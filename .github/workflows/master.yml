@@ -1,0 +1,24 @@
+on:
+  push:
+    branches:
+      - master
+
+name: 🚀 Deploy - Tiken CMS!
+
+jobs:
+  web-deploy:
+    name: 🎉 Deploy
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 🚚 Get latest code
+        uses: actions/checkout@v3
+      
+      - name: 📂 Sync files
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_LOGIN }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          server-dir: /domains/honeydew-cassowary-327775.hostingersite.com/public_html/wp-content/themes/tiken-wp-theme/
+          state-name: .ftp-deploy-sync-state.json
