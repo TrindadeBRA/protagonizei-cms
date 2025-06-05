@@ -10,25 +10,15 @@ require_once THEME_DIR . 'configs.php';
 require_once THEME_DIR . 'includes/apikey.php';
 require_once THEME_DIR . 'includes/settings.php';
 require_once THEME_DIR . 'includes/github-deploy.php';
-require_once THEME_DIR . 'includes/cpt/cpt-products.php';
 require_once THEME_DIR . 'includes/cpt/cpt-contacts.php';
-require_once THEME_DIR . 'includes/scf/scf-segments.php';
-require_once THEME_DIR . 'includes/scf/scf-products.php';
 require_once THEME_DIR . 'includes/scf/scf-contacts.php';
 require_once THEME_DIR . 'includes/swagger/swagger-page.php';
 
 // Endpoints
 require_once THEME_DIR . 'endpoints/api-configs.php';
-require_once THEME_DIR . 'endpoints/api-products.php';
-require_once THEME_DIR . 'endpoints/api-segment.php';
 require_once THEME_DIR . 'endpoints/api-contacts.php';
 require_once THEME_DIR . 'endpoints/api-posts-slugs.php';
 require_once THEME_DIR . 'endpoints/api-post-details.php';
-require_once THEME_DIR . 'endpoints/api-product-lines.php';
-require_once THEME_DIR . 'endpoints/api-product-line-slugs.php';
-
-// Import Products
-require_once get_template_directory() . '/includes/import/import-products.php';
 
 // Impede acesso direto ao arquivo
 if (!defined('ABSPATH')) {

@@ -3,7 +3,7 @@ on:
     branches:
       - master
 
-name: 🚀 Deploy - Tiken CMS!
+name: 🚀 Deploy - TrinityWeb Kit CMS!
 
 jobs:
   web-deploy:
