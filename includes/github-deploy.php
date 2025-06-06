@@ -146,7 +146,7 @@ function trinitykitcms_trigger_github_workflow() {
     $data = array(
         'message' => 'Trigger deploy workflow - ' . date('Y-m-d H:i:s', $timestamp),
         'content' => base64_encode("Deploy trigger timestamp: " . $timestamp),
-        'branch' => 'main'
+        'branch' => 'master'
     );
     
     // Adicionar SHA se o arquivo já existir
