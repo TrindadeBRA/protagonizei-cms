@@ -114,8 +114,11 @@ function trinitykitcms_render_admin_page()
 
         function copyApiUrl() {
             var copyText = document.querySelectorAll('input')[1];
+            var url = copyText.value.replace(/\/$/, ''); // Remove trailing slash
+            copyText.value = url;
             copyText.select();
             document.execCommand("copy");
+            copyText.value = copyText.value + '/'; // Restore the original value with slash
             alert("URL da API copiada!");
         }
     </script>
