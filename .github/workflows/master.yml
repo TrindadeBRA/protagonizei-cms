@@ -20,5 +20,5 @@ jobs:
           server: ${{ secrets.FTP_HOST }}
           username: ${{ secrets.FTP_LOGIN }}
           password: ${{ secrets.FTP_PASSWORD }}
-          server-dir: /domains/honeydew-cassowary-327775.hostingersite.com/public_html/wp-content/themes/tiken-wp-theme/
+          server-dir: /public_html/wp-content/themes/trinitykit-wp-theme/
           state-name: .ftp-deploy-sync-state.json
