@@ -14,6 +14,8 @@ require_once THEME_DIR . 'includes/cpt/cpt-contacts.php';
 require_once THEME_DIR . 'includes/scf/scf-contacts.php';
 require_once THEME_DIR . 'includes/cpt/cpt-orders.php';
 require_once THEME_DIR . 'includes/scf/scf-orders.php';
+require_once THEME_DIR . 'includes/cpt/cpt-book-templates.php';
+require_once THEME_DIR . 'includes/scf/scf-book-templates.php';
 require_once THEME_DIR . 'includes/swagger/swagger-page.php';
 
 // Endpoints
