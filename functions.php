@@ -23,6 +23,7 @@ require_once THEME_DIR . 'endpoints/api-configs.php';
 require_once THEME_DIR . 'endpoints/api-contacts.php';
 require_once THEME_DIR . 'endpoints/api-posts-slugs.php';
 require_once THEME_DIR . 'endpoints/api-post-details.php';
+require_once THEME_DIR . 'endpoints/orders/api-create-order.php';
 
 // Impede acesso direto ao arquivo
 if (!defined('ABSPATH')) {
@@ -104,6 +105,7 @@ add_action('rest_api_init', function () {
         
         $allowed_origins = [
             'http://localhost:3000',
+            'http://localhost:8080',
             $frontend_url
         ];
 
@@ -112,13 +114,21 @@ add_action('rest_api_init', function () {
 
             if (in_array($origin, $allowed_origins)) {
                 header("Access-Control-Allow-Origin: $origin");
-                header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-                header('Access-Control-Allow-Headers: Origin, Content-Type, Accept, Authorization');
+                header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+                header('Access-Control-Allow-Headers: Origin, Content-Type, Accept, Authorization, X-API-Key, X-Requested-With');
+                header('Access-Control-Allow-Credentials: true');
+                header('Access-Control-Max-Age: 86400');    // cache for 1 day
             } else {
                 header('HTTP/1.1 403 Forbidden');
                 echo json_encode(['message' => 'CORS bloqueado']);
                 exit;
             }
+        }
+
+        // Handle preflight OPTIONS request
+        if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+            status_header(200);
+            exit();
         }
 
         return $served;
