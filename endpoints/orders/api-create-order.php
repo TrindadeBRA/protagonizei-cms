@@ -29,14 +29,14 @@ add_action('rest_api_init', function () {
  */
 function trinitykit_create_order($request) {
     // Verify API key
-    $api_key = $request->get_header('X-API-Key');
-    if (!$api_key || $api_key !== get_option('trinitykitcms_api_key')) {
-        return new WP_Error(
-            'invalid_api_key',
-            'API Key inválida ou não fornecida',
-            array('status' => 401)
-        );
-    }
+    // $api_key = $request->get_header('X-API-Key');
+    // if (!$api_key || $api_key !== get_option('trinitykitcms_api_key')) {
+    //     return new WP_Error(
+    //         'invalid_api_key',
+    //         'API Key inválida ou não fornecida',
+    //         array('status' => 401)
+    //     );
+    // }
 
     // Get and validate required fields
     $child_name = sanitize_text_field($request->get_param('childName'));
