@@ -11,7 +11,7 @@ function register_book_templates_post_type() {
     $labels = array(
         'name'                  => _x( 'Modelos de Livros', 'Nome do tipo de post' ),
         'singular_name'         => _x( 'Modelo de Livro', 'Nome singular do tipo de post' ),
-        'menu_name'             => _x( 'Modelos de Livros', 'Nome do menu' ),
+        'menu_name'             => _x( 'Livros', 'Nome do menu' ),
         'add_new'               => _x( 'Adicionar Novo', 'Novo item' ),
         'add_new_item'          => __( 'Adicionar Novo Modelo de Livro' ),
         'edit_item'             => __( 'Editar Modelo de Livro' ),
