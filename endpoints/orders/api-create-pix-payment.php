@@ -34,6 +34,18 @@ add_action('rest_api_init', function () {
  */
 function trinitykit_create_pix_key($request) {
     $order_id = $request->get_param('order_id');
+    
+    // Get the order post
+    $order = get_post($order_id);
+    
+    if (!$order || $order->post_type !== 'orders') {
+        return new WP_Error(
+            'order_not_found',
+            'Pedido não encontrado',
+            array('status' => 404)
+        );
+    }
+
     $asaas_api_key = ASAAS_API_KEY;
     $asaas_wallet_id = ASAAS_WALLET_ID;
     $asaas_api_url = 'https://api-sandbox.asaas.com/v3/pix/qrCodes/static';
@@ -71,7 +83,6 @@ function trinitykit_create_pix_key($request) {
     $body = json_decode(wp_remote_retrieve_body($response), true);
     $status_code = wp_remote_retrieve_response_code($response);
 
-
     // Handle Asaas API errors
     if ($status_code !== 200) {
         $error_description = isset($body['errors']) ? $body['errors'][0]['description'] : 'Erro desconhecido';
@@ -85,6 +96,8 @@ function trinitykit_create_pix_key($request) {
 
     error_log("[TrinityKit] Resposta da criação de chave PIX para pedido #$order_id: " . json_encode($body));
 
+    // Update order status to awaiting payment
+    update_field('order_status', 'awaiting_payment', $order_id);
 
     // Return only the relevant data for the frontend
     return new WP_REST_Response(array(

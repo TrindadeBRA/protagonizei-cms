@@ -38,8 +38,54 @@ function trinitykit_handle_payment_webhook($request) {
     // Log the raw request body
     error_log("[TrinityKit] Webhook recebido: " . $raw_body);
     
+    // Parse the JSON body
+    $data = json_decode($raw_body, true);
+    
+    // Validate the webhook data
+    if (!isset($data['event']) || $data['event'] !== 'PAYMENT_RECEIVED') {
+        error_log("[TrinityKit] Evento inválido no webhook: " . $data['event']);
+        return new WP_REST_Response(array(
+            'message' => 'Evento inválido'
+        ), 400);
+    }
+    
+    if (!isset($data['payment']['externalReference'])) {
+        error_log("[TrinityKit] Referência externa não encontrada no webhook");
+        return new WP_REST_Response(array(
+            'message' => 'Referência externa não encontrada'
+        ), 400);
+    }
+    
+    // Get the order ID from external reference
+    $order_id = $data['payment']['externalReference'];
+    
+    // Get the order post
+    $order = get_post($order_id);
+    
+    if (!$order || $order->post_type !== 'orders') {
+        error_log("[TrinityKit] Pedido não encontrado: " . $order_id);
+        return new WP_REST_Response(array(
+            'message' => 'Pedido não encontrado'
+        ), 404);
+    }
+    
+    // Update order status to paid
+    update_field('order_status', 'paid', $order_id);
+    
+    // Save payment transaction ID
+    update_field('payment_transaction_id', $data['payment']['id'], $order_id);
+    
+    // Save payment date
+    update_field('payment_date', $data['payment']['paymentDate'], $order_id);
+    
+    // Remove PIX QR Code and PIX Code
+    update_field('payment_qr_code', '', $order_id);
+    update_field('payment_qr_code_text', '', $order_id);
+    
+    error_log("[TrinityKit] Pedido #$order_id atualizado para pago");
+    
     // Return success response
     return new WP_REST_Response(array(
-        'message' => 'Webhook recebido com sucesso'
+        'message' => 'Webhook processado com sucesso'
     ), 200);
 }

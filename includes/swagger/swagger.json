@@ -928,21 +928,56 @@
     "/webhook/payment-confirm": {
       "post": {
         "summary": "Webhook de confirmação de pagamento",
-        "description": "Endpoint para receber notificações de confirmação de pagamento. Todos os dados recebidos são registrados no log do sistema.",
+        "description": "Endpoint para receber notificações de confirmação de pagamento do Asaas. Atualiza o status do pedido para pago e registra os dados da transação.",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
-                "description": "Dados da notificação de pagamento"
+                "required": ["event", "payment"],
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "ID do evento"
+                  },
+                  "event": {
+                    "type": "string",
+                    "description": "Tipo do evento",
+                    "enum": ["PAYMENT_RECEIVED"]
+                  },
+                  "dateCreated": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "Data de criação do evento"
+                  },
+                  "payment": {
+                    "type": "object",
+                    "required": ["id", "externalReference", "paymentDate"],
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "description": "ID da transação de pagamento"
+                      },
+                      "externalReference": {
+                        "type": "string",
+                        "description": "ID do pedido no WordPress"
+                      },
+                      "paymentDate": {
+                        "type": "string",
+                        "format": "date",
+                        "description": "Data do pagamento"
+                      }
+                    }
+                  }
+                }
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "Webhook recebido com sucesso",
+            "description": "Webhook processado com sucesso",
             "content": {
               "application/json": {
                 "schema": {
@@ -950,7 +985,110 @@
                   "properties": {
                     "message": {
                       "type": "string",
-                      "example": "Webhook recebido com sucesso"
+                      "example": "Webhook processado com sucesso"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados do webhook inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Evento inválido"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Pedido não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Pedido não encontrado"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/orders/{order_id}/payment-status": {
+      "get": {
+        "summary": "Verificar status do pagamento",
+        "description": "Verifica se um pedido específico já foi pago",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "description": "ID do pedido para verificar o status do pagamento",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Status do pagamento obtido com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Mensagem descritiva do status",
+                      "example": "Pedido já foi pago"
+                    },
+                    "status": {
+                      "type": "string",
+                      "description": "Status do pagamento",
+                      "enum": ["paid", "pending"],
+                      "example": "paid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Pedido não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "order_not_found"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Pedido não encontrado"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "integer",
+                          "example": 404
+                        }
+                      }
                     }
                   }
                 }
