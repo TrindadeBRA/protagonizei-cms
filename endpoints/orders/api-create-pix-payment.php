@@ -66,7 +66,7 @@ function trinitykit_create_pix_key($request) {
             'externalReference' => $order_id,
             'expiresAt' => date('Y-m-d H:i:s', strtotime('+1 day'))
         )),
-        'timeout' => 30
+        //'timeout' => 30
     ));
 
     // Handle WordPress HTTP request errors
