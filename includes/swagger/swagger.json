@@ -845,6 +845,85 @@
           }
         }
       }
+    },
+    "/orders/{order_id}/pix": {
+      "post": {
+        "summary": "Criar pagamento PIX para um pedido",
+        "description": "Cria um pagamento PIX para um pedido existente usando a API do Asaas",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "description": "ID do pedido para criar o pagamento PIX",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pagamento PIX criado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Pix criado com sucesso"
+                    },
+                    "pix_key_id": {
+                      "type": "string",
+                      "description": "ID da chave PIX gerada",
+                      "example": "pix_123456789"
+                    },
+                    "qr_code_image": {
+                      "type": "string",
+                      "description": "Imagem do QR Code PIX em base64",
+                      "example": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..."
+                    },
+                    "qr_code_copypaste": {
+                      "type": "string",
+                      "description": "Código PIX para copiar e colar",
+                      "example": "00020126580014BR.GOV.BCB.PIX0136..."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro ao criar pagamento PIX",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "asaas_pix_key_error"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Erro ao criar chave PIX: [mensagem de erro]"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "integer",
+                          "example": 500
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {

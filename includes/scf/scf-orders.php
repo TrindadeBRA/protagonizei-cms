@@ -163,6 +163,27 @@ function register_order_fields() {
                     'display_format' => 'd/m/Y H:i',
                     'return_format' => 'Y-m-d H:i:s',
                 ),
+                array(
+                    'key' => 'field_payment_qr_code',
+                    'label' => 'QR Code PIX',
+                    'name' => 'payment_qr_code',
+                    'type' => 'image',
+                    'instructions' => 'QR Code PIX gerado para o pagamento',
+                    'required' => 0,
+                    'return_format' => 'array',
+                    'preview_size' => 'medium',
+                    'library' => 'all',
+                    'mime_types' => 'jpg, jpeg, png',
+                ),
+                array(
+                    'key' => 'field_payment_qr_code_text',
+                    'label' => 'Código PIX',
+                    'name' => 'payment_qr_code_text',
+                    'type' => 'textarea',
+                    'instructions' => 'Código PIX para copiar e colar',
+                    'required' => 0,
+                    'rows' => 3,
+                ),
                 
                 // Tab: Ativos Gerados
                 array(
