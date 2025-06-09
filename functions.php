@@ -25,6 +25,7 @@ require_once THEME_DIR . 'endpoints/api-posts-slugs.php';
 require_once THEME_DIR . 'endpoints/api-post-details.php';
 require_once THEME_DIR . 'endpoints/orders/api-create-order.php';
 require_once THEME_DIR . 'endpoints/orders/api-create-pix-payment.php';
+require_once THEME_DIR . 'endpoints/orders/webhook-payment-confirm.php';
 
 // Impede acesso direto ao arquivo
 if (!defined('ABSPATH')) {

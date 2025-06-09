@@ -924,6 +924,41 @@
           }
         }
       }
+    },
+    "/webhook/payment-confirm": {
+      "post": {
+        "summary": "Webhook de confirmação de pagamento",
+        "description": "Endpoint para receber notificações de confirmação de pagamento. Todos os dados recebidos são registrados no log do sistema.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "Dados da notificação de pagamento"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Webhook recebido com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Webhook recebido com sucesso"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
