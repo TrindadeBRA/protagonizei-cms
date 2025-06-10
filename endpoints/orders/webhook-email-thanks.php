@@ -32,8 +32,6 @@ add_action('rest_api_init', function () {
  * @since 1.0.0
  */
 function trinitykit_handle_thank_webhook($request) {
-    error_log("[TrinityKit] Iniciando processamento do webhook de agradecimento");
-    
     // Get all orders with status 'paid'
     $args = array(
         'post_type' => 'orders',
@@ -48,21 +46,17 @@ function trinitykit_handle_thank_webhook($request) {
     );
 
     $paid_orders = get_posts($args);
-    error_log("[TrinityKit] Encontrados " . count($paid_orders) . " pedidos com status 'paid'");
-    
     $processed = 0;
     $errors = array();
 
     foreach ($paid_orders as $order) {
         $order_id = $order->ID;
-        error_log("[TrinityKit] Processando pedido #$order_id");
         
         // Get order details
         $name = get_field('buyer_name', $order_id);
         $buyer_email = get_field('buyer_email', $order_id);
-        $order_total = get_field('order_total', $order_id);
-        
-        error_log("[TrinityKit] Dados do pedido #$order_id - Nome: $name, Email: $buyer_email, Total: $order_total");
+        $order_total = get_field('payment_amount', $order_id);
+        $gender = get_field('child_gender', $order_id);
         
         // Skip if required fields are empty
         if (empty($name) || empty($buyer_email)) {
@@ -83,31 +77,20 @@ function trinitykit_handle_thank_webhook($request) {
         // Ensure order_total is not null and is numeric
         $order_total = is_numeric($order_total) ? floatval($order_total) : 0;
         
-        // Prepare email content
+        // Get email template
+        require_once __DIR__ . '/email/thank-you-template.php';
         $subject = 'Obrigado pela sua compra!';
-        $message = "Olá {$name},\n\n";
-        $message .= "Agradecemos imensamente pela sua compra!\n\n";
-        $message .= "Detalhes do seu pedido:\n";
-        $message .= "Número do pedido: #{$order_id}\n";
-        $message .= "Valor total: R$ " . number_format($order_total, 2, ',', '.') . "\n\n";
-        $message .= "Estamos muito felizes em tê-lo como cliente!\n\n";
-        $message .= "Atenciosamente,\nEquipe Protagonizei";
+        $message = trinitykit_get_thank_you_email_template($name, $order_id, $order_total, $gender);
         
         // Send email
         $headers = array(
-            'Content-Type: text/plain; charset=UTF-8',
-            'From: noreply@protagonizei.com <noreply@protagonizei.com>'
+            'Content-Type: text/html; charset=UTF-8',
+            'From: Protagonizei <noreply@protagonizei.com>'
         );
-        
-        // Add debug information
-        error_log("[TrinityKit] Tentando enviar email para: $buyer_email");
-        error_log("[TrinityKit] Assunto: $subject");
         
         $sent = wp_mail($buyer_email, $subject, $message, $headers);
         
         if ($sent) {
-            error_log("[TrinityKit] Email enviado com sucesso para o pedido #$order_id");
-            
             // Update order status to thanked
             $update_status = update_field('order_status', 'thanked', $order_id);
             
@@ -138,7 +121,6 @@ function trinitykit_handle_thank_webhook($request) {
         }
     }
     
-    error_log("[TrinityKit] Processamento concluído. $processed pedidos processados.");
     if (!empty($errors)) {
         error_log("[TrinityKit] Erros encontrados: " . implode(" | ", $errors));
     }

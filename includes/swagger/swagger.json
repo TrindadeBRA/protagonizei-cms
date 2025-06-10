@@ -953,7 +953,7 @@
                   },
                   "payment": {
                     "type": "object",
-                    "required": ["id", "externalReference", "paymentDate"],
+                    "required": ["id", "externalReference", "paymentDate", "value"],
                     "properties": {
                       "id": {
                         "type": "string",
@@ -967,6 +967,11 @@
                         "type": "string",
                         "format": "date",
                         "description": "Data do pagamento"
+                      },
+                      "value": {
+                        "type": "number",
+                        "example": 49.99,
+                        "description": "Valor do pagamento"
                       }
                     }
                   }

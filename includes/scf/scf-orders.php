@@ -171,6 +171,13 @@ function register_order_fields() {
                     'display_format' => 'd/m/Y H:i',
                     'return_format' => 'Y-m-d H:i:s',
                 ),
+                // Valor do pagamento
+                array(
+                    'key' => 'field_payment_amount',
+                    'label' => 'Valor do Pagamento',
+                    'name' => 'payment_amount',
+                    'type' => 'number',
+                ),
                 
                 // Tab: Ativos Gerados
                 array(

@@ -35,15 +35,12 @@ function trinitykit_handle_payment_webhook($request) {
     // Get the raw request body
     $raw_body = $request->get_body();
     
-    // Log the raw request body
-    error_log("[TrinityKit] Webhook recebido: " . $raw_body);
-    
     // Parse the JSON body
     $data = json_decode($raw_body, true);
     
     // Validate the webhook data
     if (!isset($data['event']) || $data['event'] !== 'PAYMENT_RECEIVED') {
-        error_log("[TrinityKit] Evento inválido no webhook: " . $data['event']);
+        error_log("[TrinityKit] Evento inválido no webhook: " . ($data['event'] ?? 'não definido'));
         return new WP_REST_Response(array(
             'message' => 'Evento inválido'
         ), 400);
@@ -70,14 +67,29 @@ function trinitykit_handle_payment_webhook($request) {
     }
     
     // Update order status to paid
-    update_field('order_status', 'paid', $order_id);
+    $status_updated = update_field('order_status', 'paid', $order_id);
+    if (!$status_updated) {
+        error_log("[TrinityKit] Falha ao atualizar status do pedido #$order_id para 'paid'");
+    }
     
     // Save payment transaction ID
-    update_field('payment_transaction_id', $data['payment']['id'], $order_id);
+    $transaction_updated = update_field('payment_transaction_id', $data['payment']['id'], $order_id);
+    if (!$transaction_updated) {
+        error_log("[TrinityKit] Falha ao salvar ID da transação para o pedido #$order_id");
+    }
     
     // Save payment date
-    update_field('payment_date', $data['payment']['paymentDate'], $order_id);
-    
+    $date_updated = update_field('payment_date', $data['payment']['paymentDate'], $order_id);
+    if (!$date_updated) {
+        error_log("[TrinityKit] Falha ao salvar data do pagamento para o pedido #$order_id");
+    }
+
+    // Save payment amount
+    $amount_updated = update_field('payment_amount', $data['payment']['value'], $order_id);
+    if (!$amount_updated) {
+        error_log("[TrinityKit] Falha ao salvar valor do pagamento para o pedido #$order_id");
+    }
+
     // Remove PIX QR Code and PIX Code
     update_field('payment_qr_code', '', $order_id);
     update_field('payment_qr_code_text', '', $order_id);
