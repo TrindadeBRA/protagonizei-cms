@@ -41,6 +41,18 @@ function register_order_fields() {
                     'default_value' => 'created',
                     'return_format' => 'value',
                 ),
+                // relacionamento 1:1 com um post do custom post type book-templates
+                array(
+                    'key' => 'field_book_template',
+                    'label' => 'Modelo de Livro',
+                    'name' => 'book_template',
+                    'type' => 'post_object',
+                    'instructions' => 'Modelo de livro selecionado para o pedido',
+                    'post_type' => 'book_templates',
+                    'post_status' => array('publish'),
+                    'return_format' => 'object',
+                    'required' => 1,
+                ),
                 
                 // Tab: Dados da Criança
                 array(

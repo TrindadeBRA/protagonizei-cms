@@ -214,6 +214,29 @@ function trinitykit_create_order($request) {
         'created'
     );
 
+    // Buscar o modelo de livro mais recente publicado
+    $latest_book_template = get_posts(array(
+        'post_type' => 'book_templates',
+        'post_status' => 'publish',
+        'posts_per_page' => 1,
+        'orderby' => 'date',
+        'order' => 'DESC'
+    ));
+
+    // Se encontrou um modelo, associa ao pedido
+    if (!empty($latest_book_template)) {
+        update_field('book_template', $latest_book_template[0]->ID, $order_id);
+        
+        // Adiciona log da associação
+        trinitykit_add_post_log(
+            $order_id,
+            'api-create-order',
+            "Modelo de livro #{$latest_book_template[0]->ID} associado automaticamente",
+            '',
+            'info'
+        );
+    }
+
     // Return success response
     return new WP_REST_Response(array(
         'message' => 'Pedido criado com sucesso',
