@@ -127,6 +127,14 @@ function register_order_fields() {
                     'required' => 1,
                 ),
                 array(
+                    'key' => 'field_buyer_name',
+                    'label' => 'Nome do Responsável',
+                    'name' => 'buyer_name',
+                    'type' => 'text',
+                    'instructions' => 'Nome do responsável pela criança',
+                    'required' => 1,
+                ),
+                array(
                     'key' => 'field_buyer_phone',
                     'label' => 'Telefone do Comprador',
                     'name' => 'buyer_phone',

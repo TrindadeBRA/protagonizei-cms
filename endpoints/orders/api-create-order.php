@@ -43,13 +43,13 @@ function trinitykit_create_order($request) {
     $child_age = intval($request->get_param('childAge'));
     $child_gender = sanitize_text_field($request->get_param('childGender'));
     $skin_tone = sanitize_text_field($request->get_param('skinTone'));
-    $parent_name = sanitize_text_field($request->get_param('parentName'));
+    $name = sanitize_text_field($request->get_param('parentName'));
     $email = sanitize_email($request->get_param('email'));
     $phone = sanitize_text_field($request->get_param('phone'));
     $photo = $request->get_file_params()['photo'] ?? null;
 
     // Validate required fields
-    if (!$child_name || !$child_age || !$child_gender || !$skin_tone || !$parent_name || !$email || !$phone || !$photo) {
+    if (!$child_name || !$child_age || !$child_gender || !$skin_tone || !$name || !$email || !$phone || !$photo) {
         return new WP_Error(
             'missing_fields',
             'Todos os campos são obrigatórios',
@@ -163,7 +163,7 @@ function trinitykit_create_order($request) {
     // Update post title with ID
     wp_update_post(array(
         'ID' => $order_id,
-        'post_title' => "#$order_id - $parent_name - $child_name"
+        'post_title' => "#$order_id - $name - $child_name"
     ));
 
     // Create attachment
@@ -202,6 +202,7 @@ function trinitykit_create_order($request) {
     update_field('child_skin_tone', $skin_tone, $order_id);
     update_field('buyer_email', $email, $order_id);
     update_field('buyer_phone', $phone, $order_id);
+    update_field('buyer_name', $name, $order_id);
     update_field('child_face_photo', $attachment_id, $order_id);
 
     // Add log entry for order creation

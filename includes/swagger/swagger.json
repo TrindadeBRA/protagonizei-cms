@@ -1097,6 +1097,60 @@
           }
         }
       }
+    },
+    "/webhook/send-thanks": {
+      "get": {
+        "summary": "Webhook para envio de emails de agradecimento",
+        "description": "Endpoint que verifica pedidos com status 'paid', envia emails de agradecimento e atualiza o status para 'thanked'",
+        "responses": {
+          "200": {
+            "description": "Processamento concluído com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Mensagem de sucesso com número de pedidos processados",
+                      "example": "Processamento concluído. 5 pedidos processados."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno do servidor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "email_sending_failed"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Erro ao enviar email de agradecimento"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "integer",
+                          "example": 500
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {

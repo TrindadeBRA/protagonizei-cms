@@ -30,6 +30,7 @@ require_once THEME_DIR . 'endpoints/orders/api-create-order.php';
 require_once THEME_DIR . 'endpoints/orders/api-create-pix-payment.php';
 require_once THEME_DIR . 'endpoints/orders/webhook-payment-confirm.php';
 require_once THEME_DIR . 'endpoints/orders/api-check-payment-status.php';
+require_once THEME_DIR . 'endpoints/orders/webhook-email-thanks.php';
 
 // Impede acesso direto ao arquivo
 if (!defined('ABSPATH')) {
@@ -76,24 +77,6 @@ function disable_gutenberg_editor() {
 }
 add_filter('use_block_editor_for_post', 'disable_gutenberg_editor', 10);
 add_filter('use_block_editor_for_post_type', 'disable_gutenberg_editor', 10);
-
-
-// Configuração do SMTP para o envio de emails
-add_action('phpmailer_init', function($phpmailer) {
-    $phpmailer->isSMTP();
-    $phpmailer->Host       = defined('SMTP_HOST') ? SMTP_HOST : 'smtp-hve.office365.com';
-    $phpmailer->SMTPAuth   = true;
-    $phpmailer->Port       = defined('SMTP_PORT') ? SMTP_PORT : 587;
-    $phpmailer->Username   = defined('SMTP_USERNAME') ? SMTP_USERNAME : '';
-    $phpmailer->Password   = defined('SMTP_PASSWORD') ? SMTP_PASSWORD : '';
-    $phpmailer->SMTPSecure = 'tls'; // STARTTLS
-    $phpmailer->From       = defined('SMTP_FROM') ? SMTP_FROM : '';
-    $phpmailer->FromName   = defined('SMTP_FROM_NAME') ? SMTP_FROM_NAME : '';
-    $phpmailer->addReplyTo(
-        defined('SMTP_REPLY_TO') ? SMTP_REPLY_TO : '',
-        defined('SMTP_REPLY_TO_NAME') ? SMTP_REPLY_TO_NAME : ''
-    );
-});
 
 // Retorna erro 403 se alguém tentar acessar o index
 add_filter('rest_index', function ($response) {
@@ -168,3 +151,15 @@ function trinitykitcms_rewrite_post_permalink($permalink, $post) {
 }
 add_filter('post_link', 'trinitykitcms_rewrite_post_permalink', 10, 2);
 add_filter('post_type_link', 'trinitykitcms_rewrite_post_permalink', 10, 2);
+
+// Looking to send emails in production? Check out our Email API/SMTP product!
+function mailtrap($phpmailer) {
+    $phpmailer->isSMTP();
+    $phpmailer->Host = 'sandbox.smtp.mailtrap.io';
+    $phpmailer->SMTPAuth = true;
+    $phpmailer->Port = 2525;
+    $phpmailer->Username = '074245c3a9070d';
+    $phpmailer->Password = 'ad803e39bef73e';
+  }
+  
+  add_action('phpmailer_init', 'mailtrap');
