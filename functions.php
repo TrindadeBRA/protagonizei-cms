@@ -96,7 +96,7 @@ add_action('rest_api_init', function () {
         $allowed_origins = [
             'http://localhost:3000',
             'http://localhost:8080',
-            'cms-protagonizei.thetrinityweb.com.br'
+            'cms-protagonizei.thetrinityweb.com.br',
             $frontend_url
         ];
 
