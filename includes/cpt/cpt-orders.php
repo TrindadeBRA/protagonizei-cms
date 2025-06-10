@@ -76,10 +76,12 @@ function orders_column_content( $column, $post_id ) {
                 'awaiting_payment' => 'Aguardando Pagamento',
                 'paid' => 'Pago',
                 'thanked' => 'Agradecido',
-                'awaiting_assets' => 'Aguardando Ativos',
+                'created_assets_text' => 'Assets de Texto Criados',
+                'created_assets_illustration' => 'Assets de Ilustração Criados',
+                'created_assets_merge' => 'Assets Finais Criados',
                 'ready_for_delivery' => 'Pronto para Entrega',
                 'delivered' => 'Entregue',
-                'completed' => 'Concluído',
+                'completed' => 'Concluído (Entregue e PDF Gerado)',
                 'error' => 'Erro'
             );
             echo isset($status_labels[$status]) ? $status_labels[$status] : $status;
@@ -114,10 +116,12 @@ function add_status_filter_to_orders() {
             'awaiting_payment' => 'Aguardando Pagamento',
             'paid' => 'Pago',
             'thanked' => 'Agradecido',
-            'awaiting_assets' => 'Aguardando Ativos',
+            'created_assets_text' => 'Assets de Texto Criados',
+            'created_assets_illustration' => 'Assets de Ilustração Criados',
+            'created_assets_merge' => 'Assets Finais Criados',
             'ready_for_delivery' => 'Pronto para Entrega',
             'delivered' => 'Entregue',
-            'completed' => 'Concluído',
+            'completed' => 'Concluído (Entregue e PDF Gerado)',
             'error' => 'Erro'
         );
         

@@ -97,7 +97,7 @@ function trinitykit_get_thank_you_email_template($name, $order_id, $order_total,
     <body>
         <div class="container">
             <div class="header">
-                <img src="https://protagonizei.thetrinityweb.com.br/assets/images/navigation-logo.png" alt="Protagonizei Logo" class="logo">
+                <img src="https://protagonizei.com/assets/images/navigation-logo.png" alt="Protagonizei Logo" class="logo">
             </div>
             <div class="content">
                 <h2>Olá ' . esc_html($name) . ',</h2>
