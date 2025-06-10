@@ -46,12 +46,13 @@ function trinitykit_create_pix_key($request) {
         );
     }
 
-    $asaas_api_key = ASAAS_API_KEY;
-    $asaas_wallet_id = ASAAS_WALLET_ID;
-    $asaas_api_url = 'https://api-sandbox.asaas.com/v3/pix/qrCodes/static';
+    $asaas_api_key = get_option('trinitykitcms_asaas_api_key');
+    $asaas_wallet_id = get_option('trinitykitcms_asaas_wallet_id');
+    $asaas_api_url = get_option('trinitykitcms_asaas_api_url');
+    $pix_endpoint = $asaas_api_url . '/pix/qrCodes/static';
 
     // Make request to create PIX QR Code
-    $response = wp_remote_post($asaas_api_url, array(
+    $response = wp_remote_post($pix_endpoint, array(
         'headers' => array(
             'Content-Type' => 'application/json',
             'Accept' => 'application/json',

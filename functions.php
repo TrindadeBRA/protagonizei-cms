@@ -9,6 +9,7 @@ require_once THEME_DIR . 'configs.php';
 // Includes
 require_once THEME_DIR . 'includes/apikey.php';
 require_once THEME_DIR . 'includes/settings.php';
+require_once THEME_DIR . 'includes/integrations.php';
 require_once THEME_DIR . 'includes/github-deploy.php';
 require_once THEME_DIR . 'includes/utils/post-logger.php';
 require_once THEME_DIR . 'includes/cpt/cpt-contacts.php';
