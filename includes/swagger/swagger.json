@@ -1156,6 +1156,78 @@
           }
         }
       }
+    },
+    "/webhook/generate-text-assets": {
+      "get": {
+        "summary": "Gerar textos personalizados em lote",
+        "description": "Processa todos os pedidos no status 'thanked' para gerar textos personalizados usando Deepseek API",
+        "responses": {
+          "200": {
+            "description": "Textos gerados com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Processamento concluído. 5/5 pedidos processados"
+                    },
+                    "processed": {
+                      "type": "integer",
+                      "example": 5
+                    },
+                    "total": {
+                      "type": "integer",
+                      "example": 5
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro no processamento",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Processamento concluído. 3/5 pedidos processados"
+                    },
+                    "processed": {
+                      "type": "integer",
+                      "example": 3
+                    },
+                    "total": {
+                      "type": "integer",
+                      "example": 5
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "example": "Erro no pedido #123: Modelo de livro não encontrado"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [{"ApiKeyAuth": []}]
+      }
     }
   },
   "components": {
