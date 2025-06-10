@@ -82,7 +82,14 @@ function trinitykit_handle_payment_webhook($request) {
     update_field('payment_qr_code', '', $order_id);
     update_field('payment_qr_code_text', '', $order_id);
     
-    error_log("[TrinityKit] Pedido #$order_id atualizado para pago");
+    // Add log entry for order creation
+    trinitykit_add_post_log(
+        $order_id,
+        'webhook-payment-confirm',
+        "Pedido #$order_id atualizado para pago",
+        'awaiting_payment',
+        'paid'
+    );
     
     // Return success response
     return new WP_REST_Response(array(

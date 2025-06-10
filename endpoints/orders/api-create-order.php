@@ -204,7 +204,14 @@ function trinitykit_create_order($request) {
     update_field('buyer_phone', $phone, $order_id);
     update_field('child_face_photo', $attachment_id, $order_id);
 
-    error_log('Pedido criado com sucesso: ' . $order_id);
+    // Add log entry for order creation
+    trinitykit_add_post_log(
+        $order_id,
+        'api-create-order',
+        "Pedido criado com sucesso para $child_name (#$order_id)",
+        '',
+        'created'
+    );
 
     // Return success response
     return new WP_REST_Response(array(

@@ -50,6 +50,17 @@ function trinitykit_check_payment_status($request) {
     
     // Check if the order is paid
     $is_paid = $order_status === 'paid';
+
+    if ($is_paid) {
+        // Add log entry for order creation
+        trinitykit_add_post_log(
+            $order_id,
+            'api-check-payment-status',
+            "Status do pedido #$order_id confirmada API",
+            '',
+            'paid'
+        );
+    }
     
     // Return the payment status
     return new WP_REST_Response(array(

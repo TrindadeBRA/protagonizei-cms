@@ -94,10 +94,17 @@ function trinitykit_create_pix_key($request) {
         );
     }
 
-    error_log("[TrinityKit] Resposta da criação de chave PIX para pedido #$order_id: " . json_encode($body));
-
     // Update order status to awaiting payment
     update_field('order_status', 'awaiting_payment', $order_id);
+
+    // Add log entry for order creation
+    trinitykit_add_post_log(
+        $order_id,
+        'api-create-pix-payment',
+        "Pix criado com sucesso para pedido #$order_id",
+        'created',
+        'awaiting_payment'
+    );
 
     // Return only the relevant data for the frontend
     return new WP_REST_Response(array(
