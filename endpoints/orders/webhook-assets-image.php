@@ -317,10 +317,8 @@ function trinitykit_handle_image_assets_webhook($request) {
                 $attachment_id = 0; // Fallback
             }
             
-            $illustration_data = array(
-                'url' => $processed_image_url,
-                'id' => $attachment_id
-            );
+            // Para campos de imagem do ACF, precisamos usar apenas o ID
+            $illustration_data = $attachment_id;
             
             $updated_pages[] = array(
                 'generated_text_content' => $generated_pages[$index]['generated_text_content'],
@@ -343,7 +341,19 @@ function trinitykit_handle_image_assets_webhook($request) {
         error_log("[TrinityKit] - Número de páginas: " . count($updated_pages));
         error_log("[TrinityKit] - Estrutura da primeira página: " . json_encode($updated_pages[0]));
         
+        // Verificar se o campo existe antes de atualizar
+        $existing_pages = get_field('generated_book_pages', $order_id);
+        error_log("[TrinityKit] - Páginas existentes: " . ($existing_pages ? count($existing_pages) : 'null'));
+        
         $pages_updated = update_field('generated_book_pages', $updated_pages, $order_id);
+        
+        // Se falhar, tentar método alternativo
+        if (!$pages_updated) {
+            error_log("[TrinityKit] Tentando método alternativo para atualizar páginas...");
+            $pages_updated = update_post_meta($order_id, 'generated_book_pages', $updated_pages);
+            error_log("[TrinityKit] Método alternativo resultou em: " . ($pages_updated ? 'sucesso' : 'falha'));
+        }
+        
         $status_updated = update_field('order_status', 'created_assets_illustration', $order_id);
         
         // Log detalhado para debug
