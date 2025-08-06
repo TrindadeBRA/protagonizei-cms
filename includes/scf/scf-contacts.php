@@ -45,7 +45,7 @@ function register_contact_fields() {
                     'instructions' => 'Anexe algum arquivo',
                     'required' => 0,
                     'return_format' => 'array',
-                    'preview_size' => 'medium',
+                    'preview_size' => 'full',
                     'library' => 'all',
                     'mime_types' => 'pdf, xls, xlsx, csv, doc, docx, jpg, jpeg, png, gif, svg, webp',
                     'max_size' => 10, // 10MB

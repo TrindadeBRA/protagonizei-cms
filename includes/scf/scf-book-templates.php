@@ -92,7 +92,7 @@ function register_book_template_fields() {
                                     'instructions' => 'Ilustração base para esta combinação de gênero e tom de pele',
                                     'required' => 1,
                                     'return_format' => 'array',
-                                    'preview_size' => 'medium',
+                                    'preview_size' => 'full',
                                     'library' => 'all',
                                     'mime_types' => 'jpg, jpeg, png',
                                 ),
