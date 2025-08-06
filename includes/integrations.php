@@ -14,6 +14,10 @@ function trinitykitcms_register_integration_settings() {
     // Registrar configurações do Deepseek
     register_setting('trinitykitcms_deepseek_settings', 'trinitykitcms_deepseek_api_key', 'sanitize_text_field');
     register_setting('trinitykitcms_deepseek_settings', 'trinitykitcms_deepseek_base_url', 'sanitize_url');
+
+    // Registrar configurações do FaceSwap
+    register_setting('trinitykitcms_faceswap_settings', 'trinitykitcms_faceswap_api_key', 'sanitize_text_field');
+    register_setting('trinitykitcms_faceswap_settings', 'trinitykitcms_faceswap_base_url', 'sanitize_url');
 }
 add_action('admin_init', 'trinitykitcms_register_integration_settings');
 
@@ -88,6 +92,36 @@ function trinitykitcms_render_integrations_page() {
                 </table>
                 
                 <?php submit_button('Salvar Configurações do Deepseek'); ?>
+            </form>
+        </div>
+
+        <!-- Bloco de configurações do FaceSwap -->
+        <div class="card" style="max-width: 800px; padding: 20px; margin-bottom: 20px;">
+            <h2>Configurações do FaceSwap</h2>
+            <form method="post" action="options.php">
+                <?php
+                settings_fields('trinitykitcms_faceswap_settings');
+                ?>
+                
+                <table class="form-table">
+                    <tr>
+                        <th scope="row">FaceSwap API Key</th>
+                        <td>
+                            <input type="password" name="trinitykitcms_faceswap_api_key" value="<?php echo esc_attr(get_option('trinitykitcms_faceswap_api_key')); ?>" class="regular-text">
+                            <p class="description">Chave de API do FaceSwap.</p>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <th scope="row">FaceSwap Base URL</th>
+                        <td>
+                            <input type="url" name="trinitykitcms_faceswap_base_url" value="<?php echo esc_attr(get_option('trinitykitcms_faceswap_base_url')); ?>" class="regular-text">
+                            <p class="description">URL base da API do FaceSwap.</p>
+                        </td>
+                    </tr>
+                </table>
+                
+                <?php submit_button('Salvar Configurações do FaceSwap'); ?>
             </form>
         </div>
     </div>
