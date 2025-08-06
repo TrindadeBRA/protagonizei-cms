@@ -50,6 +50,9 @@ function trinitykitcms_setup() {
 // Hook para executar a configuração do tema
 add_action('after_setup_theme', 'trinitykitcms_setup');
 
+// Desabilita o tamanho máximo de imagem
+add_filter('big_image_size_threshold', '__return_false');
+
 // Configuração de logs para debug do tema
 ini_set('error_log', get_template_directory() . '/debug.log');
 
