@@ -241,10 +241,31 @@ function trinitykit_handle_image_assets_webhook($request) {
         $book_template = get_field('book_template', $order_id);
         $generated_pages = get_field('generated_book_pages', $order_id);
         
-        // Skip if required fields are empty
-        if (empty($child_name) || empty($child_gender) || empty($child_skin_tone) || 
-            empty($child_face_photo) || !$book_template || empty($generated_pages)) {
-            $error_msg = "[TrinityKit] Campos obrigatórios vazios para o pedido #$order_id";
+        // Check required fields and log missing ones
+        $missing_fields = array();
+        
+        if (empty($child_name)) {
+            $missing_fields[] = 'child_name';
+        }
+        if (empty($child_gender)) {
+            $missing_fields[] = 'child_gender';
+        }
+        if (empty($child_skin_tone)) {
+            $missing_fields[] = 'child_skin_tone';
+        }
+        if (empty($child_face_photo)) {
+            $missing_fields[] = 'child_face_photo';
+        }
+        if (!$book_template) {
+            $missing_fields[] = 'book_template';
+        }
+        if (empty($generated_pages)) {
+            $missing_fields[] = 'generated_book_pages';
+        }
+        
+        if (!empty($missing_fields)) {
+            $missing_fields_str = implode(', ', $missing_fields);
+            $error_msg = "[TrinityKit] Campos obrigatórios vazios para o pedido #$order_id: $missing_fields_str";
             error_log($error_msg);
             $errors[] = $error_msg;
             continue;
