@@ -1228,6 +1228,74 @@
         },
         "security": [{"ApiKeyAuth": []}]
       }
+    },
+    "/webhook/generate-image-assets": {
+      "get": {
+        "summary": "Gerar ilustrações com face swap em lote",
+        "description": "Processa todos os pedidos no status 'created_assets_text' para gerar ilustrações personalizadas com face swap usando FaceSwap API. Aplica o rosto da criança nas imagens base do template, considerando gênero e tom de pele.",
+        "responses": {
+          "200": {
+            "description": "Ilustrações geradas com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Processamento concluído. 5 pedidos processados."
+                    },
+                    "processed": {
+                      "type": "integer",
+                      "description": "Número de pedidos processados com sucesso",
+                      "example": 5
+                    },
+                    "total": {
+                      "type": "integer",
+                      "description": "Número total de pedidos encontrados",
+                      "example": 5
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro no processamento",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Processamento concluído. 3/5 pedidos processados"
+                    },
+                    "processed": {
+                      "type": "integer",
+                      "description": "Número de pedidos processados com sucesso",
+                      "example": 3
+                    },
+                    "total": {
+                      "type": "integer",
+                      "description": "Número total de pedidos encontrados",
+                      "example": 5
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "example": "Erro no pedido #123: Face swap falhou para página 2"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [{"ApiKeyAuth": []}]
+      }
     }
   },
   "components": {

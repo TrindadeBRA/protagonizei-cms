@@ -33,6 +33,8 @@ require_once THEME_DIR . 'endpoints/orders/webhook-payment-confirm.php';
 require_once THEME_DIR . 'endpoints/orders/api-check-payment-status.php';
 require_once THEME_DIR . 'endpoints/orders/webhook-email-thanks.php';
 require_once THEME_DIR . 'endpoints/orders/webhook-assets-text.php';
+require_once THEME_DIR . 'endpoints/orders/webhook-assets-image.php';
+
 // Impede acesso direto ao arquivo
 if (!defined('ABSPATH')) {
     exit;
