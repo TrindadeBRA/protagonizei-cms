@@ -22,7 +22,7 @@ jobs:
           coverage: none
       
       - name: 📦 Install dependencies
-        run: composer install --prefer-dist --no-progress --no-dev --optimize-autoloader
+        run: composer install --prefer-dist --no-progress --optimize-autoloader
       
       - name: 🧪 Run tests
         run: vendor/bin/phpunit
@@ -35,6 +35,16 @@ jobs:
     steps:
       - name: 🚚 Get latest code
         uses: actions/checkout@v3
+      
+      - name: 🐘 Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          extensions: mbstring, xml, ctype, iconv, intl
+          coverage: none
+      
+      - name: 📦 Install production dependencies
+        run: composer install --prefer-dist --no-progress --no-dev --optimize-autoloader
       
       - name: 📂 Sync files
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
