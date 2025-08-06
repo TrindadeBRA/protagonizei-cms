@@ -276,30 +276,21 @@ function trinitykit_handle_image_assets_webhook($request) {
         $page_errors = 0;
 
         foreach ($template_pages as $index => $page) {
-            // Determinar a imagem base baseada no gênero e tom de pele
-            $base_image_field = '';
-            if ($child_gender === 'menino') {
-                if ($child_skin_tone === 'clara') {
-                    $base_image_field = 'base_illustration_boy_light';
-                } elseif ($child_skin_tone === 'media') {
-                    $base_image_field = 'base_illustration_boy_medium';
-                } else { // escura
-                    $base_image_field = 'base_illustration_boy_dark';
-                }
-            } else { // menina
-                if ($child_skin_tone === 'clara') {
-                    $base_image_field = 'base_illustration_girl_light';
-                } elseif ($child_skin_tone === 'media') {
-                    $base_image_field = 'base_illustration_girl_medium';
-                } else { // escura
-                    $base_image_field = 'base_illustration_girl_dark';
+            // Buscar a ilustração base correta no repeater base_illustrations
+            $base_illustrations = $page['base_illustrations'];
+            $base_image = null;
+            
+            if (!empty($base_illustrations)) {
+                foreach ($base_illustrations as $illustration) {
+                    if ($illustration['gender'] === $child_gender && $illustration['skin_tone'] === $child_skin_tone) {
+                        $base_image = $illustration['illustration_asset'];
+                        break;
+                    }
                 }
             }
-
-            $base_image = $page[$base_image_field];
             
             if (empty($base_image)) {
-                $error_msg = "[TrinityKit] Imagem base não encontrada para página $index do pedido #$order_id";
+                $error_msg = "[TrinityKit] Imagem base não encontrada para página $index do pedido #$order_id (gênero: $child_gender, tom: $child_skin_tone)";
                 error_log($error_msg);
                 $page_errors++;
                 continue;
