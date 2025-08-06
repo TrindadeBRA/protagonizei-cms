@@ -272,10 +272,19 @@ function trinitykit_handle_image_assets_webhook($request) {
         }
 
         $template_pages = get_field('template_book_pages', $book_template->ID);
-        $updated_pages = array();
+        $updated_pages = $generated_pages; // Começar com os dados existentes
         $page_errors = 0;
+        
+        error_log("[TrinityKit] Dados existentes preservados - Páginas: " . count($updated_pages));
+        error_log("[TrinityKit] Estrutura da primeira página existente: " . json_encode($updated_pages[0]));
 
         foreach ($template_pages as $index => $page) {
+            // Verificar se o índice existe nos dados atualizados
+            if (!isset($updated_pages[$index])) {
+                error_log("[TrinityKit] ERRO: Índice $index não existe nos dados atualizados");
+                $page_errors++;
+                continue;
+            }
             // Buscar a ilustração base correta no repeater base_illustrations
             $base_illustrations = $page['base_illustrations'];
             $base_image = null;
@@ -320,13 +329,11 @@ function trinitykit_handle_image_assets_webhook($request) {
             // Para campos de imagem do ACF, precisamos usar apenas o ID
             $illustration_data = $attachment_id;
             
-            $updated_pages[] = array(
-                'generated_text_content' => $generated_pages[$index]['generated_text_content'],
-                'generated_illustration' => $illustration_data
-            );
+            // Adicionar apenas a ilustração aos dados existentes
+            $updated_pages[$index]['generated_illustration'] = $illustration_data;
             
             // Log para debug da estrutura
-            error_log("[TrinityKit] Página $index processada - URL: $processed_image_url, ID: " . $illustration_data['id']);
+            error_log("[TrinityKit] Página $index processada - URL: $processed_image_url, ID: $illustration_data");
         }
 
         if ($page_errors > 0) {
