@@ -271,20 +271,11 @@ function trinitykit_handle_image_assets_webhook($request) {
             continue;
         }
 
-        $template_pages = get_field('template_book_pages', $book_template->ID);
-        $updated_pages = $generated_pages; // Começar com os dados existentes
+                $template_pages = get_field('template_book_pages', $book_template->ID);
         $page_errors = 0;
         
-        error_log("[TrinityKit] Dados existentes preservados - Páginas: " . count($updated_pages));
-        error_log("[TrinityKit] Estrutura da primeira página existente: " . json_encode($updated_pages[0]));
-
+        // Processar cada página individualmente
         foreach ($template_pages as $index => $page) {
-            // Verificar se o índice existe nos dados atualizados
-            if (!isset($updated_pages[$index])) {
-                error_log("[TrinityKit] ERRO: Índice $index não existe nos dados atualizados");
-                $page_errors++;
-                continue;
-            }
             // Buscar a ilustração base correta no repeater base_illustrations
             $base_illustrations = $page['base_illustrations'];
             $base_image = null;
@@ -326,32 +317,13 @@ function trinitykit_handle_image_assets_webhook($request) {
                 $attachment_id = 0; // Fallback
             }
             
-            // Para campos de imagem do ACF com return_format => 'array', precisamos enviar o ID
-            // Mas vamos tentar também com a estrutura completa para garantir
-            $illustration_data = $attachment_id;
-            
-            // Alternativa: tentar com a estrutura completa que o ACF espera
-            if ($attachment_id > 0) {
-                $attachment_data = get_post($attachment_id);
-                if ($attachment_data) {
-                    $illustration_data = array(
-                        'ID' => $attachment_id,
-                        'id' => $attachment_id,
-                        'url' => $processed_image_url,
-                        'title' => $attachment_data->post_title,
-                        'filename' => basename($processed_image_url)
-                    );
-                }
-            }
-            
             // Log para debug
-            error_log("[TrinityKit] Dados da ilustração - ID: $attachment_id, URL: $processed_image_url");
+            error_log("[TrinityKit] Página $index processada - URL: $processed_image_url, ID: $attachment_id");
             
-            // Adicionar apenas a ilustração aos dados existentes
-            $updated_pages[$index]['generated_illustration'] = $illustration_data;
-            
-            // Log para debug da estrutura
-            error_log("[TrinityKit] Página $index processada - URL: $processed_image_url, ID: $illustration_data");
+            // Atualizar apenas a ilustração desta página específica usando ACF
+            $field_key = "generated_book_pages_{$index}_generated_illustration";
+            $update_result = update_field($field_key, $attachment_id, $order_id);
+            error_log("[TrinityKit] Atualização da página $index ($field_key): " . ($update_result ? 'sucesso' : 'falha'));
         }
 
         if ($page_errors > 0) {
@@ -361,45 +333,14 @@ function trinitykit_handle_image_assets_webhook($request) {
             continue;
         }
 
-        // Update order with generated pages
-        error_log("[TrinityKit] Estrutura dos dados a serem atualizados:");
-        error_log("[TrinityKit] - Número de páginas: " . count($updated_pages));
-        error_log("[TrinityKit] - Estrutura da primeira página: " . json_encode($updated_pages[0]));
-        
-        // Verificar se o campo existe antes de atualizar
-        $existing_pages = get_field('generated_book_pages', $order_id);
-        error_log("[TrinityKit] - Páginas existentes: " . ($existing_pages ? count($existing_pages) : 'null'));
-        
-        // Tentar atualizar usando ACF
-        $pages_updated = update_field('generated_book_pages', $updated_pages, $order_id);
-        
-        // Verificar se a atualização funcionou
-        $updated_pages_check = get_field('generated_book_pages', $order_id);
-        error_log("[TrinityKit] - Páginas após atualização: " . ($updated_pages_check ? count($updated_pages_check) : 'null'));
-        if ($updated_pages_check) {
-            error_log("[TrinityKit] - Estrutura da primeira página após atualização: " . json_encode($updated_pages_check[0]));
-        }
-        
-        // Se falhar, tentar método alternativo
-        if (!$pages_updated) {
-            error_log("[TrinityKit] Tentando método alternativo para atualizar páginas...");
-            $pages_updated = update_post_meta($order_id, 'generated_book_pages', $updated_pages);
-            error_log("[TrinityKit] Método alternativo resultou em: " . ($pages_updated ? 'sucesso' : 'falha'));
-            
-            // Verificar novamente após método alternativo
-            $updated_pages_check_alt = get_field('generated_book_pages', $order_id);
-            error_log("[TrinityKit] - Páginas após método alternativo: " . ($updated_pages_check_alt ? count($updated_pages_check_alt) : 'null'));
-        }
-        
+        // Atualizar status do pedido
         $status_updated = update_field('order_status', 'created_assets_illustration', $order_id);
         
         // Log detalhado para debug
         error_log("[TrinityKit] Tentativa de atualização do pedido #$order_id:");
-        error_log("[TrinityKit] - pages_updated: " . ($pages_updated ? 'true' : 'false'));
         error_log("[TrinityKit] - status_updated: " . ($status_updated ? 'true' : 'false'));
-        error_log("[TrinityKit] - Número de páginas atualizadas: " . count($updated_pages));
         
-        if ($pages_updated && $status_updated) {
+        if ($status_updated) {
             // Add log entry
             trinitykit_add_post_log(
                 $order_id,
@@ -411,7 +352,7 @@ function trinitykit_handle_image_assets_webhook($request) {
             
             $processed++;
         } else {
-            $error_msg = "[TrinityKit] Falha ao atualizar campos do pedido #$order_id (pages: " . ($pages_updated ? 'OK' : 'FALHOU') . ", status: " . ($status_updated ? 'OK' : 'FALHOU') . ")";
+            $error_msg = "[TrinityKit] Falha ao atualizar status do pedido #$order_id";
             error_log($error_msg);
             $errors[] = $error_msg;
         }
