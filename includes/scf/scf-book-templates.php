@@ -49,8 +49,8 @@ function register_book_template_fields() {
                             'type' => 'repeater',
                             'instructions' => 'Ilustrações base para cada combinação de gênero e tom de pele',
                             'required' => 1,
-                            'min' => 6,
-                            'max' => 6,
+                                            'min' => 4,
+                'max' => 4,
                             'layout' => 'table',
                             'button_label' => '',
                             'collapsed' => 'field_gender',
@@ -78,7 +78,7 @@ function register_book_template_fields() {
                                     'required' => 1,
                                     'choices' => array(
                                         'clara' => 'Clara',
-                                        'media' => 'Média',
+                                        // 'media' => 'Média', // Temporariamente desabilitado
                                         'escura' => 'Escura'
                                     ),
                                     'default_value' => 'clara',
@@ -130,10 +130,10 @@ function prefill_base_illustrations($field) {
                 'gender' => 'menino',
                 'skin_tone' => 'clara'
             ),
-            array(
-                'gender' => 'menino',
-                'skin_tone' => 'media'
-            ),
+            // array(
+            //     'gender' => 'menino',
+            //     'skin_tone' => 'media'
+            // ),
             array(
                 'gender' => 'menino',
                 'skin_tone' => 'escura'
@@ -142,10 +142,10 @@ function prefill_base_illustrations($field) {
                 'gender' => 'menina',
                 'skin_tone' => 'clara'
             ),
-            array(
-                'gender' => 'menina',
-                'skin_tone' => 'media'
-            ),
+            // array(
+            //     'gender' => 'menina',
+            //     'skin_tone' => 'media'
+            // ),
             array(
                 'gender' => 'menina',
                 'skin_tone' => 'escura'
