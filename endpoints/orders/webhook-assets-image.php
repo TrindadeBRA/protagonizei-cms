@@ -326,8 +326,26 @@ function trinitykit_handle_image_assets_webhook($request) {
                 $attachment_id = 0; // Fallback
             }
             
-            // Para campos de imagem do ACF, precisamos usar apenas o ID
+            // Para campos de imagem do ACF com return_format => 'array', precisamos enviar o ID
+            // Mas vamos tentar também com a estrutura completa para garantir
             $illustration_data = $attachment_id;
+            
+            // Alternativa: tentar com a estrutura completa que o ACF espera
+            if ($attachment_id > 0) {
+                $attachment_data = get_post($attachment_id);
+                if ($attachment_data) {
+                    $illustration_data = array(
+                        'ID' => $attachment_id,
+                        'id' => $attachment_id,
+                        'url' => $processed_image_url,
+                        'title' => $attachment_data->post_title,
+                        'filename' => basename($processed_image_url)
+                    );
+                }
+            }
+            
+            // Log para debug
+            error_log("[TrinityKit] Dados da ilustração - ID: $attachment_id, URL: $processed_image_url");
             
             // Adicionar apenas a ilustração aos dados existentes
             $updated_pages[$index]['generated_illustration'] = $illustration_data;
@@ -352,13 +370,25 @@ function trinitykit_handle_image_assets_webhook($request) {
         $existing_pages = get_field('generated_book_pages', $order_id);
         error_log("[TrinityKit] - Páginas existentes: " . ($existing_pages ? count($existing_pages) : 'null'));
         
+        // Tentar atualizar usando ACF
         $pages_updated = update_field('generated_book_pages', $updated_pages, $order_id);
+        
+        // Verificar se a atualização funcionou
+        $updated_pages_check = get_field('generated_book_pages', $order_id);
+        error_log("[TrinityKit] - Páginas após atualização: " . ($updated_pages_check ? count($updated_pages_check) : 'null'));
+        if ($updated_pages_check) {
+            error_log("[TrinityKit] - Estrutura da primeira página após atualização: " . json_encode($updated_pages_check[0]));
+        }
         
         // Se falhar, tentar método alternativo
         if (!$pages_updated) {
             error_log("[TrinityKit] Tentando método alternativo para atualizar páginas...");
             $pages_updated = update_post_meta($order_id, 'generated_book_pages', $updated_pages);
             error_log("[TrinityKit] Método alternativo resultou em: " . ($pages_updated ? 'sucesso' : 'falha'));
+            
+            // Verificar novamente após método alternativo
+            $updated_pages_check_alt = get_field('generated_book_pages', $order_id);
+            error_log("[TrinityKit] - Páginas após método alternativo: " . ($updated_pages_check_alt ? count($updated_pages_check_alt) : 'null'));
         }
         
         $status_updated = update_field('order_status', 'created_assets_illustration', $order_id);
