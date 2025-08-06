@@ -6,9 +6,31 @@ on:
 name: 🚀 Deploy - TrinityWeb Kit CMS!
 
 jobs:
+  tests:
+    name: 🧪 Run Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 🚚 Get latest code
+        uses: actions/checkout@v3
+      
+      - name: 🐘 Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          extensions: mbstring, xml, ctype, iconv, intl, pdo_sqlite
+          coverage: none
+      
+      - name: 📦 Install dependencies
+        run: composer install --prefer-dist --no-progress --no-dev --optimize-autoloader
+      
+      - name: 🧪 Run tests
+        run: vendor/bin/phpunit
+
   web-deploy:
     name: 🎉 Deploy
     runs-on: ubuntu-latest
+    needs: tests  # 👈 Só faz deploy se os testes passarem!
     
     steps:
       - name: 🚚 Get latest code
