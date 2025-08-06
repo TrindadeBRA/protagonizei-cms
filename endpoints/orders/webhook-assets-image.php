@@ -311,13 +311,24 @@ function trinitykit_handle_image_assets_webhook($request) {
             }
 
             // Atualizar a página com a nova ilustração
+            $attachment_id = attachment_url_to_postid($processed_image_url);
+            if (!$attachment_id) {
+                error_log("[TrinityKit] AVISO: Não foi possível obter o ID do anexo para URL: $processed_image_url");
+                $attachment_id = 0; // Fallback
+            }
+            
+            $illustration_data = array(
+                'url' => $processed_image_url,
+                'id' => $attachment_id
+            );
+            
             $updated_pages[] = array(
                 'generated_text_content' => $generated_pages[$index]['generated_text_content'],
-                'generated_illustration' => array(
-                    'url' => $processed_image_url,
-                    'id' => attachment_url_to_postid($processed_image_url)
-                )
+                'generated_illustration' => $illustration_data
             );
+            
+            // Log para debug da estrutura
+            error_log("[TrinityKit] Página $index processada - URL: $processed_image_url, ID: " . $illustration_data['id']);
         }
 
         if ($page_errors > 0) {
@@ -328,8 +339,18 @@ function trinitykit_handle_image_assets_webhook($request) {
         }
 
         // Update order with generated pages
+        error_log("[TrinityKit] Estrutura dos dados a serem atualizados:");
+        error_log("[TrinityKit] - Número de páginas: " . count($updated_pages));
+        error_log("[TrinityKit] - Estrutura da primeira página: " . json_encode($updated_pages[0]));
+        
         $pages_updated = update_field('generated_book_pages', $updated_pages, $order_id);
         $status_updated = update_field('order_status', 'created_assets_illustration', $order_id);
+        
+        // Log detalhado para debug
+        error_log("[TrinityKit] Tentativa de atualização do pedido #$order_id:");
+        error_log("[TrinityKit] - pages_updated: " . ($pages_updated ? 'true' : 'false'));
+        error_log("[TrinityKit] - status_updated: " . ($status_updated ? 'true' : 'false'));
+        error_log("[TrinityKit] - Número de páginas atualizadas: " . count($updated_pages));
         
         if ($pages_updated && $status_updated) {
             // Add log entry
@@ -343,7 +364,7 @@ function trinitykit_handle_image_assets_webhook($request) {
             
             $processed++;
         } else {
-            $error_msg = "[TrinityKit] Falha ao atualizar campos do pedido #$order_id";
+            $error_msg = "[TrinityKit] Falha ao atualizar campos do pedido #$order_id (pages: " . ($pages_updated ? 'OK' : 'FALHOU') . ", status: " . ($status_updated ? 'OK' : 'FALHOU') . ")";
             error_log($error_msg);
             $errors[] = $error_msg;
         }
