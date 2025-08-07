@@ -195,7 +195,6 @@ function trinitykit_create_order($request) {
     update_post_meta($attachment_id, '_upload_date', current_time('mysql'));
 
     // Save ACF fields
-    update_field('order_status', 'created', $order_id);
     update_field('child_name', $child_name, $order_id);
     update_field('child_age', $child_age, $order_id);
     update_field('child_gender', $child_gender, $order_id);
@@ -204,6 +203,8 @@ function trinitykit_create_order($request) {
     update_field('buyer_phone', $phone, $order_id);
     update_field('buyer_name', $name, $order_id);
     update_field('child_face_photo', $attachment_id, $order_id);
+    update_field('order_status', 'created', $order_id);
+
 
     // Add log entry for order creation
     trinitykit_add_post_log(
