@@ -1296,6 +1296,83 @@
         },
         "security": [{"ApiKeyAuth": []}]
       }
+    },
+    "/webhook/merge-assets": {
+      "get": {
+        "summary": "Combinar textos e ilustrações em lote",
+        "description": "Processa todos os pedidos no status 'created_assets_illustration' para combinar os textos personalizados com as ilustrações processadas. Gera as páginas finais do livro com texto sobreposto nas imagens na metade direita, usando fonte branca com sombra para boa legibilidade.",
+        "responses": {
+          "200": {
+            "description": "Assets combinados com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Processamento de merge concluído. 5 pedidos processados."
+                    },
+                    "processed": {
+                      "type": "integer",
+                      "description": "Número de pedidos processados com sucesso",
+                      "example": 5
+                    },
+                    "total": {
+                      "type": "integer",
+                      "description": "Número total de pedidos encontrados",
+                      "example": 5
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Lista de erros encontrados (vazia em caso de sucesso)",
+                      "example": []
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro no processamento",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Processamento de merge concluído. 3 pedidos processados."
+                    },
+                    "processed": {
+                      "type": "integer",
+                      "description": "Número de pedidos processados com sucesso",
+                      "example": 3
+                    },
+                    "total": {
+                      "type": "integer",
+                      "description": "Número total de pedidos encontrados",
+                      "example": 5
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "example": "Erro no pedido #123: Falha ao criar imagem mesclada para página 2"
+                      },
+                      "description": "Lista detalhada de erros encontrados"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [{"ApiKeyAuth": []}]
+      }
     }
   },
   "components": {

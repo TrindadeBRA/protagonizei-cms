@@ -117,23 +117,40 @@ O sistema possui 11 status principais para os pedidos:
 ---
 
 ### 6. **CREATED_ASSETS_ILLUSTRATION** → Geração de Ilustrações
-**Status:** Definido no sistema mas não implementado nos arquivos analisados
+**Webhook:** `GET /wp-json/trinitykitcms-api/v1/webhook/generate-image-assets`  
+**Arquivo:** `endpoints/orders/webhook-assets-image.php`
 
-**Função esperada:**
-- Processar ilustrações base do modelo
-- Aplicar face swap usando foto da criança
-- Ajustar para tom de pele correto
-- Salvar ilustrações personalizadas
+**Disparado por:** Sistema externo (provavelmente cron job)
+
+**O que faz:**
+- Busca todos os pedidos com status `created_assets_text`
+- Para cada página do modelo de livro:
+  - Busca a ilustração base correta baseada no gênero e tom de pele da criança
+  - Aplica face swap usando a foto da criança via API FaceSwap
+  - Salva as ilustrações personalizadas no campo `generated_illustration`
+- Atualiza status para `created_assets_illustration`
+
+**Integração externa:** API FaceSwap para aplicação de face swap nas ilustrações
 
 ---
 
 ### 7. **CREATED_ASSETS_MERGE** → Merge dos Assets
-**Status:** Definido no sistema mas não implementado nos arquivos analisados
+**Webhook:** `GET /wp-json/trinitykitcms-api/v1/webhook/merge-assets`  
+**Arquivo:** `endpoints/orders/webhook-assets-merge-pdf.php`
 
-**Função esperada:**
-- Combinar textos personalizados com ilustrações
-- Gerar páginas finais do livro
-- Preparar para geração do PDF final
+**Disparado por:** Sistema externo (provavelmente cron job)
+
+**O que faz:**
+- Busca todos os pedidos com status `created_assets_illustration`
+- Para cada página gerada:
+  - Combina texto personalizado com ilustração processada
+  - Aplica o texto na metade direita da imagem horizontal
+  - Usa fonte branca com sombra para boa legibilidade
+  - Salva páginas finais no campo `merged_book_pages`
+- Atualiza status para `created_assets_merge`
+- Prepara dados para geração do PDF final
+
+**Processamento:** Usa biblioteca GD do PHP para manipulação de imagens e sobreposição de texto
 
 ---
 
@@ -208,6 +225,11 @@ O sistema possui 11 status principais para os pedidos:
 - `generated_book_pages` - Array com páginas personalizadas
   - `generated_text_content` - Texto personalizado de cada página
   - `generated_illustration` - Ilustração personalizada de cada página
+- `merged_book_pages` - Array com páginas finais mescladas
+  - `page_number` - Número da página
+  - `merged_content` - ID da imagem final com texto e ilustração combinados
+  - `original_text` - Texto original usado na mesclagem
+  - `original_illustration` - ID da ilustração original usada
 
 ## Integrações Externas
 
@@ -228,7 +250,7 @@ O sistema possui 11 status principais para os pedidos:
 
 ## Notas de Implementação
 
-1. **Status Não Implementados:** Os status `created_assets_illustration`, `created_assets_merge`, `ready_for_delivery`, `delivered` e `completed` estão definidos no sistema mas não possuem implementação nos arquivos analisados.
+1. **Status Não Implementados:** Os status `ready_for_delivery`, `delivered` e `completed` estão definidos no sistema mas não possuem implementação nos arquivos analisados.
 
 2. **Automação:** O sistema usa webhooks para automação do fluxo, provavelmente executados por cron jobs externos.
 
