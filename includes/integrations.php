@@ -18,6 +18,11 @@ function trinitykitcms_register_integration_settings() {
     // Registrar configurações do FaceSwap
     register_setting('trinitykitcms_faceswap_settings', 'trinitykitcms_faceswap_api_key', 'sanitize_text_field');
     register_setting('trinitykitcms_faceswap_settings', 'trinitykitcms_faceswap_base_url', 'sanitize_url');
+
+    // Registrar configurações do Telegram
+    register_setting('trinitykitcms_telegram_settings', 'trinitykitcms_telegram_bot_token', 'sanitize_text_field');
+    register_setting('trinitykitcms_telegram_settings', 'trinitykitcms_telegram_chat_id', 'sanitize_text_field');
+    register_setting('trinitykitcms_telegram_settings', 'trinitykitcms_telegram_bot_username', 'sanitize_text_field');
 }
 add_action('admin_init', 'trinitykitcms_register_integration_settings');
 
@@ -122,6 +127,44 @@ function trinitykitcms_render_integrations_page() {
                 </table>
                 
                 <?php submit_button('Salvar Configurações do FaceSwap'); ?>
+            </form>
+        </div>
+
+        <!-- Bloco de configurações do Telegram -->
+        <div class="card" style="max-width: 800px; padding: 20px; margin-bottom: 20px;">
+            <h2>Configurações do Telegram</h2>
+            <form method="post" action="options.php">
+                <?php
+                settings_fields('trinitykitcms_telegram_settings');
+                ?>
+                
+                <table class="form-table">
+                    <tr>
+                        <th scope="row">Bot Token</th>
+                        <td>
+                            <input type="password" name="trinitykitcms_telegram_bot_token" value="<?php echo esc_attr(get_option('trinitykitcms_telegram_bot_token')); ?>" class="regular-text">
+                            <p class="description">Token do bot fornecido pelo BotFather (ex: 123456789:ABCdefGHIjklMNOpqr-STUvwxYZ).</p>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <th scope="row">Chat ID do Grupo</th>
+                        <td>
+                            <input type="text" name="trinitykitcms_telegram_chat_id" value="<?php echo esc_attr(get_option('trinitykitcms_telegram_chat_id')); ?>" class="regular-text">
+                            <p class="description">ID do chat/grupo onde as mensagens serão enviadas (ex: -1234567890).</p>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <th scope="row">Nome do Bot</th>
+                        <td>
+                            <input type="text" name="trinitykitcms_telegram_bot_username" value="<?php echo esc_attr(get_option('trinitykitcms_telegram_bot_username')); ?>" class="regular-text">
+                            <p class="description">Nome de usuário do bot (ex: MeuBot). Opcional, usado para referência.</p>
+                        </td>
+                    </tr>
+                </table>
+                
+                <?php submit_button('Salvar Configurações do Telegram'); ?>
             </form>
         </div>
     </div>

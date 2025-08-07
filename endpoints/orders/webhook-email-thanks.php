@@ -104,6 +104,32 @@ function trinitykit_handle_thank_webhook($request) {
                     'thanked'
                 );
                 
+                // Send Telegram notification
+                try {
+                    $telegram = new TelegramService();
+                    if ($telegram->isConfigured()) {
+                        $order_url = home_url("/wp-admin/post.php?post={$order_id}&action=edit");
+                        
+                        $message = "✅ <b>Email de Agradecimento Enviado!</b>\n\n";
+                        $message .= "📧 <b>Cliente:</b> " . htmlspecialchars($name) . "\n";
+                        $message .= "💌 <b>E-mail:</b> " . htmlspecialchars($buyer_email) . "\n";
+                        $message .= "💰 <b>Valor:</b> R$ " . number_format($order_total, 2, ',', '.') . "\n";
+                        $message .= "🔢 <b>Pedido:</b> #" . $order_id . "\n";
+                        $message .= "📅 <b>Data:</b> " . date('d/m/Y H:i:s') . "\n\n";
+                        $message .= "🔗 <a href='" . esc_url($order_url) . "'>Ver Pedido no Admin</a>";
+                        
+                        $telegram_result = $telegram->sendTextMessage($message);
+                        
+                        if ($telegram_result['success']) {
+                            error_log("[TrinityKit] Notificação Telegram enviada para pedido #$order_id");
+                        } else {
+                            error_log("[TrinityKit] Erro ao enviar notificação Telegram para pedido #$order_id: " . $telegram_result['error']);
+                        }
+                    }
+                } catch (Exception $e) {
+                    error_log("[TrinityKit] Erro na notificação Telegram para pedido #$order_id: " . $e->getMessage());
+                }
+                
                 $processed++;
             } else {
                 $error_msg = "[TrinityKit] Falha ao atualizar status do pedido #$order_id";

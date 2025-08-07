@@ -3,6 +3,11 @@
 // Definir constante do diretório do plugin
 define('THEME_DIR', plugin_dir_path(__FILE__));
 
+// Carregar autoload do Composer
+if (file_exists(THEME_DIR . 'vendor/autoload.php')) {
+    require_once THEME_DIR . 'vendor/autoload.php';
+}
+
 // Configurações
 require_once THEME_DIR . 'configs.php';
 
@@ -10,6 +15,7 @@ require_once THEME_DIR . 'configs.php';
 require_once THEME_DIR . 'includes/apikey.php';
 require_once THEME_DIR . 'includes/settings.php';
 require_once THEME_DIR . 'includes/integrations.php';
+require_once THEME_DIR . 'includes/telegram-service.php';
 require_once THEME_DIR . 'includes/github-deploy.php';
 require_once THEME_DIR . 'includes/utils/post-logger.php';
 require_once THEME_DIR . 'includes/cpt/cpt-contacts.php';
