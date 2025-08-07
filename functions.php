@@ -53,6 +53,16 @@ add_action('after_setup_theme', 'trinitykitcms_setup');
 // Desabilita o tamanho máximo de imagem
 add_filter('big_image_size_threshold', '__return_false');
 
+// Remove WordPress update notifications
+function remove_update_notifications() {
+    // Remove core notifications
+    add_filter('pre_site_transient_update_core', '__return_null');
+
+}
+add_action('admin_init', 'remove_update_notifications');
+
+
+
 // Configuração de logs para debug do tema
 ini_set('error_log', get_template_directory() . '/debug.log');
 
