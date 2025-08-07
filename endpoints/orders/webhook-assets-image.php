@@ -138,6 +138,8 @@ function process_face_swap_with_faceswap($swap_image_url, $target_image_url) {
             }
         } elseif ($status_data['status'] === 'FAILED') {
             error_log("[TrinityKit] Face swap falhou para task ID: " . $task_id);
+            error_log("[TrinityKit] Resposta completa da API: " . $status_response);
+            error_log("[TrinityKit] Body enviado: " . json_encode($body));
             return false;
         }
         
