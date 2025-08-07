@@ -51,13 +51,13 @@ function trinitykit_handle_thank_webhook($request) {
 
     foreach ($paid_orders as $order) {
         $order_id = $order->ID;
-        
         // Get order details
         $name = get_field('buyer_name', $order_id);
         $buyer_email = get_field('buyer_email', $order_id);
         $order_total = get_field('payment_amount', $order_id);
         $gender = get_field('child_gender', $order_id);
-        
+        $child_name = get_field('child_name', $order_id);
+
         // Skip if required fields are empty
         if (empty($name) || empty($buyer_email)) {
             $error_msg = "[TrinityKit] Campos obrigatórios vazios para o pedido #$order_id";
@@ -110,13 +110,16 @@ function trinitykit_handle_thank_webhook($request) {
                     if ($telegram->isConfigured()) {
                         $order_url = home_url("/wp-admin/post.php?post={$order_id}&action=edit");
                         
-                        $message = "✅ <b>Email de Agradecimento Enviado!</b>\n\n";
+                        $message = "✅ <b>Pedido confirmado!</b>\n\n";
                         $message .= "📧 <b>Cliente:</b> " . htmlspecialchars($name) . "\n";
+                        $message .= "👶 <b>Criança:</b> " . htmlspecialchars($child_name) . "\n";
                         $message .= "💌 <b>E-mail:</b> " . htmlspecialchars($buyer_email) . "\n";
                         $message .= "💰 <b>Valor:</b> R$ " . number_format($order_total, 2, ',', '.') . "\n";
                         $message .= "🔢 <b>Pedido:</b> #" . $order_id . "\n";
-                        $message .= "📅 <b>Data:</b> " . date('d/m/Y H:i:s') . "\n\n";
-                        $message .= "🔗 <a href='" . esc_url($order_url) . "'>Ver Pedido no Admin</a>";
+                        $date = new DateTime('now', new DateTimeZone('America/Sao_Paulo'));
+                        $message .= "📅 <b>Data:</b> " . $date->format('d/m/Y H:i:s') . "\n\n";
+                        $message .= "🔗 <a href='" . esc_url($order_url) . "'>Ver Pedido</a>";
+                        
                         
                         $telegram_result = $telegram->sendTextMessage($message);
                         
