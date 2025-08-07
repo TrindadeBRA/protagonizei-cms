@@ -221,11 +221,7 @@ function add_text_overlay_to_image($image_path, $text, $text_position = 'center_
     
     // Verificar se há fontes TTF disponíveis no sistema
     $possible_fonts = [
-        '/System/Library/Fonts/Arial.ttf',
-        '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',
-        '/usr/share/fonts/TTF/arial.ttf',
-        '/Windows/Fonts/arial.ttf',
-        ABSPATH . 'wp-content/themes/' . get_template() . '/fonts/arial.ttf'
+        ABSPATH . 'wp-content/themes/' . get_template() . '/assets/fonts/Roboto.ttf',
     ];
     
     foreach ($possible_fonts as $font_file) {
@@ -322,12 +318,12 @@ function add_text_overlay_to_image($image_path, $text, $text_position = 'center_
             // Ajustar Y para TTF (baseline, não topo)
             $ttf_y = $line_y + abs($bbox[7]); // Ajustar para baseline
             
-            // Draw shadow com TTF (sombra sutil e equilibrada)
-            for ($sx = -1; $sx <= 1; $sx++) {
-                for ($sy = -1; $sy <= 1; $sy++) {
-                    imagettftext($image, $font_size, 0, $text_x + $sx + 2, $ttf_y + $sy + 2, $shadow, $font_path, $line);
-                }
-            }
+            // // Draw shadow com TTF (sombra sutil e equilibrada)
+            // for ($sx = -1; $sx <= 1; $sx++) {
+            //     for ($sy = -1; $sy <= 1; $sy++) {
+            //         imagettftext($image, $font_size, 0, $text_x + $sx + 2, $ttf_y + $sy + 2, $shadow, $font_path, $line);
+            //     }
+            // }
             
             // Draw main text com TTF
             imagettftext($image, $font_size, 0, $text_x, $ttf_y, $white, $font_path, $line);
