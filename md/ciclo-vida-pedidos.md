@@ -136,7 +136,7 @@ O sistema possui 11 status principais para os pedidos:
 
 ### 7. **CREATED_ASSETS_MERGE** → Merge dos Assets
 **Webhook:** `GET /wp-json/trinitykitcms-api/v1/webhook/merge-assets`  
-**Arquivo:** `endpoints/orders/webhook-assets-merge-pdf.php`
+**Arquivo:** `endpoints/orders/webhook-assets-merge.php`
 
 **Disparado por:** Sistema externo (provavelmente cron job)
 
