@@ -202,3 +202,11 @@ function trinitykitcms_smtp_configuration($phpmailer) {
 }
 
 add_action('phpmailer_init', 'trinitykitcms_smtp_configuration');
+
+// Permitir upload de arquivos PSD e SVG
+function trinitykitcms_permitir_tipos_arquivo($mimes) {
+    $mimes['psd'] = 'image/vnd.adobe.photoshop';
+    $mimes['svg'] = 'image/svg+xml';
+    return $mimes;
+}
+add_filter('upload_mimes', 'trinitykitcms_permitir_tipos_arquivo');
