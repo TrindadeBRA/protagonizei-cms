@@ -23,6 +23,11 @@ function trinitykitcms_register_integration_settings() {
     register_setting('trinitykitcms_telegram_settings', 'trinitykitcms_telegram_bot_token', 'sanitize_text_field');
     register_setting('trinitykitcms_telegram_settings', 'trinitykitcms_telegram_chat_id', 'sanitize_text_field');
     register_setting('trinitykitcms_telegram_settings', 'trinitykitcms_telegram_bot_username', 'sanitize_text_field');
+
+    // Registrar configurações do SMTP
+    register_setting('trinitykitcms_smtp_settings', 'trinitykitcms_smtp_host', 'sanitize_text_field');
+    register_setting('trinitykitcms_smtp_settings', 'trinitykitcms_smtp_username', 'sanitize_text_field');
+    register_setting('trinitykitcms_smtp_settings', 'trinitykitcms_smtp_password', 'sanitize_text_field');
 }
 add_action('admin_init', 'trinitykitcms_register_integration_settings');
 
@@ -165,6 +170,44 @@ function trinitykitcms_render_integrations_page() {
                 </table>
                 
                 <?php submit_button('Salvar Configurações do Telegram'); ?>
+            </form>
+        </div>
+
+        <!-- Bloco de configurações do SMTP -->
+        <div class="card" style="max-width: 800px; padding: 20px; margin-bottom: 20px;">
+            <h2>Configurações do SMTP</h2>
+            <form method="post" action="options.php">
+                <?php
+                settings_fields('trinitykitcms_smtp_settings');
+                ?>
+                
+                <table class="form-table">
+                    <tr>
+                        <th scope="row">Host SMTP</th>
+                        <td>
+                            <input type="text" name="trinitykitcms_smtp_host" value="<?php echo esc_attr(get_option('trinitykitcms_smtp_host')); ?>" class="regular-text">
+                            <p class="description">Servidor SMTP (ex: email-smtp.us-east-1.amazonaws.com).</p>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <th scope="row">Usuário SMTP</th>
+                        <td>
+                            <input type="text" name="trinitykitcms_smtp_username" value="<?php echo esc_attr(get_option('trinitykitcms_smtp_username')); ?>" class="regular-text">
+                            <p class="description">Nome de usuário SMTP.</p>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <th scope="row">Senha SMTP</th>
+                        <td>
+                            <input type="password" name="trinitykitcms_smtp_password" value="<?php echo esc_attr(get_option('trinitykitcms_smtp_password')); ?>" class="regular-text">
+                            <p class="description">Senha SMTP.</p>
+                        </td>
+                    </tr>
+                </table>
+                
+                <?php submit_button('Salvar Configurações do SMTP'); ?>
             </form>
         </div>
     </div>

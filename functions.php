@@ -176,14 +176,29 @@ function trinitykitcms_rewrite_post_permalink($permalink, $post) {
 add_filter('post_link', 'trinitykitcms_rewrite_post_permalink', 10, 2);
 add_filter('post_type_link', 'trinitykitcms_rewrite_post_permalink', 10, 2);
 
-// Looking to send emails in production? Check out our Email API/SMTP product!
-function mailtrap($phpmailer) {
+// Configuração SMTP usando configurações do banco de dados
+function trinitykitcms_smtp_configuration($phpmailer) {
+    // Obter configurações do banco
+    $smtp_host = get_option('trinitykitcms_smtp_host');
+    $smtp_username = get_option('trinitykitcms_smtp_username');
+    $smtp_password = get_option('trinitykitcms_smtp_password');
+
+    // Verificar se as configurações básicas estão preenchidas
+    if (empty($smtp_host) || empty($smtp_username) || empty($smtp_password)) {
+        error_log('SMTP não configurado: Host, usuário ou senha não informados.');
+        return;
+    }
+
     $phpmailer->isSMTP();
-    $phpmailer->Host = 'sandbox.smtp.mailtrap.io';
+    $phpmailer->Host = $smtp_host;
     $phpmailer->SMTPAuth = true;
-    $phpmailer->Port = 2525;
-    $phpmailer->Username = '074245c3a9070d';
-    $phpmailer->Password = 'ad803e39bef73e';
-  }
-  
-  add_action('phpmailer_init', 'mailtrap');
+    $phpmailer->Username = $smtp_username;
+    $phpmailer->Password = $smtp_password;
+    $phpmailer->Port = 587; // Porta padrão TLS (hardcoded)
+    $phpmailer->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS; // TLS (hardcoded)
+
+    // Configurar remetente (hardcoded)
+    $phpmailer->setFrom('noreply@protagonizei.com', 'Protagonizei');
+}
+
+add_action('phpmailer_init', 'trinitykitcms_smtp_configuration');
