@@ -73,7 +73,7 @@ class TelegramService {
             } else {
                 return [
                     'success' => false,
-                    'error' => $resulSt->getDescription(),
+                    'error' => $result->getDescription(),
                     'error_code' => $result->getErrorCode()
                 ];
             }

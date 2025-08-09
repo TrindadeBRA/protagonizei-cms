@@ -211,6 +211,41 @@ function trinitykit_handle_generate_pdf_webhook($request) {
                     'ready_for_delivery'
                 );
 
+                // Enviar notificação do Telegram
+                try {
+                    $telegram = new TelegramService();
+                    if ($telegram->isConfigured()) {
+                        $order_url = home_url("/wp-admin/post.php?post={$order_id}&action=edit");
+                        $buyer_name = get_field('buyer_name', $order_id);
+                        $buyer_email = get_field('buyer_email', $order_id);
+                        $order_total = get_field('payment_amount', $order_id);
+                        $order_total = is_numeric($order_total) ? floatval($order_total) : 0;
+                        
+                        $message = "📚 <b>PDF Gerado - Pedido Pronto para Revisão!</b>\n\n";
+                        $message .= "📧 <b>Cliente:</b> " . htmlspecialchars($buyer_name) . "\n";
+                        $message .= "👶 <b>Criança:</b> " . htmlspecialchars($child_name) . "\n";
+                        $message .= "💌 <b>E-mail:</b> " . htmlspecialchars($buyer_email) . "\n";
+                        $message .= "💰 <b>Valor:</b> R$ " . number_format($order_total, 2, ',', '.') . "\n";
+                        $message .= "📄 <b>Páginas:</b> " . count($page_images) . "\n";
+                        $message .= "🔢 <b>Pedido:</b> #" . $order_id . "\n";
+                        $date = new DateTime('now', new DateTimeZone('America/Sao_Paulo'));
+                        $message .= "📅 <b>Data:</b> " . $date->format('d/m/Y H:i:s') . "\n";
+                        $message .= "📎 <b>PDF:</b> <a href='" . esc_url($pdf_url) . "'>Baixar PDF</a>\n\n";
+                        $message .= "🔗 <a href='" . esc_url($order_url) . "'>Ver Pedido no Admin</a>\n\n";
+                        $message .= "✅ <b>Status:</b> Pronto para revisão e envio";
+                        
+                        $telegram_result = $telegram->sendTextMessage($message);
+                        
+                        if ($telegram_result['success']) {
+                            error_log("[TrinityKit] Notificação Telegram enviada para pedido #$order_id - PDF pronto");
+                        } else {
+                            error_log("[TrinityKit] Erro ao enviar notificação Telegram para pedido #$order_id: " . $telegram_result['error']);
+                        }
+                    }
+                } catch (Exception $e) {
+                    error_log("[TrinityKit] Erro na notificação Telegram para pedido #$order_id: " . $e->getMessage());
+                }
+
                 // Não remover o arquivo: ele é o próprio arquivo final em uploads
 
                 $processed++;

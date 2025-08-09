@@ -338,10 +338,6 @@ function trinitykit_handle_check_faceswap_webhook($request) {
                 $telegram_msg .= "👶 <b>Criança:</b> " . htmlspecialchars($child_name) . "\n";
                 $telegram_msg .= "📄 <b>Página:</b> " . ($index + 1) . "\n";
                 $telegram_msg .= "🔢 <b>Pedido:</b> #" . $order_id . "\n\n";
-                $telegram_msg .= "⚠️ <b>AÇÃO NECESSÁRIA:</b>\n";
-                $telegram_msg .= "• Verificar qualidade da foto da criança\n";
-                $telegram_msg .= "• Ajustar manualmente se necessário\n";
-                $telegram_msg .= "• Fazer upload da ilustração corrigida\n\n";
                 $telegram_msg .= "🔗 <a href='" . esc_url($order_url) . "'>ABRIR PEDIDO PARA CORREÇÃO</a>";
                 
                 try {
