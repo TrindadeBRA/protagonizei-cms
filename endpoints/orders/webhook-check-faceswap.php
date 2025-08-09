@@ -78,12 +78,15 @@ function check_face_swap_status($task_id) {
 }
 
 /**
- * Save base64 image to WordPress
+ * Save base64 image to WordPress with professional metadata
  * 
  * @param string $base64_image String base64 da imagem
+ * @param int $order_id ID do pedido
+ * @param string $child_name Nome da criança
+ * @param int $page_index Índice da página (0-based)
  * @return string|false URL da imagem salva ou false em caso de erro
  */
-function save_base64_image_to_wordpress($base64_image) {
+function save_base64_image_to_wordpress($base64_image, $order_id = null, $child_name = '', $page_index = 0) {
     // Remove the data:image/jpeg;base64, prefix if it exists
     if (strpos($base64_image, 'data:image/') === 0) {
         $base64_image = substr($base64_image, strpos($base64_image, ',') + 1);
@@ -96,8 +99,17 @@ function save_base64_image_to_wordpress($base64_image) {
         return false;
     }
     
-    // Generate unique filename
-    $filename = 'faceswap-' . uniqid() . '.jpg';
+    // Generate professional filename
+    $page_number = $page_index + 1;
+    $sanitized_child_name = sanitize_file_name($child_name);
+    $timestamp = date('Y-m-d_H-i-s');
+    
+    if ($order_id && $sanitized_child_name) {
+        $filename = "faceswap-pedido-{$order_id}-{$sanitized_child_name}-pagina-{$page_number}-{$timestamp}.jpg";
+    } else {
+        $filename = "faceswap-{$timestamp}-" . uniqid() . ".jpg";
+    }
+    
     $upload_dir = wp_upload_dir();
     $file_path = $upload_dir['path'] . '/' . $filename;
     
@@ -109,13 +121,23 @@ function save_base64_image_to_wordpress($base64_image) {
         return false;
     }
     
-    // Prepare data for WordPress insertion
+    // Prepare professional data for WordPress insertion
     $file_type = wp_check_filetype($filename, null);
+    
+    // Create professional title and description
+    $professional_title = $child_name ? 
+        "Ilustração Face Swap - {$child_name} - Página {$page_number}" : 
+        "Ilustração Face Swap - Página {$page_number}";
+    
+    $professional_content = $order_id ? 
+        "Ilustração personalizada gerada via Face Swap para o pedido #{$order_id}. Criança: {$child_name}. Página {$page_number} do livro personalizado." :
+        "Ilustração personalizada gerada via Face Swap.";
     
     $attachment = array(
         'post_mime_type' => $file_type['type'],
-        'post_title' => sanitize_file_name($filename),
-        'post_content' => '',
+        'post_title' => $professional_title,
+        'post_content' => $professional_content,
+        'post_excerpt' => "Face Swap - Pedido #{$order_id} - {$child_name} - Página {$page_number}",
         'post_status' => 'inherit'
     );
     
@@ -126,6 +148,23 @@ function save_base64_image_to_wordpress($base64_image) {
         error_log("[TrinityKit] Erro ao inserir anexo: " . $attach_id->get_error_message());
         return false;
     }
+    
+    // Add professional metadata
+    if ($order_id) {
+        update_post_meta($attach_id, '_trinitykitcms_order_id', $order_id);
+        update_post_meta($attach_id, '_trinitykitcms_child_name', $child_name);
+        update_post_meta($attach_id, '_trinitykitcms_page_number', $page_number);
+        update_post_meta($attach_id, '_trinitykitcms_page_index', $page_index);
+        update_post_meta($attach_id, '_trinitykitcms_generation_method', 'face_swap_api');
+        update_post_meta($attach_id, '_trinitykitcms_generation_date', current_time('mysql'));
+        update_post_meta($attach_id, '_trinitykitcms_file_source', 'webhook_check_faceswap');
+    }
+    
+    // Add ALT text for accessibility
+    $alt_text = $child_name ? 
+        "Ilustração personalizada de {$child_name} na página {$page_number}" :
+        "Ilustração personalizada página {$page_number}";
+    update_post_meta($attach_id, '_wp_attachment_image_alt', $alt_text);
     
     // Generate image sizes
     require_once(ABSPATH . 'wp-admin/includes/image.php');
@@ -212,7 +251,7 @@ function trinitykit_handle_check_faceswap_webhook($request) {
             if ($status_data['status'] === 'COMPLETED') {
                 // Process the base64 image and save to WordPress
                 $base64_image = $status_data['output'];
-                $image_url = save_base64_image_to_wordpress($base64_image);
+                $image_url = save_base64_image_to_wordpress($base64_image, $order_id, $child_name, $index);
                 
                 if ($image_url) {
                     // Update the page with the new illustration
