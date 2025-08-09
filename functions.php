@@ -42,6 +42,7 @@ require_once THEME_DIR . 'endpoints/orders/webhook-assets-text.php';
 require_once THEME_DIR . 'endpoints/orders/webhook-initiate-faceswap.php';
 require_once THEME_DIR . 'endpoints/orders/webhook-check-faceswap.php';
 require_once THEME_DIR . 'endpoints/orders/webhook-assets-merge.php';
+require_once THEME_DIR . 'endpoints/orders/webhook-generate-pdf.php';
 
 // Impede acesso direto ao arquivo
 if (!defined('ABSPATH')) {

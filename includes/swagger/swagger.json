@@ -1459,6 +1459,83 @@
         },
         "security": [{"ApiKeyAuth": []}]
       }
+    },
+    "/webhook/generate-pdf": {
+      "get": {
+        "summary": "Gerar PDFs dos livros personalizados em lote",
+        "description": "Processa todos os pedidos no status 'created_assets_merge' para gerar PDFs completos dos livros personalizados. Coleta todas as imagens finais das páginas (final_page_with_text) e cria um PDF profissional com todas as páginas do livro na ordem correta. Após a geração bem-sucedida, atualiza o status do pedido para 'ready_for_delivery'.",
+        "responses": {
+          "200": {
+            "description": "Geração de PDFs concluída com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Processamento de geração de PDF concluído. 3 pedidos processados."
+                    },
+                    "processed": {
+                      "type": "integer",
+                      "description": "Número de pedidos que tiveram PDFs gerados com sucesso",
+                      "example": 3
+                    },
+                    "total": {
+                      "type": "integer",
+                      "description": "Número total de pedidos encontrados com status 'created_assets_merge'",
+                      "example": 3
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Lista de erros encontrados (vazia em caso de sucesso)",
+                      "example": []
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro no processamento",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Processamento de geração de PDF concluído. 2 pedidos processados."
+                    },
+                    "processed": {
+                      "type": "integer",
+                      "description": "Número de pedidos processados com sucesso",
+                      "example": 2
+                    },
+                    "total": {
+                      "type": "integer",
+                      "description": "Número total de pedidos encontrados",
+                      "example": 3
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "example": "Pedido #123: Páginas finais ausentes: 1, 3"
+                      },
+                      "description": "Lista detalhada de erros encontrados"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [{"ApiKeyAuth": []}]
+      }
     }
   },
   "components": {

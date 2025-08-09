@@ -212,6 +212,17 @@ function register_order_fields() {
                     'required' => 0,
                 ),
                 array(
+                    'key' => 'field_generated_pdf_attachment',
+                    'label' => 'Arquivo PDF do Livro',
+                    'name' => 'generated_pdf_attachment',
+                    'type' => 'file',
+                    'instructions' => 'Arquivo PDF final do livro personalizado com todas as páginas',
+                    'required' => 0,
+                    'return_format' => 'array',
+                    'library' => 'all',
+                    'mime_types' => 'pdf',
+                ),
+                array(
                     'key' => 'field_face_swap_initiated',
                     'label' => 'Face Swap Iniciado',
                     'name' => 'face_swap_initiated',
