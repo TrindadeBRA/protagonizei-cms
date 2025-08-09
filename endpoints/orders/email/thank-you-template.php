@@ -11,6 +11,7 @@ if (!defined('ABSPATH')) {
 
 function trinitykit_get_thank_you_email_template($name, $order_id, $order_total, $gender = 'menina') {
     $main_color = $gender === 'menina' ? '#f5349b' : '#357eff';
+    $bg_color = $gender === 'menina' ? '#fdf0f8' : '#e8f4fd';
     
     return '
     <!DOCTYPE html>
@@ -28,8 +29,8 @@ function trinitykit_get_thank_you_email_template($name, $order_id, $order_total,
                 <h2>Olá ' . esc_html($name) . ',</h2>
                 <p>Agradecemos imensamente pela sua compra! Estamos muito felizes em tê-lo como cliente.</p>
                 
-                <div style="background-color: #f9f9f9; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid ' . $main_color . ';">
-                    <h3>Detalhes do seu pedido:</h3>
+                <div style="background-color: ' . $bg_color . '; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid ' . $main_color . ';">
+                    <h3 style="color: ' . $main_color . ';">Detalhes do seu pedido:</h3>
                     <p><strong>Número do pedido:</strong> <span style="color: ' . $main_color . '; font-weight: bold;">#' . esc_html($order_id) . '</span></p>
                     <p><strong>Valor total:</strong> <span style="color: ' . $main_color . '; font-weight: bold;">R$ ' . number_format($order_total, 2, ',', '.') . '</span></p>
                 </div>

@@ -1536,6 +1536,83 @@
         },
         "security": [{"ApiKeyAuth": []}]
       }
+    },
+    "/webhook/deliver-pdf": {
+      "get": {
+        "summary": "Entregar PDFs dos livros personalizados aos clientes",
+        "description": "Processa todos os pedidos no status 'ready_for_delivery' para enviar emails de entrega aos clientes com links para download dos PDFs finais. Após o envio bem-sucedido do email, atualiza o status do pedido para 'delivered' e notifica a equipe via Telegram sobre a entrega realizada.",
+        "responses": {
+          "200": {
+            "description": "Entrega de PDFs concluída com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Processamento de entrega de PDFs concluído. 3 pedidos entregues."
+                    },
+                    "processed": {
+                      "type": "integer",
+                      "description": "Número de pedidos que foram entregues com sucesso",
+                      "example": 3
+                    },
+                    "total": {
+                      "type": "integer",
+                      "description": "Número total de pedidos encontrados com status 'ready_for_delivery'",
+                      "example": 3
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Lista de erros encontrados (vazia em caso de sucesso)",
+                      "example": []
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro no processamento",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Processamento de entrega de PDFs concluído. 2 pedidos entregues."
+                    },
+                    "processed": {
+                      "type": "integer",
+                      "description": "Número de pedidos entregues com sucesso",
+                      "example": 2
+                    },
+                    "total": {
+                      "type": "integer",
+                      "description": "Número total de pedidos encontrados",
+                      "example": 3
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "example": "Pedido #123: Email inválido: email@invalido"
+                      },
+                      "description": "Lista detalhada de erros encontrados"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [{"ApiKeyAuth": []}]
+      }
     }
   },
   "components": {
