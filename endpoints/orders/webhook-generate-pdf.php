@@ -321,11 +321,11 @@ function generate_book_pdf($order_id, $child_name, $page_images) {
         $pdf->setPrintHeader(false);
         $pdf->setPrintFooter(false);
         
-        // Configurar margens (muito pequenas para usar toda a página)
+        // Configurar margens (zero para não interferir nas dimensões reais)
         $pdf->SetMargins(0, 0, 0);
         $pdf->SetAutoPageBreak(false, 0);
         
-        // Processar cada página
+        // Processar cada página respeitando o tamanho físico original (sem redimensionar)
         foreach ($page_images as $index => $page_data) {
             if (!file_exists($page_data['image_path'])) {
                 error_log("[TrinityKit] Imagem não encontrada: " . $page_data['image_path']);
@@ -334,32 +334,76 @@ function generate_book_pdf($order_id, $child_name, $page_images) {
             
             error_log("[TrinityKit] Processando página " . $page_data['page_number'] . ": " . $page_data['image_path']);
             
-            // Adicionar nova página
-            $pdf->AddPage();
-            
-            // Obter dimensões da página em mm
-            $page_width = $pdf->getPageWidth();
-            $page_height = $pdf->getPageHeight();
-            
-            // Inserir imagem ocupando toda a página
+            // Obter dimensões de pixels e tentar DPI da imagem
+            $img_info = getimagesize($page_data['image_path']);
+            $img_width_px = $img_info[0];
+            $img_height_px = $img_info[1];
+
+            // DPI padrão (fallback). Se disponível em EXIF, usa-se o valor real
+            $dpi = 300;
+            $res_unit = 'inch'; // inch|cm
+            if (function_exists('exif_read_data')) {
+                $exif = @exif_read_data($page_data['image_path']);
+                if ($exif && isset($exif['XResolution']) && isset($exif['ResolutionUnit'])) {
+                    $xres = is_array($exif['XResolution']) ? ($exif['XResolution'][0] / max($exif['XResolution'][1], 1)) : $exif['XResolution'];
+                    if (is_string($xres) && strpos($xres, '/') !== false) {
+                        list($num, $den) = array_map('floatval', explode('/', $xres));
+                        $xres = $den != 0 ? ($num / $den) : $xres;
+                    }
+                    $dpi_candidate = floatval($xres);
+                    // ResolutionUnit: 2 = inch, 3 = cm
+                    $unit = intval($exif['ResolutionUnit']);
+                    if ($dpi_candidate > 0) {
+                        if ($unit === 3) { // pixels por centímetro
+                            $res_unit = 'cm';
+                            $dpi = $dpi_candidate; // trataremos como dpcm abaixo
+                        } else { // assume polegadas
+                            $res_unit = 'inch';
+                            $dpi = $dpi_candidate; // dpi
+                        }
+                    }
+                }
+            }
+
+            // Converter dimensões físicas em mm com base no DPI/Unidade
+            if ($res_unit === 'cm') { // dpcm
+                $page_width_mm = ($img_width_px / max($dpi, 1)) * 10.0;  // cm -> mm
+                $page_height_mm = ($img_height_px / max($dpi, 1)) * 10.0;
+                // Para coerência com a renderização do TCPDF, passaremos o DPI equivalente em px/inch
+                $effective_dpi = $dpi * 2.54; // dpcm -> dpi
+            } else { // inch (dpi)
+                $page_width_mm = ($img_width_px / max($dpi, 1)) * 25.4;
+                $page_height_mm = ($img_height_px / max($dpi, 1)) * 25.4;
+                $effective_dpi = $dpi;
+            }
+
+            // Definir orientação com base nas dimensões
+            $orientation = ($page_width_mm >= $page_height_mm) ? 'L' : 'P';
+
+            // Adicionar página com tamanho EXATO da imagem (sem redimensionar)
+            $pdf->AddPage($orientation, array($page_width_mm, $page_height_mm));
+
+            // Inserir imagem preenchendo exatamente a página (sem crop e sem ajuste para A4)
+            // Observação: não há "redimensionamento relativo ao tamanho físico" porque a página
+            // foi criada com as mesmas dimensões físicas da imagem (px -> mm via DPI)
             $pdf->Image(
-                $page_data['image_path'],  // Caminho da imagem
-                0,                         // X
-                0,                         // Y
-                $page_width,              // Largura
-                $page_height,             // Altura
-                '',                       // Tipo (auto-detect)
-                '',                       // Link
-                '',                       // Align
-                false,                    // Resize
-                300,                      // DPI
-                '',                       // Palign
-                false,                    // Ismask
-                false,                    // Imgmask
-                0,                        // Border
-                false,                    // Fitbox
-                false,                    // Hidden
-                true                      // Fitonpage
+                $page_data['image_path'],
+                0,
+                0,
+                $page_width_mm,
+                $page_height_mm,
+                '',
+                '',
+                '',
+                false,
+                0, // ignorar DPI aqui pois já controlamos via dimensão da página
+                '',
+                false,
+                false,
+                0,
+                false,
+                false,
+                false
             );
         }
         
