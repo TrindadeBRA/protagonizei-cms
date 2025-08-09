@@ -442,24 +442,37 @@ function download_image_from_url($image_url) {
 }
 
 /**
- * Save merged image to WordPress media library
+ * Save merged image to WordPress media library with professional metadata
  * 
  * @param string $image_path Path to the merged image
+ * @param int $order_id ID do pedido
+ * @param string $child_name Nome da criança
+ * @param int $page_index Índice da página (0-based)
+ * @param string $text_position Posição do texto aplicada
  * @return string|false URL of the saved image or false on error
  */
-function save_merged_image_to_wordpress($image_path) {
+function save_merged_image_to_wordpress($image_path, $order_id = null, $child_name = '', $page_index = 0, $text_position = 'center_right') {
     if (!file_exists($image_path)) {
         error_log("[TrinityKit] Arquivo de imagem não encontrado: $image_path");
         return false;
     }
 
-    // Usar wp_handle_sideload para upload mais robusto
-    $filename = basename($image_path);
-    $file_type = wp_check_filetype($filename, null);
+    // Generate professional filename
+    $page_number = $page_index + 1;
+    $sanitized_child_name = sanitize_file_name($child_name);
+    $timestamp = date('Y-m-d_H-i-s');
+    
+    if ($order_id && $sanitized_child_name) {
+        $professional_filename = "merged-pedido-{$order_id}-{$sanitized_child_name}-pagina-{$page_number}-{$timestamp}.jpg";
+    } else {
+        $professional_filename = "merged-page-{$timestamp}-" . uniqid() . ".jpg";
+    }
+    
+    $file_type = wp_check_filetype($professional_filename, null);
     
     // Preparar array para wp_handle_sideload
     $file_array = array(
-        'name' => $filename,
+        'name' => $professional_filename,
         'type' => $file_type['type'],
         'tmp_name' => $image_path,
         'error' => 0,
@@ -485,11 +498,21 @@ function save_merged_image_to_wordpress($image_path) {
         return false;
     }
     
-    // Criar attachment no WordPress
+    // Create professional title and description
+    $professional_title = $child_name ? 
+        "Página Final Mesclada - {$child_name} - Página {$page_number}" : 
+        "Página Final Mesclada - Página {$page_number}";
+    
+    $professional_content = $order_id ? 
+        "Página final do livro personalizado com texto e ilustração mesclados para o pedido #{$order_id}. Criança: {$child_name}. Página {$page_number} com posição de texto '{$text_position}'." :
+        "Página final do livro personalizado com texto e ilustração mesclados.";
+    
+    // Criar attachment no WordPress com metadados profissionais
     $attachment = array(
         'post_mime_type' => $uploaded_file['type'],
-        'post_title' => sanitize_file_name(pathinfo($filename, PATHINFO_FILENAME)),
-        'post_content' => '',
+        'post_title' => $professional_title,
+        'post_content' => $professional_content,
+        'post_excerpt' => "Merge Final - Pedido #{$order_id} - {$child_name} - Página {$page_number}",
         'post_status' => 'inherit'
     );
     
@@ -501,7 +524,26 @@ function save_merged_image_to_wordpress($image_path) {
         return false;
     }
     
-    // Gerar metadados
+    // Add professional metadata
+    if ($order_id) {
+        update_post_meta($attach_id, '_trinitykitcms_order_id', $order_id);
+        update_post_meta($attach_id, '_trinitykitcms_child_name', $child_name);
+        update_post_meta($attach_id, '_trinitykitcms_page_number', $page_number);
+        update_post_meta($attach_id, '_trinitykitcms_page_index', $page_index);
+        update_post_meta($attach_id, '_trinitykitcms_text_position', $text_position);
+        update_post_meta($attach_id, '_trinitykitcms_generation_method', 'text_image_merge');
+        update_post_meta($attach_id, '_trinitykitcms_generation_date', current_time('mysql'));
+        update_post_meta($attach_id, '_trinitykitcms_file_source', 'webhook_merge_assets');
+        update_post_meta($attach_id, '_trinitykitcms_asset_type', 'final_merged_page');
+    }
+    
+    // Add ALT text for accessibility
+    $alt_text = $child_name ? 
+        "Página final mesclada de {$child_name} - Página {$page_number}" :
+        "Página final mesclada - Página {$page_number}";
+    update_post_meta($attach_id, '_wp_attachment_image_alt', $alt_text);
+    
+    // Gerar metadados de imagem
     $attach_data = wp_generate_attachment_metadata($attach_id, $uploaded_file['file']);
     
     if (empty($attach_data)) {
@@ -597,7 +639,7 @@ function trinitykit_handle_merge_assets_webhook($request) {
         }
 
         $page_errors = 0;
-        $merged_pages = array();
+        $processed_pages = 0;
         
         // Process each generated page
         foreach ($generated_pages as $index => $page) {
@@ -713,7 +755,7 @@ function trinitykit_handle_merge_assets_webhook($request) {
             }
             
             // Save merged image to WordPress
-            $merged_image_url = save_merged_image_to_wordpress($merged_image_path);
+            $merged_image_url = save_merged_image_to_wordpress($merged_image_path, $order_id, $child_name, $index, $text_position);
             
             if ($merged_image_url === false) {
                 $error_msg = "[TrinityKit] Erro ao salvar imagem mesclada para página $index do pedido #$order_id";
@@ -730,14 +772,22 @@ function trinitykit_handle_merge_assets_webhook($request) {
             
             // Get attachment ID for the merged image
             $merged_attachment_id = attachment_url_to_postid($merged_image_url);
+            if (!$merged_attachment_id) {
+                error_log("[TrinityKit] AVISO: Não foi possível obter o ID do anexo para URL: $merged_image_url");
+                $merged_attachment_id = 0; // Fallback
+            }
             
-            // Store the merged page data
-            $merged_pages[] = array(
-                'page_number' => $index + 1,
-                'merged_content' => $merged_attachment_id,
-                'original_text' => $text_content,
-                'original_illustration' => $illustration_id
-            );
+            // Update the final page with text directly in the existing repeater
+            $field_key = "generated_book_pages_{$index}_final_page_with_text";
+            $update_result = update_field($field_key, $merged_attachment_id, $order_id);
+            
+            if ($update_result) {
+                $processed_pages++;
+                error_log("[TrinityKit] Página final $index salva com sucesso - URL: $merged_image_url, ID: $merged_attachment_id");
+            } else {
+                $page_errors++;
+                error_log("[TrinityKit] Falha ao salvar página final $index do pedido #$order_id");
+            }
             
             // Clean up temporary files
             unlink($merged_image_path);
@@ -753,23 +803,28 @@ function trinitykit_handle_merge_assets_webhook($request) {
             continue;
         }
 
-        // Update order with merged pages and change status
-        $merged_pages_updated = update_field('merged_book_pages', $merged_pages, $order_id);
-        $status_updated = update_field('order_status', 'created_assets_merge', $order_id);
-        
-        if ($merged_pages_updated && $status_updated) {
-            // Add log entry
-            trinitykit_add_post_log(
-                $order_id,
-                'webhook-merge-assets',
-                "Assets mesclados com sucesso para $child_name - " . count($merged_pages) . " páginas processadas",
-                'created_assets_illustration',
-                'created_assets_merge'
-            );
+        // Update order status if all pages were processed successfully
+        if ($page_errors === 0 && $processed_pages > 0) {
+            $status_updated = update_field('order_status', 'created_assets_merge', $order_id);
             
-            $processed++;
+            if ($status_updated) {
+                // Add log entry
+                trinitykit_add_post_log(
+                    $order_id,
+                    'webhook-merge-assets',
+                    "Assets mesclados com sucesso para $child_name - {$processed_pages} páginas processadas",
+                    'created_assets_illustration',
+                    'created_assets_merge'
+                );
+                
+                $processed++;
+            } else {
+                $error_msg = "[TrinityKit] Falha ao atualizar status do pedido #$order_id";
+                error_log($error_msg);
+                $errors[] = $error_msg;
+            }
         } else {
-            $error_msg = "[TrinityKit] Falha ao atualizar campos do pedido #$order_id";
+            $error_msg = "[TrinityKit] Falha ao processar $page_errors páginas do pedido #$order_id";
             error_log($error_msg);
             $errors[] = $error_msg;
         }
