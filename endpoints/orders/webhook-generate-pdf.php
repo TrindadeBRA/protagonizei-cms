@@ -211,10 +211,7 @@ function trinitykit_handle_generate_pdf_webhook($request) {
                     'ready_for_delivery'
                 );
 
-                // Limpar arquivo temporário
-                if (file_exists($pdf_result['file_path'])) {
-                    unlink($pdf_result['file_path']);
-                }
+                // Não remover o arquivo: ele é o próprio arquivo final em uploads
 
                 $processed++;
                 error_log("[TrinityKit] PDF gerado com sucesso para pedido #$order_id");
