@@ -77,7 +77,63 @@ function check_face_swap_status($task_id) {
     return $status_data;
 }
 
-// Note: Using save_base64_image_to_wordpress() function from webhook-assets-image.php
+/**
+ * Save base64 image to WordPress
+ * 
+ * @param string $base64_image String base64 da imagem
+ * @return string|false URL da imagem salva ou false em caso de erro
+ */
+function save_base64_image_to_wordpress($base64_image) {
+    // Remove the data:image/jpeg;base64, prefix if it exists
+    if (strpos($base64_image, 'data:image/') === 0) {
+        $base64_image = substr($base64_image, strpos($base64_image, ',') + 1);
+    }
+    
+    $image_data = base64_decode($base64_image);
+    
+    if ($image_data === false) {
+        error_log("[TrinityKit] Erro ao decodificar imagem base64");
+        return false;
+    }
+    
+    // Generate unique filename
+    $filename = 'faceswap-' . uniqid() . '.jpg';
+    $upload_dir = wp_upload_dir();
+    $file_path = $upload_dir['path'] . '/' . $filename;
+    
+    // Save file
+    $file_saved = file_put_contents($file_path, $image_data);
+    
+    if ($file_saved === false) {
+        error_log("[TrinityKit] Erro ao salvar arquivo de imagem");
+        return false;
+    }
+    
+    // Prepare data for WordPress insertion
+    $file_type = wp_check_filetype($filename, null);
+    
+    $attachment = array(
+        'post_mime_type' => $file_type['type'],
+        'post_title' => sanitize_file_name($filename),
+        'post_content' => '',
+        'post_status' => 'inherit'
+    );
+    
+    // Insert into WordPress
+    $attach_id = wp_insert_attachment($attachment, $file_path);
+    
+    if (is_wp_error($attach_id)) {
+        error_log("[TrinityKit] Erro ao inserir anexo: " . $attach_id->get_error_message());
+        return false;
+    }
+    
+    // Generate image sizes
+    require_once(ABSPATH . 'wp-admin/includes/image.php');
+    $attach_data = wp_generate_attachment_metadata($attach_id, $file_path);
+    wp_update_attachment_metadata($attach_id, $attach_data);
+    
+    return wp_get_attachment_url($attach_id);
+}
 
 // Note: Using send_telegram_error_notification() function from webhook-initiate-faceswap.php
 
