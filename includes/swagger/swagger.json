@@ -1229,13 +1229,13 @@
         "security": [{"ApiKeyAuth": []}]
       }
     },
-    "/webhook/generate-image-assets": {
+    "/webhook/initiate-faceswap": {
       "get": {
-        "summary": "Gerar ilustrações com face swap em lote",
-        "description": "Processa todos os pedidos no status 'created_assets_text' para gerar ilustrações personalizadas com face swap usando FaceSwap API. Aplica o rosto da criança nas imagens base do template, considerando gênero e tom de pele.",
+        "summary": "Iniciar processo de face swap em lote",
+        "description": "Processa todos os pedidos no status 'created_assets_text' que ainda não tiveram o face swap iniciado. Para cada página do livro, inicia o processo de face swap na API externa e salva os IDs das tarefas retornadas.",
         "responses": {
           "200": {
-            "description": "Ilustrações geradas com sucesso",
+            "description": "Processo de face swap iniciado com sucesso",
             "content": {
               "application/json": {
                 "schema": {
@@ -1243,17 +1243,25 @@
                   "properties": {
                     "message": {
                       "type": "string",
-                      "example": "Processamento concluído. 5 pedidos processados."
+                      "example": "Processamento de iniciação do face swap concluído. 3 pedidos processados."
                     },
                     "processed": {
                       "type": "integer",
                       "description": "Número de pedidos processados com sucesso",
-                      "example": 5
+                      "example": 3
                     },
                     "total": {
                       "type": "integer",
                       "description": "Número total de pedidos encontrados",
-                      "example": 5
+                      "example": 3
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Lista de erros encontrados (vazia em caso de sucesso)",
+                      "example": []
                     }
                   }
                 }
@@ -1269,24 +1277,102 @@
                   "properties": {
                     "message": {
                       "type": "string",
-                      "example": "Processamento concluído. 3/5 pedidos processados"
+                      "example": "Processamento de iniciação do face swap concluído. 2 pedidos processados."
                     },
                     "processed": {
                       "type": "integer",
                       "description": "Número de pedidos processados com sucesso",
-                      "example": 3
+                      "example": 2
                     },
                     "total": {
                       "type": "integer",
                       "description": "Número total de pedidos encontrados",
+                      "example": 3
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "example": "Pedido #123: Imagem base não encontrada para página 1"
+                      },
+                      "description": "Lista detalhada de erros encontrados"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [{"ApiKeyAuth": []}]
+      }
+    },
+    "/webhook/check-faceswap": {
+      "get": {
+        "summary": "Verificar status do face swap e processar imagens prontas",
+        "description": "Processa todos os pedidos no status 'created_assets_text' que já tiveram o face swap iniciado (face_swap_initiated = true). Verifica o status das tarefas na API externa e processa as imagens que estão prontas, salvando-as no WordPress e atualizando o status do pedido quando todas as páginas estiverem concluídas.",
+        "responses": {
+          "200": {
+            "description": "Verificação de face swap concluída com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Verificação de face swap concluída. 2 pedidos finalizados."
+                    },
+                    "processed": {
+                      "type": "integer",
+                      "description": "Número de pedidos finalizados (status atualizado para created_assets_illustration)",
+                      "example": 2
+                    },
+                    "total": {
+                      "type": "integer",
+                      "description": "Número total de pedidos verificados",
+                      "example": 5
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Lista de erros encontrados (vazia em caso de sucesso)",
+                      "example": []
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro no processamento",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Verificação de face swap concluída. 1 pedidos finalizados."
+                    },
+                    "processed": {
+                      "type": "integer",
+                      "description": "Número de pedidos finalizados",
+                      "example": 1
+                    },
+                    "total": {
+                      "type": "integer",
+                      "description": "Número total de pedidos verificados",
                       "example": 5
                     },
                     "errors": {
                       "type": "array",
                       "items": {
                         "type": "string",
-                        "example": "Erro no pedido #123: Face swap falhou para página 2"
-                      }
+                        "example": "Pedido #456: Face swap falhou para página 2 (Task ID: abc123)"
+                      },
+                      "description": "Lista detalhada de erros encontrados"
                     }
                   }
                 }

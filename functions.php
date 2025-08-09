@@ -39,7 +39,8 @@ require_once THEME_DIR . 'endpoints/orders/webhook-payment-confirm.php';
 require_once THEME_DIR . 'endpoints/orders/api-check-payment-status.php';
 require_once THEME_DIR . 'endpoints/orders/webhook-email-thanks.php';
 require_once THEME_DIR . 'endpoints/orders/webhook-assets-text.php';
-require_once THEME_DIR . 'endpoints/orders/webhook-assets-image.php';
+require_once THEME_DIR . 'endpoints/orders/webhook-initiate-faceswap.php';
+require_once THEME_DIR . 'endpoints/orders/webhook-check-faceswap.php';
 require_once THEME_DIR . 'endpoints/orders/webhook-assets-merge.php';
 
 // Impede acesso direto ao arquivo
