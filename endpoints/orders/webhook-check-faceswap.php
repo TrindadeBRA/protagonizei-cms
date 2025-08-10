@@ -36,7 +36,12 @@ function check_face_swap_status($task_id) {
 
     if (empty($api_key) || empty($base_url)) {
         error_log("[TrinityKit] Configurações do FaceSwap não encontradas");
-        return false;
+        return array(
+            'status' => 'ERROR',
+            'http_code' => 0,
+            'error_message' => 'Configurações do FaceSwap ausentes',
+            'task_id' => $task_id,
+        );
     }
 
     $status_url = $base_url . '/status/' . $task_id;
@@ -54,9 +59,15 @@ function check_face_swap_status($task_id) {
     $response = curl_exec($ch);
     
     if (curl_errno($ch)) {
-        error_log("[TrinityKit] Erro cURL na verificação de status: " . curl_error($ch));
+        $curl_error = curl_error($ch);
+        error_log("[TrinityKit] Erro cURL na verificação de status: " . $curl_error);
         curl_close($ch);
-        return false;
+        return array(
+            'status' => 'ERROR',
+            'http_code' => 0,
+            'error_message' => $curl_error,
+            'task_id' => $task_id,
+        );
     }
     
     $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -64,14 +75,26 @@ function check_face_swap_status($task_id) {
     
     if ($http_code !== 200) {
         error_log("[TrinityKit] Erro na verificação de status ($http_code): " . $response);
-        return false;
+        $trimmed = is_string($response) ? substr($response, 0, 500) : '';
+        return array(
+            'status' => 'ERROR',
+            'http_code' => $http_code,
+            'error_message' => $trimmed,
+            'task_id' => $task_id,
+        );
     }
     
     $status_data = json_decode($response, true);
     
     if (json_last_error() !== JSON_ERROR_NONE) {
-        error_log("[TrinityKit] Resposta JSON inválida na verificação de status: " . json_last_error_msg());
-        return false;
+        $json_err = json_last_error_msg();
+        error_log("[TrinityKit] Resposta JSON inválida na verificação de status: " . $json_err);
+        return array(
+            'status' => 'ERROR',
+            'http_code' => 200,
+            'error_message' => $json_err,
+            'task_id' => $task_id,
+        );
     }
     
     return $status_data;
@@ -298,9 +321,17 @@ function trinitykit_handle_check_faceswap_webhook($request) {
             // Check face swap status
             $status_data = check_face_swap_status($task_id);
             
-            if ($status_data === false) {
-                error_log("[TrinityKit] Erro ao verificar status da página $index do pedido #$order_id");
-                $failed_pages++;
+            if ($status_data === false || (is_array($status_data) && isset($status_data['status']) && $status_data['status'] === 'ERROR')) {
+                $err_code = is_array($status_data) && isset($status_data['http_code']) ? intval($status_data['http_code']) : 0;
+                $err_msg = is_array($status_data) && isset($status_data['error_message']) ? $status_data['error_message'] : 'erro desconhecido';
+                error_log("[TrinityKit] Erro ao verificar status da página $index do pedido #$order_id | http=$err_code | detalhe=$err_msg");
+                
+                // Se a tarefa não existir mais (404), não marca como falha definitiva; deixa como pendente para reprocessar
+                if ($err_code === 404 && stripos($err_msg, 'request does not exist') !== false) {
+                    $pending_pages++;
+                } else {
+                    $failed_pages++;
+                }
                 continue;
             }
 
