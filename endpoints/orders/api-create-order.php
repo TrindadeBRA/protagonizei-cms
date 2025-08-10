@@ -75,15 +75,6 @@ function trinitykit_create_order($request) {
         );
     }
 
-    // Validate age
-    if ($child_age < 2 || $child_age > 8) {
-        return new WP_Error(
-            'invalid_age',
-            'A idade deve estar entre 2 e 8 anos',
-            array('status' => 400)
-        );
-    }
-
     // Validate gender
     if (!in_array($child_gender, ['menino', 'menina'])) {
         return new WP_Error(

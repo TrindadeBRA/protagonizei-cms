@@ -636,7 +636,6 @@
                 "type": "object",
                 "required": [
                   "childName",
-                  "childAge",
                   "childGender",
                   "skinTone",
                   "parentName",
@@ -649,13 +648,6 @@
                     "type": "string",
                     "description": "Nome da criança",
                     "example": "Luna Trindade"
-                  },
-                  "childAge": {
-                    "type": "integer",
-                    "description": "Idade da criança (entre 2 e 8 anos)",
-                    "minimum": 2,
-                    "maximum": 8,
-                    "example": 5
                   },
                   "childGender": {
                     "type": "string",
