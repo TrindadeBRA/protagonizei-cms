@@ -345,12 +345,40 @@ function trinitykit_handle_check_faceswap_webhook($request) {
                     $field_selector = 'generated_book_pages_' . ($index + 1) . '_generated_illustration';
                     error_log("[TrinityKit] Atualizando ACF (selector=$field_selector) com attachment_id=$attachment_id para pedido #$order_id página " . ($index + 1));
                     $update_result = update_sub_field($field_selector, $attachment_id, $order_id);
+                    $used_selector = 'name[' . $field_selector . ']';
+                    
+                    // Fallback 1: usar field keys, se disponíveis
+                    if (!$update_result && function_exists('acf_get_field')) {
+                        $repeater_key = 'field_generated_book_pages';
+                        $image_key = 'field_generated_illustration';
+                        $update_result = update_sub_field(array($repeater_key, $index + 1, $image_key), $attachment_id, $order_id);
+                        if ($update_result) {
+                            $used_selector = "keys[$repeater_key," . ($index + 1) . ",$image_key]";
+                        }
+                    }
+                    
+                    // Fallback 2: atualizar o repeater completo
+                    if (!$update_result) {
+                        $pages_for_update = get_field('generated_book_pages', $order_id);
+                        if (is_array($pages_for_update) && array_key_exists($index, $pages_for_update)) {
+                            $pages_for_update[$index]['generated_illustration'] = $attachment_id;
+                            $bulk_update = update_field('generated_book_pages', $pages_for_update, $order_id);
+                            if ($bulk_update) {
+                                $update_result = true;
+                                $used_selector = 'bulk_update[generated_book_pages]';
+                            } else {
+                                error_log('[TrinityKit] Fallback bulk update falhou para pedido #' . $order_id . ' página ' . ($index + 1));
+                            }
+                        } else {
+                            error_log('[TrinityKit] Fallback indisponível: páginas não são array ou índice não existe (pedido #' . $order_id . ', index=' . $index . ')');
+                        }
+                    }
                     
                     if ($update_result) {
                         $completed_pages++;
-                        error_log("[TrinityKit] Página $index processada com sucesso - URL: $image_url, ID: $attachment_id");
+                        error_log("[TrinityKit] Página $index processada com sucesso - URL: $image_url, ID: $attachment_id (selector_usado=$used_selector)");
                     } else {
-                        $error_msg = "Falha ao atualizar ilustração da página $index do pedido #$order_id";
+                        $error_msg = "Falha ao atualizar ilustração da página $index do pedido #$order_id (selector_usado=$used_selector)";
                         error_log("[TrinityKit] $error_msg");
                         $failed_pages++;
                         
