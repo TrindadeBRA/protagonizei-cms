@@ -36,12 +36,7 @@ function check_face_swap_status($task_id) {
 
     if (empty($api_key) || empty($base_url)) {
         error_log("[TrinityKit] Configurações do FaceSwap não encontradas");
-        return array(
-            'status' => 'ERROR',
-            'http_code' => 0,
-            'error_message' => 'Configurações do FaceSwap ausentes',
-            'task_id' => $task_id,
-        );
+        return false;
     }
 
     $status_url = $base_url . '/status/' . $task_id;
@@ -59,15 +54,9 @@ function check_face_swap_status($task_id) {
     $response = curl_exec($ch);
     
     if (curl_errno($ch)) {
-        $curl_error = curl_error($ch);
-        error_log("[TrinityKit] Erro cURL na verificação de status: " . $curl_error);
+        error_log("[TrinityKit] Erro cURL na verificação de status: " . curl_error($ch));
         curl_close($ch);
-        return array(
-            'status' => 'ERROR',
-            'http_code' => 0,
-            'error_message' => $curl_error,
-            'task_id' => $task_id,
-        );
+        return false;
     }
     
     $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -75,26 +64,14 @@ function check_face_swap_status($task_id) {
     
     if ($http_code !== 200) {
         error_log("[TrinityKit] Erro na verificação de status ($http_code): " . $response);
-        $trimmed = is_string($response) ? substr($response, 0, 500) : '';
-        return array(
-            'status' => 'ERROR',
-            'http_code' => $http_code,
-            'error_message' => $trimmed,
-            'task_id' => $task_id,
-        );
+        return false;
     }
     
     $status_data = json_decode($response, true);
     
     if (json_last_error() !== JSON_ERROR_NONE) {
-        $json_err = json_last_error_msg();
-        error_log("[TrinityKit] Resposta JSON inválida na verificação de status: " . $json_err);
-        return array(
-            'status' => 'ERROR',
-            'http_code' => 200,
-            'error_message' => $json_err,
-            'task_id' => $task_id,
-        );
+        error_log("[TrinityKit] Resposta JSON inválida na verificação de status: " . json_last_error_msg());
+        return false;
     }
     
     return $status_data;
@@ -107,7 +84,7 @@ function check_face_swap_status($task_id) {
  * @param int $order_id ID do pedido
  * @param string $child_name Nome da criança
  * @param int $page_index Índice da página (0-based)
- * @return array|false Array com 'id' e 'url' do attachment salvo ou false em caso de erro
+ * @return string|false URL da imagem salva ou false em caso de erro
  */
 function save_base64_image_to_wordpress($base64_image, $order_id = null, $child_name = '', $page_index = 0) {
     // Remove the data:image/jpeg;base64, prefix if it exists
@@ -194,55 +171,10 @@ function save_base64_image_to_wordpress($base64_image, $order_id = null, $child_
     $attach_data = wp_generate_attachment_metadata($attach_id, $file_path);
     wp_update_attachment_metadata($attach_id, $attach_data);
     
-    return array(
-        'id' => $attach_id,
-        'url' => wp_get_attachment_url($attach_id)
-    );
+    return wp_get_attachment_url($attach_id);
 }
 
 // Note: Using send_telegram_error_notification() function from webhook-initiate-faceswap.php
-
-/**
- * Loga um snapshot resumido das páginas do pedido
- */
-function trinitykit_log_pages_snapshot($order_id, $pages, $label = 'snapshot') {
-    $snapshot = array();
-    if (is_array($pages)) {
-        foreach ($pages as $idx => $page) {
-            $task_id = isset($page['faceswap_task_id']) ? $page['faceswap_task_id'] : null;
-            $illustration = isset($page['generated_illustration']) ? $page['generated_illustration'] : null;
-            $is_array = is_array($illustration);
-            $attachment_id = 0;
-            if ($illustration) {
-                if ($is_array) {
-                    $attachment_id = isset($illustration['ID']) ? intval($illustration['ID']) : 0;
-                } else {
-                    $attachment_id = intval($illustration);
-                }
-            }
-            $is_valid = $attachment_id > 0 && get_post_type($attachment_id) === 'attachment';
-
-            $snapshot[] = array(
-                'index' => $idx,
-                'page_number' => $idx + 1,
-                'has_task_id' => !empty($task_id),
-                'task_id' => $task_id,
-                'has_illustration' => (bool) $illustration,
-                'illustration_is_array' => $is_array,
-                'illustration_id' => $attachment_id,
-                'illustration_valid' => $is_valid,
-            );
-        }
-    } else {
-        $snapshot = array('error' => 'pages_not_array');
-    }
-
-    $json = json_encode($snapshot);
-    if ($json === false) {
-        $json = 'json_encode_error';
-    }
-    error_log('[TrinityKit] Páginas (' . $label . ') pedido #' . $order_id . ': ' . substr($json, 0, 4000));
-}
 
 /**
  * Handles the check face swap webhook
@@ -284,8 +216,6 @@ function trinitykit_handle_check_faceswap_webhook($request) {
         // Get order details
         $child_name = get_field('child_name', $order_id);
         $generated_pages = get_field('generated_book_pages', $order_id);
-        // Snapshot inicial das páginas
-        trinitykit_log_pages_snapshot($order_id, $generated_pages, 'inicial');
         
         if (empty($generated_pages)) {
             $error_msg = "Páginas geradas não encontradas para pedido #$order_id";
@@ -300,11 +230,6 @@ function trinitykit_handle_check_faceswap_webhook($request) {
         
         // Check each page's face swap status
         foreach ($generated_pages as $index => $page) {
-            // Log por página (variáveis principais)
-            $log_task = isset($page['faceswap_task_id']) ? $page['faceswap_task_id'] : null;
-            $log_ill = isset($page['generated_illustration']) ? $page['generated_illustration'] : null;
-            $log_ill_type = is_array($log_ill) ? 'array' : (is_null($log_ill) ? 'null' : 'scalar');
-            error_log("[TrinityKit] Pedido #$order_id página " . ($index + 1) . " - task_id=" . ($log_task ?: 'null') . ", has_illustration=" . ($log_ill ? 'yes' : 'no') . ", illustration_type=" . $log_ill_type);
             $task_id = $page['faceswap_task_id'] ?? null;
             
             if (empty($task_id)) {
@@ -321,95 +246,34 @@ function trinitykit_handle_check_faceswap_webhook($request) {
             // Check face swap status
             $status_data = check_face_swap_status($task_id);
             
-            if ($status_data === false || (is_array($status_data) && isset($status_data['status']) && $status_data['status'] === 'ERROR')) {
-                $err_code = is_array($status_data) && isset($status_data['http_code']) ? intval($status_data['http_code']) : 0;
-                $err_msg = is_array($status_data) && isset($status_data['error_message']) ? $status_data['error_message'] : 'erro desconhecido';
-                error_log("[TrinityKit] Erro ao verificar status da página $index do pedido #$order_id | http=$err_code | detalhe=$err_msg");
-                
-                // Se a tarefa não existir mais (404), não marca como falha definitiva; deixa como pendente para reprocessar
-                if ($err_code === 404 && stripos($err_msg, 'request does not exist') !== false) {
-                    $pending_pages++;
-                } else {
-                    $failed_pages++;
-                }
+            if ($status_data === false) {
+                error_log("[TrinityKit] Erro ao verificar status da página $index do pedido #$order_id");
+                $failed_pages++;
                 continue;
             }
 
             if ($status_data['status'] === 'COMPLETED') {
-                // Extrai imagem (base64 ou URL) e salva no WordPress
-                $output = isset($status_data['output']) ? $status_data['output'] : null;
-                $image_result = false;
-
-                // Se output vier como array, tenta chaves comuns
-                if (is_array($output)) {
-                    $output = $output['image_base64'] ?? $output['base64'] ?? $output['image'] ?? $output['url'] ?? $output['image_url'] ?? null;
-                }
-
-                if (is_string($output)) {
-                    $trimmed_output = trim($output);
-                    // Se for URL, baixa e converte para base64
-                    if (preg_match('/^https?:\/\//i', $trimmed_output)) {
-                        $response_img = wp_remote_get($trimmed_output, array('timeout' => 30));
-                        if (!is_wp_error($response_img) && (int) wp_remote_retrieve_response_code($response_img) === 200) {
-                            $mime = wp_remote_retrieve_header($response_img, 'content-type');
-                            if (empty($mime)) {
-                                $mime = 'image/jpeg';
-                            }
-                            $body = wp_remote_retrieve_body($response_img);
-                            if (!empty($body)) {
-                                $base64_image = 'data:' . $mime . ';base64,' . base64_encode($body);
-                                $image_result = save_base64_image_to_wordpress($base64_image, $order_id, $child_name, $index);
-                            }
-                        }
-                    } else {
-                        // Assume string base64 (com ou sem prefixo data:)
-                        $image_result = save_base64_image_to_wordpress($trimmed_output, $order_id, $child_name, $index);
-                    }
-                }
+                // Process the base64 image and save to WordPress
+                $base64_image = $status_data['output'];
+                $image_url = save_base64_image_to_wordpress($base64_image, $order_id, $child_name, $index);
                 
-                if ($image_result && !empty($image_result['id']) && intval($image_result['id']) > 0) {
-                    // Update the page with the new illustration using a valid attachment id
-                    $attachment_id = intval($image_result['id']);
-                    $image_url = $image_result['url'];
-                    
-                    // Atualiza apenas a ilustração desta página específica usando ACF (índice 1-based)
-                    $field_selector = 'generated_book_pages_' . ($index + 1) . '_generated_illustration';
-                    error_log("[TrinityKit] Atualizando ACF (selector=$field_selector) com attachment_id=$attachment_id para pedido #$order_id página " . ($index + 1));
-                    $update_result = update_sub_field($field_selector, $attachment_id, $order_id);
-                    $used_selector = 'name[' . $field_selector . ']';
-                    
-                    // Fallback 1: usar field keys, se disponíveis
-                    if (!$update_result && function_exists('acf_get_field')) {
-                        $repeater_key = 'field_generated_book_pages';
-                        $image_key = 'field_generated_illustration';
-                        $update_result = update_sub_field(array($repeater_key, $index + 1, $image_key), $attachment_id, $order_id);
-                        if ($update_result) {
-                            $used_selector = "keys[$repeater_key," . ($index + 1) . ",$image_key]";
-                        }
+                if ($image_url) {
+                    // Update the page with the new illustration
+                    $attachment_id = attachment_url_to_postid($image_url);
+                    if (!$attachment_id) {
+                        error_log("[TrinityKit] AVISO: Não foi possível obter o ID do anexo para URL: $image_url");
+                        $attachment_id = 0; // Fallback
                     }
                     
-                    // Fallback 2: atualizar o repeater completo
-                    if (!$update_result) {
-                        $pages_for_update = get_field('generated_book_pages', $order_id);
-                        if (is_array($pages_for_update) && array_key_exists($index, $pages_for_update)) {
-                            $pages_for_update[$index]['generated_illustration'] = $attachment_id;
-                            $bulk_update = update_field('generated_book_pages', $pages_for_update, $order_id);
-                            if ($bulk_update) {
-                                $update_result = true;
-                                $used_selector = 'bulk_update[generated_book_pages]';
-                            } else {
-                                error_log('[TrinityKit] Fallback bulk update falhou para pedido #' . $order_id . ' página ' . ($index + 1));
-                            }
-                        } else {
-                            error_log('[TrinityKit] Fallback indisponível: páginas não são array ou índice não existe (pedido #' . $order_id . ', index=' . $index . ')');
-                        }
-                    }
+                    // Update only the illustration of this specific page using ACF
+                    $field_key = "generated_book_pages_{$index}_generated_illustration";
+                    $update_result = update_field($field_key, $attachment_id, $order_id);
                     
                     if ($update_result) {
                         $completed_pages++;
-                        error_log("[TrinityKit] Página $index processada com sucesso - URL: $image_url, ID: $attachment_id (selector_usado=$used_selector)");
+                        error_log("[TrinityKit] Página $index processada com sucesso - URL: $image_url, ID: $attachment_id");
                     } else {
-                        $error_msg = "Falha ao atualizar ilustração da página $index do pedido #$order_id (selector_usado=$used_selector)";
+                        $error_msg = "Falha ao atualizar ilustração da página $index do pedido #$order_id";
                         error_log("[TrinityKit] $error_msg");
                         $failed_pages++;
                         
@@ -437,7 +301,7 @@ function trinitykit_handle_check_faceswap_webhook($request) {
                         }
                     }
                 } else {
-                    $error_msg = "Erro ao salvar imagem processada da página $index do pedido #$order_id (attachment inválido)";
+                    $error_msg = "Erro ao salvar imagem processada da página $index do pedido #$order_id";
                     error_log("[TrinityKit] $error_msg");
                     $failed_pages++;
                     
@@ -496,30 +360,9 @@ function trinitykit_handle_check_faceswap_webhook($request) {
             }
         }
 
-        // Revalidar: todas as páginas precisam ter attachment válido salvo
-        $refreshed_pages = get_field('generated_book_pages', $order_id);
-        // Snapshot pós-processamento
-        trinitykit_log_pages_snapshot($order_id, $refreshed_pages, 'pos-processamento');
+        // Check if all pages are completed
         $total_pages = count($generated_pages);
-        $all_pages_have_valid_attachments = true;
-        if (is_array($refreshed_pages)) {
-            foreach ($refreshed_pages as $page_idx => $refreshed_page) {
-                $page_attachment = isset($refreshed_page['generated_illustration']) ? $refreshed_page['generated_illustration'] : 0;
-                if (is_array($page_attachment)) {
-                    $page_attachment_id = isset($page_attachment['ID']) ? intval($page_attachment['ID']) : 0;
-                } else {
-                    $page_attachment_id = intval($page_attachment);
-                }
-                if ($page_attachment_id <= 0 || get_post_type($page_attachment_id) !== 'attachment') {
-                    $all_pages_have_valid_attachments = false;
-                    break;
-                }
-            }
-        } else {
-            $all_pages_have_valid_attachments = false;
-        }
-
-        if ($all_pages_have_valid_attachments && $failed_pages === 0) {
+        if ($completed_pages === $total_pages && $failed_pages === 0) {
             // Update order status to 'created_assets_illustration'
             $status_updated = update_field('order_status', 'created_assets_illustration', $order_id);
             
@@ -543,7 +386,7 @@ function trinitykit_handle_check_faceswap_webhook($request) {
             }
         } else {
             // Log current status
-            error_log("[TrinityKit] Pedido #$order_id - Status: $completed_pages/$total_pages concluídas, $failed_pages falharam, $pending_pages pendentes (validação anexos: " . ($all_pages_have_valid_attachments ? 'OK' : 'INCOMPLETA') . ")");
+            error_log("[TrinityKit] Pedido #$order_id - Status: $completed_pages/$total_pages concluídas, $failed_pages falharam, $pending_pages pendentes");
             
             if ($failed_pages > 0) {
                 $error_msg = "Pedido #$order_id tem $failed_pages páginas com falha no face swap";
