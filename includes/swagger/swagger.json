@@ -11,6 +11,11 @@
       "description": "API TrinityKitCMS"
     }
   ],
+  "security": [
+    {
+      "ApiKeyAuth": []
+    }
+  ],
   "paths": {
     "/configs": {
       "get": {
@@ -111,6 +116,7 @@
       "post": {
         "summary": "Enviar formulário de contato",
         "description": "Cria um novo registro de contato no WordPress com suporte para upload de arquivos. Todos os campos são obrigatórios exceto o arquivo anexo.",
+        "security": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -921,6 +927,7 @@
       "post": {
         "summary": "Webhook de confirmação de pagamento",
         "description": "Endpoint para receber notificações de confirmação de pagamento do Asaas. Atualiza o status do pedido para pago e registra os dados da transação.",
+        "security": [],
         "requestBody": {
           "required": true,
           "content": {
