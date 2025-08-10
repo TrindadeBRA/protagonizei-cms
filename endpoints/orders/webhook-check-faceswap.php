@@ -210,6 +210,8 @@ function trinitykit_handle_check_faceswap_webhook($request) {
     $processed = 0;
     $errors = array();
 
+    error_log("[TrinityKit] XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX " . json_encode($orders));
+
     foreach ($orders as $order) {
         $order_id = $order->ID;
         
