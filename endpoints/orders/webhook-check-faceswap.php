@@ -180,6 +180,48 @@ function save_base64_image_to_wordpress($base64_image, $order_id = null, $child_
 // Note: Using send_telegram_error_notification() function from webhook-initiate-faceswap.php
 
 /**
+ * Loga um snapshot resumido das páginas do pedido
+ */
+function trinitykit_log_pages_snapshot($order_id, $pages, $label = 'snapshot') {
+    $snapshot = array();
+    if (is_array($pages)) {
+        foreach ($pages as $idx => $page) {
+            $task_id = isset($page['faceswap_task_id']) ? $page['faceswap_task_id'] : null;
+            $illustration = isset($page['generated_illustration']) ? $page['generated_illustration'] : null;
+            $is_array = is_array($illustration);
+            $attachment_id = 0;
+            if ($illustration) {
+                if ($is_array) {
+                    $attachment_id = isset($illustration['ID']) ? intval($illustration['ID']) : 0;
+                } else {
+                    $attachment_id = intval($illustration);
+                }
+            }
+            $is_valid = $attachment_id > 0 && get_post_type($attachment_id) === 'attachment';
+
+            $snapshot[] = array(
+                'index' => $idx,
+                'page_number' => $idx + 1,
+                'has_task_id' => !empty($task_id),
+                'task_id' => $task_id,
+                'has_illustration' => (bool) $illustration,
+                'illustration_is_array' => $is_array,
+                'illustration_id' => $attachment_id,
+                'illustration_valid' => $is_valid,
+            );
+        }
+    } else {
+        $snapshot = array('error' => 'pages_not_array');
+    }
+
+    $json = json_encode($snapshot);
+    if ($json === false) {
+        $json = 'json_encode_error';
+    }
+    error_log('[TrinityKit] Páginas (' . $label . ') pedido #' . $order_id . ': ' . substr($json, 0, 4000));
+}
+
+/**
  * Handles the check face swap webhook
  * 
  * @param WP_REST_Request $request The request object
@@ -219,6 +261,8 @@ function trinitykit_handle_check_faceswap_webhook($request) {
         // Get order details
         $child_name = get_field('child_name', $order_id);
         $generated_pages = get_field('generated_book_pages', $order_id);
+        // Snapshot inicial das páginas
+        trinitykit_log_pages_snapshot($order_id, $generated_pages, 'inicial');
         
         if (empty($generated_pages)) {
             $error_msg = "Páginas geradas não encontradas para pedido #$order_id";
@@ -233,6 +277,11 @@ function trinitykit_handle_check_faceswap_webhook($request) {
         
         // Check each page's face swap status
         foreach ($generated_pages as $index => $page) {
+            // Log por página (variáveis principais)
+            $log_task = isset($page['faceswap_task_id']) ? $page['faceswap_task_id'] : null;
+            $log_ill = isset($page['generated_illustration']) ? $page['generated_illustration'] : null;
+            $log_ill_type = is_array($log_ill) ? 'array' : (is_null($log_ill) ? 'null' : 'scalar');
+            error_log("[TrinityKit] Pedido #$order_id página " . ($index + 1) . " - task_id=" . ($log_task ?: 'null') . ", has_illustration=" . ($log_ill ? 'yes' : 'no') . ", illustration_type=" . $log_ill_type);
             $task_id = $page['faceswap_task_id'] ?? null;
             
             if (empty($task_id)) {
@@ -294,6 +343,7 @@ function trinitykit_handle_check_faceswap_webhook($request) {
                     
                     // Atualiza apenas a ilustração desta página específica usando ACF (índice 1-based)
                     $field_selector = 'generated_book_pages_' . ($index + 1) . '_generated_illustration';
+                    error_log("[TrinityKit] Atualizando ACF (selector=$field_selector) com attachment_id=$attachment_id para pedido #$order_id página " . ($index + 1));
                     $update_result = update_sub_field($field_selector, $attachment_id, $order_id);
                     
                     if ($update_result) {
@@ -389,6 +439,8 @@ function trinitykit_handle_check_faceswap_webhook($request) {
 
         // Revalidar: todas as páginas precisam ter attachment válido salvo
         $refreshed_pages = get_field('generated_book_pages', $order_id);
+        // Snapshot pós-processamento
+        trinitykit_log_pages_snapshot($order_id, $refreshed_pages, 'pos-processamento');
         $total_pages = count($generated_pages);
         $all_pages_have_valid_attachments = true;
         if (is_array($refreshed_pages)) {
