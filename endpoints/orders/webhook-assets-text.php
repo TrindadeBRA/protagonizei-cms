@@ -97,6 +97,10 @@ function process_text_with_deepseek($original_text, $child_name) {
  * @return WP_REST_Response Response object
  */
 function trinitykit_handle_text_assets_webhook($request) {
+    $api_validation = trinitykitcms_validate_api_key($request);
+    if (is_wp_error($api_validation)) {
+        return $api_validation;
+    }
     // Get all orders with status 'thanked'
     $args = array(
         'post_type' => 'orders',

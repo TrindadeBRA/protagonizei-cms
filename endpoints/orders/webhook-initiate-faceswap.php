@@ -116,6 +116,10 @@ function send_telegram_error_notification($message, $title = "Erro no FaceSwap")
  * @return WP_REST_Response Response object
  */
 function trinitykit_handle_initiate_faceswap_webhook($request) {
+    $api_validation = trinitykitcms_validate_api_key($request);
+    if (is_wp_error($api_validation)) {
+        return $api_validation;
+    }
     // Get all orders with status 'created_assets_text' and face_swap_initiated = false
     $args = array(
         'post_type' => 'orders',

@@ -44,6 +44,10 @@ add_action('rest_api_init', function () {
  * @return WP_REST_Response
  */
 function trinitykit_handle_deliver_pdf_webhook($request) {
+    $api_validation = trinitykitcms_validate_api_key($request);
+    if (is_wp_error($api_validation)) {
+        return $api_validation;
+    }
     error_log("[TrinityKit] Iniciando webhook de entrega de PDFs");
     
     try {

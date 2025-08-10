@@ -574,6 +574,10 @@ function save_merged_image_to_wordpress($image_path, $order_id = null, $child_na
  * @return WP_REST_Response Response object
  */
 function trinitykit_handle_merge_assets_webhook($request) {
+    $api_validation = trinitykitcms_validate_api_key($request);
+    if (is_wp_error($api_validation)) {
+        return $api_validation;
+    }
     // Get all orders with status 'created_assets_illustration'
     $args = array(
         'post_type' => 'orders',

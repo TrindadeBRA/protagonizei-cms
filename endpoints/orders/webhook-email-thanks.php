@@ -32,6 +32,10 @@ add_action('rest_api_init', function () {
  * @since 1.0.0
  */
 function trinitykit_handle_thank_webhook($request) {
+    $api_validation = trinitykitcms_validate_api_key($request);
+    if (is_wp_error($api_validation)) {
+        return $api_validation;
+    }
     // Get all orders with status 'paid'
     $args = array(
         'post_type' => 'orders',

@@ -183,6 +183,10 @@ function save_base64_image_to_wordpress($base64_image, $order_id = null, $child_
  * @return WP_REST_Response Response object
  */
 function trinitykit_handle_check_faceswap_webhook($request) {
+    $api_validation = trinitykitcms_validate_api_key($request);
+    if (is_wp_error($api_validation)) {
+        return $api_validation;
+    }
     // Get all orders with status 'created_assets_text' and face_swap_initiated = true
     $args = array(
         'post_type' => 'orders',
