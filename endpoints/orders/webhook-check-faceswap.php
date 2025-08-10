@@ -64,6 +64,12 @@ function check_face_swap_status($task_id) {
     
     if ($http_code !== 200) {
         error_log("[TrinityKit] Erro na verificação de status ($http_code): " . $response);
+        if ($http_code === 404 && is_string($response) && stripos($response, 'request does not exist') !== false) {
+            return array(
+                'status' => 'NOT_FOUND',
+                'error' => $response,
+            );
+        }
         return false;
     }
     
@@ -245,12 +251,18 @@ function trinitykit_handle_check_faceswap_webhook($request) {
                 continue;
             }
 
-            // Check face swap status
+            // Check face swap status (rate limit)
+            usleep(1500000);
             $status_data = check_face_swap_status($task_id);
             
             if ($status_data === false) {
                 error_log("[TrinityKit] Erro ao verificar status da página $index do pedido #$order_id");
                 $failed_pages++;
+                continue;
+            }
+            if (is_array($status_data) && isset($status_data['status']) && $status_data['status'] === 'NOT_FOUND') {
+                error_log("[TrinityKit] Task não encontrada para página $index do pedido #$order_id (pendente para reprocessar)");
+                $pending_pages++;
                 continue;
             }
 
