@@ -84,7 +84,7 @@ function check_face_swap_status($task_id) {
  * @param int $order_id ID do pedido
  * @param string $child_name Nome da criança
  * @param int $page_index Índice da página (0-based)
- * @return string|false URL da imagem salva ou false em caso de erro
+ * @return array|false Array com 'id' e 'url' do attachment salvo ou false em caso de erro
  */
 function save_base64_image_to_wordpress($base64_image, $order_id = null, $child_name = '', $page_index = 0) {
     // Remove the data:image/jpeg;base64, prefix if it exists
@@ -171,7 +171,10 @@ function save_base64_image_to_wordpress($base64_image, $order_id = null, $child_
     $attach_data = wp_generate_attachment_metadata($attach_id, $file_path);
     wp_update_attachment_metadata($attach_id, $attach_data);
     
-    return wp_get_attachment_url($attach_id);
+    return array(
+        'id' => $attach_id,
+        'url' => wp_get_attachment_url($attach_id)
+    );
 }
 
 // Note: Using send_telegram_error_notification() function from webhook-initiate-faceswap.php
@@ -255,15 +258,12 @@ function trinitykit_handle_check_faceswap_webhook($request) {
             if ($status_data['status'] === 'COMPLETED') {
                 // Process the base64 image and save to WordPress
                 $base64_image = $status_data['output'];
-                $image_url = save_base64_image_to_wordpress($base64_image, $order_id, $child_name, $index);
+                $image_result = save_base64_image_to_wordpress($base64_image, $order_id, $child_name, $index);
                 
-                if ($image_url) {
-                    // Update the page with the new illustration
-                    $attachment_id = attachment_url_to_postid($image_url);
-                    if (!$attachment_id) {
-                        error_log("[TrinityKit] AVISO: Não foi possível obter o ID do anexo para URL: $image_url");
-                        $attachment_id = 0; // Fallback
-                    }
+                if ($image_result && !empty($image_result['id']) && intval($image_result['id']) > 0) {
+                    // Update the page with the new illustration using a valid attachment id
+                    $attachment_id = intval($image_result['id']);
+                    $image_url = $image_result['url'];
                     
                     // Update only the illustration of this specific page using ACF
                     $field_key = "generated_book_pages_{$index}_generated_illustration";
@@ -301,7 +301,7 @@ function trinitykit_handle_check_faceswap_webhook($request) {
                         }
                     }
                 } else {
-                    $error_msg = "Erro ao salvar imagem processada da página $index do pedido #$order_id";
+                    $error_msg = "Erro ao salvar imagem processada da página $index do pedido #$order_id (attachment inválido)";
                     error_log("[TrinityKit] $error_msg");
                     $failed_pages++;
                     
@@ -360,9 +360,23 @@ function trinitykit_handle_check_faceswap_webhook($request) {
             }
         }
 
-        // Check if all pages are completed
+        // Revalidar: todas as páginas precisam ter attachment válido salvo
+        $refreshed_pages = get_field('generated_book_pages', $order_id);
         $total_pages = count($generated_pages);
-        if ($completed_pages === $total_pages && $failed_pages === 0) {
+        $all_pages_have_valid_attachments = true;
+        if (is_array($refreshed_pages)) {
+            foreach ($refreshed_pages as $page_idx => $refreshed_page) {
+                $page_attachment_id = isset($refreshed_page['generated_illustration']) ? intval($refreshed_page['generated_illustration']) : 0;
+                if ($page_attachment_id <= 0 || get_post_type($page_attachment_id) !== 'attachment') {
+                    $all_pages_have_valid_attachments = false;
+                    break;
+                }
+            }
+        } else {
+            $all_pages_have_valid_attachments = false;
+        }
+
+        if ($all_pages_have_valid_attachments && $failed_pages === 0) {
             // Update order status to 'created_assets_illustration'
             $status_updated = update_field('order_status', 'created_assets_illustration', $order_id);
             
@@ -386,7 +400,7 @@ function trinitykit_handle_check_faceswap_webhook($request) {
             }
         } else {
             // Log current status
-            error_log("[TrinityKit] Pedido #$order_id - Status: $completed_pages/$total_pages concluídas, $failed_pages falharam, $pending_pages pendentes");
+            error_log("[TrinityKit] Pedido #$order_id - Status: $completed_pages/$total_pages concluídas, $failed_pages falharam, $pending_pages pendentes (validação anexos: " . ($all_pages_have_valid_attachments ? 'OK' : 'INCOMPLETA') . ")");
             
             if ($failed_pages > 0) {
                 $error_msg = "Pedido #$order_id tem $failed_pages páginas com falha no face swap";
