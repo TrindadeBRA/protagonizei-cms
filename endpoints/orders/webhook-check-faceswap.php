@@ -256,18 +256,45 @@ function trinitykit_handle_check_faceswap_webhook($request) {
             }
 
             if ($status_data['status'] === 'COMPLETED') {
-                // Process the base64 image and save to WordPress
-                $base64_image = $status_data['output'];
-                $image_result = save_base64_image_to_wordpress($base64_image, $order_id, $child_name, $index);
+                // Extrai imagem (base64 ou URL) e salva no WordPress
+                $output = isset($status_data['output']) ? $status_data['output'] : null;
+                $image_result = false;
+
+                // Se output vier como array, tenta chaves comuns
+                if (is_array($output)) {
+                    $output = $output['image_base64'] ?? $output['base64'] ?? $output['image'] ?? $output['url'] ?? $output['image_url'] ?? null;
+                }
+
+                if (is_string($output)) {
+                    $trimmed_output = trim($output);
+                    // Se for URL, baixa e converte para base64
+                    if (preg_match('/^https?:\/\//i', $trimmed_output)) {
+                        $response_img = wp_remote_get($trimmed_output, array('timeout' => 30));
+                        if (!is_wp_error($response_img) && (int) wp_remote_retrieve_response_code($response_img) === 200) {
+                            $mime = wp_remote_retrieve_header($response_img, 'content-type');
+                            if (empty($mime)) {
+                                $mime = 'image/jpeg';
+                            }
+                            $body = wp_remote_retrieve_body($response_img);
+                            if (!empty($body)) {
+                                $base64_image = 'data:' . $mime . ';base64,' . base64_encode($body);
+                                $image_result = save_base64_image_to_wordpress($base64_image, $order_id, $child_name, $index);
+                            }
+                        }
+                    } else {
+                        // Assume string base64 (com ou sem prefixo data:)
+                        $image_result = save_base64_image_to_wordpress($trimmed_output, $order_id, $child_name, $index);
+                    }
+                }
                 
                 if ($image_result && !empty($image_result['id']) && intval($image_result['id']) > 0) {
                     // Update the page with the new illustration using a valid attachment id
                     $attachment_id = intval($image_result['id']);
                     $image_url = $image_result['url'];
                     
-                    // Update only the illustration of this specific page using ACF
-                    $field_key = "generated_book_pages_{$index}_generated_illustration";
-                    $update_result = update_field($field_key, $attachment_id, $order_id);
+                    // Atualiza apenas a ilustração desta página específica usando ACF (índice 1-based)
+                    $field_selector = 'generated_book_pages_' . ($index + 1) . '_generated_illustration';
+                    $update_result = update_sub_field($field_selector, $attachment_id, $order_id);
                     
                     if ($update_result) {
                         $completed_pages++;
@@ -366,7 +393,12 @@ function trinitykit_handle_check_faceswap_webhook($request) {
         $all_pages_have_valid_attachments = true;
         if (is_array($refreshed_pages)) {
             foreach ($refreshed_pages as $page_idx => $refreshed_page) {
-                $page_attachment_id = isset($refreshed_page['generated_illustration']) ? intval($refreshed_page['generated_illustration']) : 0;
+                $page_attachment = isset($refreshed_page['generated_illustration']) ? $refreshed_page['generated_illustration'] : 0;
+                if (is_array($page_attachment)) {
+                    $page_attachment_id = isset($page_attachment['ID']) ? intval($page_attachment['ID']) : 0;
+                } else {
+                    $page_attachment_id = intval($page_attachment);
+                }
                 if ($page_attachment_id <= 0 || get_post_type($page_attachment_id) !== 'attachment') {
                     $all_pages_have_valid_attachments = false;
                     break;
