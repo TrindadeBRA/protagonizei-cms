@@ -10,8 +10,8 @@ Content-Type: multipart/form-data
 {
   "childName": "Maria",
   "childAge": 5,
-  "childGender": "menina", 
-  "skinTone": "media",
+  "childGender": "girl", 
+  "skinTone": "light",
   "parentName": "João Silva",
   "email": "joao@email.com",
   "phone": "(11) 99999-9999",

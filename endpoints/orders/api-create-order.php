@@ -41,8 +41,8 @@ function trinitykit_create_order($request) {
     // Get and validate required fields
     $child_name = sanitize_text_field($request->get_param('childName'));
     $child_age = intval($request->get_param('childAge'));
-    $child_gender = sanitize_text_field($request->get_param('childGender'));
-    $skin_tone = sanitize_text_field($request->get_param('skinTone'));
+    $child_gender = strtolower(sanitize_text_field($request->get_param('childGender')));
+    $skin_tone = strtolower(sanitize_text_field($request->get_param('skinTone')));
     $name = sanitize_text_field($request->get_param('parentName'));
     $email = sanitize_email($request->get_param('email'));
     $phone = sanitize_text_field($request->get_param('phone'));
@@ -76,7 +76,7 @@ function trinitykit_create_order($request) {
     }
 
     // Validate gender
-    if (!in_array($child_gender, ['menino', 'menina'])) {
+    if (!in_array($child_gender, ['boy', 'girl'], true)) {
         return new WP_Error(
             'invalid_gender',
             'Gênero inválido',
@@ -85,7 +85,7 @@ function trinitykit_create_order($request) {
     }
 
     // Validate skin tone
-    if (!in_array($skin_tone, ['claro', 'medio', 'escuro'])) {
+    if (!in_array($skin_tone, ['light', 'dark'], true)) {
         return new WP_Error(
             'invalid_skin_tone',
             'Tom de pele inválido',

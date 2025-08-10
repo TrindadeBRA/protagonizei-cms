@@ -90,8 +90,8 @@ function register_order_fields() {
                     'instructions' => 'Gênero da criança, usado para personalização de texto e seleção de ilustrações',
                     'required' => 1,
                     'choices' => array(
-                        'menino' => 'Menino',
-                        'menina' => 'Menina'
+                        'boy' => 'Menino',
+                        'girl' => 'Menina'
                     ),
                     'return_format' => 'value',
                 ),
@@ -103,9 +103,8 @@ function register_order_fields() {
                     'instructions' => 'Tom de pele da criança, usado para seleção de ilustrações base',
                     'required' => 1,
                     'choices' => array(
-                        'clara' => 'Clara',
-                        'media' => 'Média',
-                        'escura' => 'Escura'
+                        'light' => 'Claro',
+                        'dark' => 'Escuro'
                     ),
                     'return_format' => 'value',
                 ),

@@ -139,7 +139,7 @@ function trinitykit_handle_text_assets_webhook($request) {
         $page_errors = 0;
 
         foreach ($template_pages as $index => $page) {
-            $base_text = ($child_gender === 'menino') ? 
+            $base_text = ($child_gender === 'boy') ? 
                 $page['base_text_content_boy'] : 
                 $page['base_text_content_girl'];
 

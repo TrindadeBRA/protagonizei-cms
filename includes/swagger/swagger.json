@@ -658,14 +658,14 @@
                   "childGender": {
                     "type": "string",
                     "description": "Gênero da criança",
-                    "enum": ["menino", "menina"],
-                    "example": "menina"
+                    "enum": ["boy", "girl"],
+                    "example": "girl"
                   },
                   "skinTone": {
                     "type": "string",
                     "description": "Tom de pele da criança",
-                    "enum": ["claro", "medio", "escuro"],
-                    "example": "claro"
+                    "enum": ["light", "dark"],
+                    "example": "light"
                   },
                   "parentName": {
                     "type": "string",

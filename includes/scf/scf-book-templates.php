@@ -83,10 +83,10 @@ function register_book_template_fields() {
                                     'instructions' => 'Gênero da ilustração base',
                                     'required' => 1,
                                     'choices' => array(
-                                        'menino' => 'Menino',
-                                        'menina' => 'Menina'
+                                        'boy' => 'Menino',
+                                        'girl' => 'Menina'
                                     ),
-                                    'default_value' => 'menino',
+                                    'default_value' => 'boy',
                                     'return_format' => 'value',
                                 ),
                                 array(
@@ -97,11 +97,11 @@ function register_book_template_fields() {
                                     'instructions' => 'Tom de pele da ilustração base',
                                     'required' => 1,
                                     'choices' => array(
-                                        'clara' => 'Clara',
-                                        // 'media' => 'Média', // Temporariamente desabilitado
-                                        'escura' => 'Escura'
+                                        'light' => 'Claro',
+                                        // 'medium' => 'Médio', // Temporariamente desabilitado
+                                        'dark' => 'Escuro'
                                     ),
-                                    'default_value' => 'clara',
+                                    'default_value' => 'light',
                                     'return_format' => 'value',
                                 ),
                                 array(
@@ -147,28 +147,28 @@ function prefill_base_illustrations($field) {
     if ($field['name'] === 'base_illustrations') {
         $field['default_value'] = array(
             array(
-                'gender' => 'menino',
-                'skin_tone' => 'clara'
+                'gender' => 'boy',
+                'skin_tone' => 'light'
             ),
             // array(
             //     'gender' => 'menino',
             //     'skin_tone' => 'media'
             // ),
             array(
-                'gender' => 'menino',
-                'skin_tone' => 'escura'
+                'gender' => 'boy',
+                'skin_tone' => 'dark'
             ),
             array(
-                'gender' => 'menina',
-                'skin_tone' => 'clara'
+                'gender' => 'girl',
+                'skin_tone' => 'light'
             ),
             // array(
             //     'gender' => 'menina',
             //     'skin_tone' => 'media'
             // ),
             array(
-                'gender' => 'menina',
-                'skin_tone' => 'escura'
+                'gender' => 'girl',
+                'skin_tone' => 'dark'
             )
         );
     }

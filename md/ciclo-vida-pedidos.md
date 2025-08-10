@@ -206,8 +206,8 @@ O sistema possui 11 status principais para os pedidos:
 ### Dados da Criança
 - `child_name` - Nome da criança
 - `child_age` - Idade (2-8 anos)
-- `child_gender` - Gênero (menino/menina)
-- `child_skin_tone` - Tom de pele (clara/media/escura)
+- `child_gender` - Gênero (boy/girl)
+- `child_skin_tone` - Tom de pele (light/dark)
 - `child_face_photo` - Foto do rosto para face swap
 
 ### Dados do Comprador

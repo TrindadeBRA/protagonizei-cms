@@ -24,6 +24,8 @@ add_action('rest_api_init', function () {
     ));
 });
 
+// Removida normalização de tom de pele; valores canônicos agora são 'claro' e 'escuro'
+
 /**
  * Initiate face swap with FaceSwap API
  * 
@@ -155,8 +157,8 @@ function trinitykit_handle_initiate_faceswap_webhook($request) {
         
         // Get order details
         $child_name = get_field('child_name', $order_id);
-        $child_gender = get_field('child_gender', $order_id);
-        $child_skin_tone = get_field('child_skin_tone', $order_id);
+        $child_gender = strtolower(trim((string) get_field('child_gender', $order_id)));
+        $child_skin_tone = strtolower(trim((string) get_field('child_skin_tone', $order_id)));
         $child_face_photo = get_field('child_face_photo', $order_id);
         $book_template = get_field('book_template', $order_id);
         $generated_pages = get_field('generated_book_pages', $order_id);
@@ -193,11 +195,20 @@ function trinitykit_handle_initiate_faceswap_webhook($request) {
             $base_image = null;
             
             if (!empty($base_illustrations)) {
+                $available_combos = array();
                 foreach ($base_illustrations as $illustration) {
-                    if ($illustration['gender'] === $child_gender && $illustration['skin_tone'] === $child_skin_tone) {
+                    $ill_gender = strtolower(trim((string) ($illustration['gender'] ?? '')));
+                    $ill_skin = strtolower(trim((string) ($illustration['skin_tone'] ?? '')));
+                    $available_combos[] = $ill_gender . ':' . $ill_skin;
+
+                    if ($ill_gender === $child_gender && $ill_skin === $child_skin_tone) {
                         $base_image = $illustration['illustration_asset'];
+                        error_log("[TrinityKit] Base encontrada (pedido #$order_id, página $index): genero=$child_gender, tom=$child_skin_tone, url=" . ($base_image['url'] ?? 'sem url'));
                         break;
                     }
+                }
+                if (empty($base_image)) {
+                    error_log("[TrinityKit] Nenhuma base casou exatamente (pedido #$order_id, página $index). Solicitado genero=$child_gender, tom=$child_skin_tone. Disponíveis: " . implode(',', $available_combos));
                 }
             }
             
