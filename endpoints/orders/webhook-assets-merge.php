@@ -83,6 +83,15 @@ function calculate_text_area($image_width, $image_height, $position) {
                 'height' => $area_height
             );
             
+        case 'top_center':
+            // Full-width area centered horizontally, aligned to top
+            return array(
+                'x' => $padding,
+                'y' => $padding,
+                'width' => $area_width,
+                'height' => $area_height
+            );
+
         case 'top_left':
             return array(
                 'x' => $padding,
@@ -110,6 +119,15 @@ function calculate_text_area($image_width, $image_height, $position) {
             );
             error_log("[TrinityKit] DEBUG - Posição BOTTOM_LEFT: x={$coords['x']}, y={$coords['y']}, w={$coords['width']}, h={$coords['height']}");
             return $coords;
+        
+        case 'bottom_center':
+            // Full-width area centered horizontally, aligned to bottom
+            return array(
+                'x' => $padding,
+                'y' => $image_height - $area_height - $padding,
+                'width' => $area_width,
+                'height' => $area_height
+            );
             
         default: // fallback to center_right
             error_log("[TrinityKit] DEBUG - POSIÇÃO DESCONHECIDA '$position' - usando fallback CENTER_RIGHT");
@@ -663,13 +681,17 @@ function trinitykit_handle_merge_assets_webhook($request) {
                     'esquerda_superior' => 'top_left',
                     'esquerda_centralizado' => 'center_left',
                     'esquerda_inferior' => 'bottom_left',
+                    'superior_centralizado' => 'top_center',
+                    'inferior_centralizado' => 'bottom_center',
                     // Keep English values as-is
                     'top_right' => 'top_right',
                     'center_right' => 'center_right', 
                     'bottom_right' => 'bottom_right',
                     'top_left' => 'top_left',
                     'center_left' => 'center_left',
-                    'bottom_left' => 'bottom_left'
+                    'bottom_left' => 'bottom_left',
+                    'top_center' => 'top_center',
+                    'bottom_center' => 'bottom_center'
                 );
                 
                 $text_position = isset($position_map[$raw_position]) ? $position_map[$raw_position] : 'center_right';
