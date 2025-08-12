@@ -8,6 +8,7 @@ if (!defined('ABSPATH')) {
 function trinitykitcms_register_integration_settings() {
     // Registrar configurações do Asaas
     register_setting('trinitykitcms_asaas_settings', 'trinitykitcms_asaas_wallet_id', 'sanitize_text_field');
+    register_setting('trinitykitcms_asaas_settings', 'trinitykitcms_asaas_pix_key', 'sanitize_text_field');
     register_setting('trinitykitcms_asaas_settings', 'trinitykitcms_asaas_api_key', 'sanitize_text_field');
     register_setting('trinitykitcms_asaas_settings', 'trinitykitcms_asaas_api_url', 'sanitize_url');
 
@@ -51,6 +52,14 @@ function trinitykitcms_render_integrations_page() {
                         <td>
                             <input type="text" name="trinitykitcms_asaas_wallet_id" value="<?php echo esc_attr(get_option('trinitykitcms_asaas_wallet_id')); ?>" class="regular-text">
                             <p class="description">ID da carteira Asaas.</p>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <th scope="row">Chave PIX (Asaas)</th>
+                        <td>
+                            <input type="text" name="trinitykitcms_asaas_pix_key" value="<?php echo esc_attr(get_option('trinitykitcms_asaas_pix_key')); ?>" class="regular-text">
+                            <p class="description">Sua chave PIX cadastrada no Asaas (e-mail, CPF/CNPJ, telefone ou chave aleatória).</p>
                         </td>
                     </tr>
                     
