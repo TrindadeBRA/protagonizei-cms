@@ -60,7 +60,8 @@ function trinitykit_create_pix_key($request) {
         ),
         'body' => json_encode(array(
             'addressKey' => $asaas_wallet_id,
-            'value' => 49.99,
+            // 'value' => 49.99,
+            'value' => 5,
             'description' => 'Pagamento do pedido #' . $order_id,
             'formOfPayment' => 'ALL',
             'allowsMultiplePayments' => false,
