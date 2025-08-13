@@ -9,6 +9,19 @@ function register_book_template_fields() {
             'title' => 'Campos do Modelo de Livro',
             'fields' => array(
                 array(
+                    'key' => 'field_book_price',
+                    'label' => 'Preço do Livro',
+                    'name' => 'book_price',
+                    'type' => 'number',
+                    'instructions' => 'Preço do livro em reais (R$)',
+                    'required' => 1,
+                    'min' => 0,
+                    'step' => 0.01,
+                    'default_value' => 0,
+                    'prepend' => 'R$',
+                    'placeholder' => '0.00',
+                ),
+                array(
                     'key' => 'field_template_book_pages',
                     'label' => 'Páginas do Livro',
                     'name' => 'template_book_pages',
@@ -98,7 +111,6 @@ function register_book_template_fields() {
                                     'required' => 1,
                                     'choices' => array(
                                         'light' => 'Claro',
-                                        // 'medium' => 'Médio', // Temporariamente desabilitado
                                         'dark' => 'Escuro'
                                     ),
                                     'default_value' => 'light',
