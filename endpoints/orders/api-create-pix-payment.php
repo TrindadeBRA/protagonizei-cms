@@ -47,7 +47,6 @@ function trinitykit_create_pix_key($request) {
     }
 
     $asaas_api_key = get_option('trinitykitcms_asaas_api_key');
-    // $asaas_wallet_id = get_option('trinitykitcms_asaas_wallet_id');
     $asaas_pix_key = get_option('trinitykitcms_asaas_pix_key');
     $asaas_api_url = get_option('trinitykitcms_asaas_api_url');
     $pix_endpoint = $asaas_api_url . '/pix/qrCodes/static';
