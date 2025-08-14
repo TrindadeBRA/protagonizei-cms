@@ -94,6 +94,41 @@ function trinitykit_create_order($request) {
         );
     }
 
+    // Validate coupon if provided
+    if (!empty($coupon)) {
+        $coupon_post = get_page_by_title($coupon, OBJECT, 'coupons');
+        if (!$coupon_post) {
+            $query = new WP_Query(array(
+                'post_type' => 'coupons',
+                'post_status' => 'publish',
+                'posts_per_page' => -1,
+                's' => $coupon,
+                'fields' => 'ids',
+            ));
+            if ($query->have_posts()) {
+                foreach ($query->posts as $coupon_id) {
+                    $title = get_the_title($coupon_id);
+                    if (mb_strtolower($title) === mb_strtolower($coupon)) {
+                        $coupon_post = get_post($coupon_id);
+                        break;
+                    }
+                }
+            }
+            wp_reset_postdata();
+        }
+
+        if (!$coupon_post) {
+            return new WP_Error(
+                'coupon_not_found',
+                'Cupom inválido ou não encontrado.',
+                array('status' => 400)
+            );
+        }
+
+        // Normalize to canonical title
+        $coupon = get_the_title($coupon_post->ID);
+    }
+
     // Handle photo upload
     require_once(ABSPATH . 'wp-admin/includes/file.php');
     require_once(ABSPATH . 'wp-admin/includes/image.php');
