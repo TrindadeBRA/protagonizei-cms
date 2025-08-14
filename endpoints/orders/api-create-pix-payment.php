@@ -59,16 +59,9 @@ function trinitykit_create_pix_key($request) {
         );
     }
 
-    // Obter o modelo de livro do pedido e seu preço
+    // Obter o modelo de livro do pedido (ACF post_object com return_format = object)
     $book_template = get_field('book_template', $order_id);
-    $book_template_id = 0;
-    if (is_object($book_template) && isset($book_template->ID)) {
-        $book_template_id = (int) $book_template->ID;
-    } elseif (is_array($book_template) && isset($book_template['ID'])) {
-        $book_template_id = (int) $book_template['ID'];
-    } elseif (is_numeric($book_template)) {
-        $book_template_id = (int) $book_template;
-    }
+    $book_template_id = $book_template && isset($book_template->ID) ? (int) $book_template->ID : 0;
 
     if ($book_template_id <= 0) {
         return new WP_Error(
@@ -78,8 +71,8 @@ function trinitykit_create_pix_key($request) {
         );
     }
 
-    $book_price = get_field('book_price', $book_template_id);
-    $book_price = is_numeric($book_price) ? (float) $book_price : 0.0;
+    $book_price = (float) get_field('book_price', $book_template_id);
+    $book_price = $book_price > 0 ? round($book_price, 2) : 0.0;
     if ($book_price <= 0) {
         return new WP_Error(
             'book_price_invalid',
