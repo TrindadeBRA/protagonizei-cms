@@ -81,6 +81,70 @@ function trinitykit_create_pix_key($request) {
         );
     }
 
+    // Verificar se há cupom aplicado no pedido e calcular o preço final
+    $final_price = $book_price;
+    $applied_coupon = trim((string) get_field('applied_coupon', $order_id));
+    if (!empty($applied_coupon)) {
+        // Localizar cupom por título (case-insensitive)
+        $coupon_post = get_page_by_title($applied_coupon, OBJECT, 'coupons');
+        if (!$coupon_post) {
+            $query = new WP_Query(array(
+                'post_type' => 'coupons',
+                'post_status' => 'publish',
+                'posts_per_page' => -1,
+                's' => $applied_coupon,
+                'fields' => 'ids',
+            ));
+            if ($query->have_posts()) {
+                foreach ($query->posts as $coupon_id) {
+                    $title = get_the_title($coupon_id);
+                    if (mb_strtolower($title) === mb_strtolower($applied_coupon)) {
+                        $coupon_post = get_post($coupon_id);
+                        break;
+                    }
+                }
+            }
+            wp_reset_postdata();
+        }
+
+        if (!$coupon_post) {
+            return new WP_Error(
+                'coupon_not_found',
+                'Cupom aplicado ao pedido é inválido ou não encontrado.',
+                array('status' => 400)
+            );
+        }
+
+        $discount_type = get_field('discount_type', $coupon_post->ID);
+        if ($discount_type === 'fixed') {
+            $amount = (float) get_field('discount_fixed_amount', $coupon_post->ID);
+            if ($amount <= 0) {
+                return new WP_Error(
+                    'coupon_invalid',
+                    'Cupom inválido: valor de desconto fixo não configurado.',
+                    array('status' => 400)
+                );
+            }
+            $final_price = max(0.0, round($book_price - $amount, 2));
+        } elseif ($discount_type === 'percent') {
+            $percent = (float) get_field('discount_percentage', $coupon_post->ID);
+            if ($percent <= 0 || $percent > 100) {
+                return new WP_Error(
+                    'coupon_invalid',
+                    'Cupom inválido: percentual de desconto não configurado corretamente.',
+                    array('status' => 400)
+                );
+            }
+            $final_price = max(0.0, round($book_price * (1 - ($percent / 100)), 2));
+        } else {
+            return new WP_Error(
+                'coupon_invalid',
+                'Cupom inválido: tipo de desconto desconhecido.',
+                array('status' => 400)
+            );
+        }
+    }
+
     // Make request to create PIX QR Code
     $response = wp_remote_post($pix_endpoint, array(
         'headers' => array(
@@ -90,7 +154,7 @@ function trinitykit_create_pix_key($request) {
         ),
         'body' => json_encode(array(
             'addressKey' => $asaas_pix_key,
-            'value' => $book_price,
+            'value' => $final_price,
             'description' => 'Pagamento do pedido #' . $order_id,
             'formOfPayment' => 'ALL',
             'allowsMultiplePayments' => false,
@@ -143,6 +207,6 @@ function trinitykit_create_pix_key($request) {
         'pix_key_id' => $body['id'] ?? null,
         'qr_code_image' => $body['encodedImage'] ?? null,
         'qr_code_copypaste' => $body['payload'] ?? null,
-        'price' => $book_price
+        'price' => $final_price
     ), 200);
 } 
