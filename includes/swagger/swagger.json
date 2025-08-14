@@ -1716,8 +1716,7 @@
         },
         "security": [{"ApiKeyAuth": []}]
       }
-    },
-    
+    }
   },
   "components": {
     "securitySchemes": {
