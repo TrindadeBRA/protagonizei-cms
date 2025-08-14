@@ -844,6 +844,102 @@
         }
       }
     },
+    "/orders/book-details": {
+      "get": {
+        "summary": "Obter detalhes do livro mais recente",
+        "description": "Retorna informações básicas do livro mais recente publicado no sistema, incluindo ID, nome e preço. Este endpoint não requer autenticação e busca automaticamente o livro mais recente baseado na data de publicação.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Detalhes do livro obtidos com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "integer",
+                          "description": "ID do livro no WordPress",
+                          "example": 123
+                        },
+                        "nome": {
+                          "type": "string",
+                          "description": "Nome/título do livro",
+                          "example": "Aventuras de João"
+                        },
+                        "preco": {
+                          "type": "number",
+                          "format": "float",
+                          "description": "Preço do livro em reais (R$)",
+                          "example": 29.90
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Detalhes do livro encontrados com sucesso"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nenhum livro publicado encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "data": {
+                      "type": "null"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Nenhum livro publicado encontrado"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno do servidor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "data": {
+                      "type": "null"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Erro interno do servidor: [mensagem de erro]"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/orders/{order_id}/pix": {
       "post": {
         "summary": "Criar pagamento PIX para um pedido",
@@ -1612,7 +1708,8 @@
         },
         "security": [{"ApiKeyAuth": []}]
       }
-    }
+    },
+    
   },
   "components": {
     "securitySchemes": {
