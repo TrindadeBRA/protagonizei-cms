@@ -47,6 +47,7 @@ function trinitykit_create_order($request) {
     $email = sanitize_email($request->get_param('email'));
     $phone = sanitize_text_field($request->get_param('phone'));
     $photo = $request->get_file_params()['photo'] ?? null;
+    $coupon = sanitize_text_field($request->get_param('coupon'));
 
     // Validate required fields
     if (!$child_name || !$child_age || !$child_gender || !$skin_tone || !$name || !$email || !$phone || !$photo) {
@@ -196,6 +197,17 @@ function trinitykit_create_order($request) {
     update_field('child_face_photo', $attachment_id, $order_id);
     update_field('order_status', 'created', $order_id);
 
+    if (!empty($coupon)) {
+        update_field('applied_coupon', $coupon, $order_id);
+        trinitykit_add_post_log(
+            $order_id,
+            'api-create-order',
+            "Cupom informado na criação do pedido: $coupon",
+            '',
+            'info'
+        );
+    }
+
 
     // Add log entry for order creation
     trinitykit_add_post_log(
@@ -233,6 +245,7 @@ function trinitykit_create_order($request) {
     return new WP_REST_Response(array(
         'message' => 'Pedido criado com sucesso',
         'order_id' => $order_id,
-        'status' => 'created'
+        'status' => 'created',
+        'applied_coupon' => !empty($coupon) ? $coupon : null
     ), 201);
 }

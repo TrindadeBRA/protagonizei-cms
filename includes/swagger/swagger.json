@@ -651,6 +651,11 @@
                   "photo"
                 ],
                 "properties": {
+                  "coupon": {
+                    "type": "string",
+                    "description": "Código de cupom opcional a ser aplicado ao pedido",
+                    "example": "TRINITY10"
+                  },
                   "childName": {
                     "type": "string",
                     "description": "Nome da criança",
@@ -710,26 +715,22 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "example": true
-                    },
                     "message": {
                       "type": "string",
                       "example": "Pedido criado com sucesso"
                     },
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "order_id": {
-                          "type": "integer",
-                          "example": 123
-                        },
-                        "status": {
-                          "type": "string",
-                          "example": "created"
-                        }
-                      }
+                    "order_id": {
+                      "type": "integer",
+                      "example": 123
+                    },
+                    "status": {
+                      "type": "string",
+                      "example": "created"
+                    },
+                    "applied_coupon": {
+                      "type": ["string", "null"],
+                      "description": "Cupom aplicado no pedido, se informado",
+                      "example": "TRINITY10"
                     }
                   }
                 }

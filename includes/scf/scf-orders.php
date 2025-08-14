@@ -191,6 +191,16 @@ function register_order_fields() {
                     'name' => 'payment_amount',
                     'type' => 'number',
                 ),
+
+                // Cupom aplicado
+                array(
+                    'key' => 'field_applied_coupon',
+                    'label' => 'Cupom aplicado',
+                    'name' => 'applied_coupon',
+                    'type' => 'text',
+                    'instructions' => 'Código do cupom aplicado a este pedido',
+                    'required' => 0,
+                ),
                 
                 // Tab: Ativos Gerados
                 array(
