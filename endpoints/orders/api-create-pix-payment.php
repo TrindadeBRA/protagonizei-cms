@@ -51,6 +51,43 @@ function trinitykit_create_pix_key($request) {
     $asaas_api_url = get_option('trinitykitcms_asaas_api_url');
     $pix_endpoint = $asaas_api_url . '/pix/qrCodes/static';
 
+    if (empty($asaas_api_key) || empty($asaas_api_url) || empty($asaas_pix_key)) {
+        return new WP_Error(
+            'asaas_settings_missing',
+            'Configurações do Asaas ausentes. Verifique API URL, API Key e Chave PIX nas Integrações.',
+            array('status' => 500)
+        );
+    }
+
+    // Obter o modelo de livro do pedido e seu preço
+    $book_template = get_field('book_template', $order_id);
+    $book_template_id = 0;
+    if (is_object($book_template) && isset($book_template->ID)) {
+        $book_template_id = (int) $book_template->ID;
+    } elseif (is_array($book_template) && isset($book_template['ID'])) {
+        $book_template_id = (int) $book_template['ID'];
+    } elseif (is_numeric($book_template)) {
+        $book_template_id = (int) $book_template;
+    }
+
+    if ($book_template_id <= 0) {
+        return new WP_Error(
+            'book_template_not_found',
+            'Não foi possível identificar o modelo de livro relacionado a este pedido.',
+            array('status' => 400)
+        );
+    }
+
+    $book_price = get_field('book_price', $book_template_id);
+    $book_price = is_numeric($book_price) ? (float) $book_price : 0.0;
+    if ($book_price <= 0) {
+        return new WP_Error(
+            'book_price_invalid',
+            'Preço do livro não configurado ou inválido.',
+            array('status' => 400)
+        );
+    }
+
     // Make request to create PIX QR Code
     $response = wp_remote_post($pix_endpoint, array(
         'headers' => array(
@@ -60,8 +97,7 @@ function trinitykit_create_pix_key($request) {
         ),
         'body' => json_encode(array(
             'addressKey' => $asaas_pix_key,
-            // 'value' => 49.99,
-            'value' => 5,
+            'value' => $book_price,
             'description' => 'Pagamento do pedido #' . $order_id,
             'formOfPayment' => 'ALL',
             'allowsMultiplePayments' => false,
@@ -113,6 +149,7 @@ function trinitykit_create_pix_key($request) {
         'message' => 'Pix criado com sucesso',
         'pix_key_id' => $body['id'] ?? null,
         'qr_code_image' => $body['encodedImage'] ?? null,
-        'qr_code_copypaste' => $body['payload'] ?? null
+        'qr_code_copypaste' => $body['payload'] ?? null,
+        'price' => $book_price
     ), 200);
 } 
