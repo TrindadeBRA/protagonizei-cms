@@ -56,8 +56,9 @@ add_action( 'init', 'register_orders_post_type' );
  */
 function orders_columns( $columns ) {
     $columns['order_status'] = 'Status';
-    $columns['child_name'] = 'Nome da Criança';
     $columns['buyer_email'] = 'Email do Comprador';
+    $columns['applied_coupon'] = 'Cupom Usado';
+    $columns['child_name'] = 'Nome da Criança';
     $columns['payment_date'] = 'Data do Pagamento';
     unset( $columns['author'] );
     return $columns;
@@ -91,6 +92,10 @@ function orders_column_content( $column, $post_id ) {
             break;
         case 'buyer_email':
             echo get_field( 'buyer_email', $post_id );
+            break;
+        case 'applied_coupon':
+            $coupon = get_field( 'applied_coupon', $post_id );
+            echo $coupon ? esc_html($coupon) : '-';
             break;
         case 'payment_date':
             $date = get_field( 'payment_date', $post_id );

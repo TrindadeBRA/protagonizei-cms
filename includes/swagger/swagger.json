@@ -786,6 +786,28 @@
                           }
                         }
                       }
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "example": "coupon_not_found"
+                        },
+                        "message": {
+                          "type": "string",
+                          "example": "Cupom inválido ou não encontrado."
+                        },
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "status": {
+                              "type": "integer",
+                              "example": 400
+                            }
+                          }
+                        }
+                      }
                     }
                   ]
                 }
