@@ -1033,18 +1033,11 @@
         }
       }
     },
-    "/orders/{order_id}/check-coupon": {
+    "/orders/check-coupon": {
       "get": {
         "summary": "Validar cupom e retornar preço atualizado",
         "description": "Valida um cupom para um pedido e retorna o preço atualizado",
         "parameters": [
-          {
-            "name": "order_id",
-            "in": "path",
-            "required": true,
-            "description": "ID do pedido",
-            "schema": { "type": "integer" }
-          },
           {
             "name": "coupon",
             "in": "query",
@@ -1052,6 +1045,14 @@
             "description": "Código do cupom (case-insensitive)",
             "schema": { "type": "string" },
             "example": "TRINITY10"
+          },
+          {
+            "name": "book_id",
+            "in": "query",
+            "required": true,
+            "description": "ID do livro (post type book_templates)",
+            "schema": { "type": "integer" },
+            "example": 123
           }
         ],
         "responses": {

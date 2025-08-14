@@ -10,14 +10,20 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-// Register the REST API endpoint
+// Register the REST API endpoints
 add_action('rest_api_init', function () {
+	// New route using book_id as query param
+	register_rest_route('trinitykitcms-api/v1', '/orders/check-coupon', array(
+		'methods' => 'GET',
+		'callback' => 'trinitykit_check_coupon',
+		'permission_callback' => function () { return true; }
+	));
+
+	// Backwards compatibility: legacy route using order_id in path
 	register_rest_route('trinitykitcms-api/v1', '/orders/(?P<order_id>\d+)/check-coupon', array(
 		'methods' => 'GET',
 		'callback' => 'trinitykit_check_coupon',
-		'permission_callback' => function () {
-			return true;
-		}
+		'permission_callback' => function () { return true; }
 	));
 });
 
@@ -28,8 +34,8 @@ add_action('rest_api_init', function () {
  * @return WP_REST_Response|WP_Error
  */
 function trinitykit_check_coupon($request) {
-    $order_id = $request->get_param('order_id');
     $coupon_input = trim((string) $request->get_param('coupon'));
+    $book_template_id = (int) $request->get_param('book_id');
 
     if ($coupon_input === '') {
         return new WP_Error(
@@ -39,24 +45,34 @@ function trinitykit_check_coupon($request) {
         );
     }
 
-    // Get the order post
-    $order = get_post($order_id);
-    if (!$order || $order->post_type !== 'orders') {
+    // Fallback: derive book_id from legacy order_id route
+    if ($book_template_id <= 0) {
+        $order_id = (int) $request->get_param('order_id');
+        if ($order_id > 0) {
+            $order = get_post($order_id);
+            if ($order && $order->post_type === 'orders') {
+                $book_template = get_field('book_template', $order_id);
+                if ($book_template && isset($book_template->ID)) {
+                    $book_template_id = (int) $book_template->ID;
+                }
+            }
+        }
+    }
+
+    if ($book_template_id <= 0) {
         return new WP_Error(
-            'order_not_found',
-            'Pedido não encontrado',
+            'book_template_not_found',
+            'Livro não encontrado. Informe um book_id válido.',
             array('status' => 404)
         );
     }
 
-    // Fetch book template selected for this order and its price
-    $book_template = get_field('book_template', $order_id);
-    $book_template_id = $book_template && isset($book_template->ID) ? (int) $book_template->ID : 0;
-    if ($book_template_id <= 0) {
+    $book_post = get_post($book_template_id);
+    if (!$book_post || $book_post->post_type !== 'book_templates') {
         return new WP_Error(
             'book_template_not_found',
-            'Não foi possível identificar o modelo de livro relacionado a este pedido.',
-            array('status' => 400)
+            'Livro não encontrado. Informe um book_id válido.',
+            array('status' => 404)
         );
     }
 
