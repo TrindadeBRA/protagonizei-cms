@@ -43,7 +43,7 @@ function register_contact_form_post_type() {
         'capability_type'     => 'post',
         'has_archive'         => true,
         'hierarchical'        => false,
-        'menu_position'       => -1,
+        'menu_position'       => 0,
         'supports'            => array( 'title', 'editor', 'author', 'thumbnail', 'excerpt', 'custom-fields'),
         'taxonomies'          => array('contact_tags'),
         'menu_icon'           => 'dashicons-email-alt',

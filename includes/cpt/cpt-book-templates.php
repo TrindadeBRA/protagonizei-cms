@@ -43,7 +43,7 @@ function register_book_templates_post_type() {
         'capability_type'     => 'post',
         'has_archive'         => true,
         'hierarchical'        => false,
-        'menu_position'       => -1,
+        'menu_position'       => -10,
         'supports'            => array( 'title', 'editor', 'author', 'thumbnail', 'excerpt', 'custom-fields'),
         'menu_icon'           => 'dashicons-book-alt',
     );

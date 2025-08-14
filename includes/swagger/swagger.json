@@ -1033,6 +1033,74 @@
         }
       }
     },
+    "/orders/{order_id}/check-coupon": {
+      "get": {
+        "summary": "Validar cupom e retornar preço atualizado",
+        "description": "Valida um cupom para um pedido e retorna o preço atualizado",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "description": "ID do pedido",
+            "schema": { "type": "integer" }
+          },
+          {
+            "name": "coupon",
+            "in": "query",
+            "required": true,
+            "description": "Código do cupom (case-insensitive)",
+            "schema": { "type": "string" },
+            "example": "TRINITY10"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cupom válido, preço calculado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "price": { "type": "number", "format": "float", "example": 39.90 }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro de validação ou cupom inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": { "type": "string", "example": "coupon_invalid" },
+                    "message": { "type": "string", "example": "Cupom inválido: percentual de desconto não configurado corretamente." },
+                    "data": { "type": "object", "properties": { "status": { "type": "integer", "example": 400 } } }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Pedido ou cupom não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": { "type": "string", "example": "coupon_not_found" },
+                    "message": { "type": "string", "example": "Cupom inválido ou não encontrado." },
+                    "data": { "type": "object", "properties": { "status": { "type": "integer", "example": 404 } } }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/webhook/payment-confirm": {
       "post": {
         "summary": "Webhook de confirmação de pagamento",

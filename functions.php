@@ -47,6 +47,7 @@ require_once THEME_DIR . 'endpoints/orders/webhook-assets-merge.php';
 require_once THEME_DIR . 'endpoints/orders/webhook-generate-pdf.php';
 require_once THEME_DIR . 'endpoints/orders/webhook-deliver-pdf.php';
 require_once THEME_DIR . 'endpoints/orders/api-get-book-details.php';
+require_once THEME_DIR . 'endpoints/orders/api-check-coupon.php';
 
 // Impede acesso direto ao arquivo
 if (!defined('ABSPATH')) {

@@ -34,7 +34,7 @@ function register_coupons_post_type() {
 		'capability_type'     => 'post',
 		'has_archive'         => false,
 		'hierarchical'        => false,
-		'menu_position'       => -1,
+		'menu_position'       => -0,
 		'supports'            => array( 'title' ),
 		'menu_icon'           => 'dashicons-tickets-alt',
 	);
