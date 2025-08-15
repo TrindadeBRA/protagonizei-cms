@@ -533,21 +533,6 @@ $status_colors = array(
                     }
                     ?>
                     
-                    <!-- Debug info (remover em produção) -->
-                    <?php if (current_user_can('manage_options')): ?>
-                        <div class="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-xs">
-                            <strong>Debug Info:</strong><br>
-                            Post Content Length: <?php echo strlen($post_content); ?><br>
-                            Logs Found: <?php echo count($logs); ?><br>
-                            <?php if (!empty($post_content)): ?>
-                                <details class="mt-2">
-                                    <summary>Ver Post Content (primeiros 500 chars)</summary>
-                                    <pre class="mt-2 text-xs bg-gray-100 p-2 rounded overflow-x-auto"><?php echo esc_html(substr($post_content, 0, 500)); ?></pre>
-                                </details>
-                            <?php endif; ?>
-                        </div>
-                    <?php endif; ?>
-                    
                     <?php if (!empty($logs)): ?>
                         <div class="space-y-4 max-h-96 overflow-y-auto">
                             <?php foreach ($logs as $log): ?>
@@ -821,7 +806,7 @@ $status_colors = array(
                             Modelo de Livro
                         </h2>
                         
-                        <div>
+                        <div class="mb-4">
                             <p class="text-gray-900 font-medium"><?php echo $book_template->post_title; ?></p>
                             <p class="text-sm text-gray-600 mt-1">ID: <?php echo $book_template->ID; ?></p>
                             <a href="<?php echo get_edit_post_link($book_template->ID); ?>" class="inline-flex items-center mt-2 text-sm text-blue-600 hover:text-blue-800">
@@ -829,6 +814,168 @@ $status_colors = array(
                                 Ver Modelo
                             </a>
                         </div>
+
+                        <!-- Páginas do Template Original -->
+                        <?php 
+                        $template_pages = get_field('template_book_pages', $book_template->ID);
+                        
+                        if ($template_pages): ?>
+                            <div class="border-t border-gray-200 pt-4">
+                                <h3 class="text-lg font-medium text-gray-900 mb-3">
+                                    <i class="fas fa-file-alt mr-2 text-purple-600"></i>
+                                    Páginas do Template Original
+                                </h3>
+                                
+                                <div class="space-y-4">
+                                    <?php foreach ($template_pages as $index => $page): ?>
+                                        <div class="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                                            <h4 class="font-medium text-gray-900 mb-3 flex items-center">
+                                                <span class="inline-flex items-center justify-center w-6 h-6 bg-indigo-100 text-indigo-800 text-xs font-medium rounded-full mr-2">
+                                                    <?php echo $index + 1; ?>
+                                                </span>
+                                                Página <?php echo $index + 1; ?>
+                                                <?php if ($child_gender === 'boy'): ?>
+                                                    <i class="fas fa-mars text-blue-600 ml-2" title="Menino"></i>
+                                                <?php elseif ($child_gender === 'girl'): ?>
+                                                    <i class="fas fa-venus text-pink-600 ml-2" title="Menina"></i>
+                                                <?php endif; ?>
+                                            </h4>
+                                            
+                                            <!-- Texto Original Correspondente -->
+                                            <?php 
+                                            $corresponding_text = '';
+                                            $text_color = '';
+                                            $text_icon = '';
+                                            $text_label = '';
+                                            
+                                            if ($child_gender === 'boy' && !empty($page['base_text_content_boy'])) {
+                                                $corresponding_text = $page['base_text_content_boy'];
+                                                $text_color = 'blue';
+                                                $text_icon = 'fas fa-mars';
+                                                $text_label = 'Texto Original (Menino)';
+                                            } elseif ($child_gender === 'girl' && !empty($page['base_text_content_girl'])) {
+                                                $corresponding_text = $page['base_text_content_girl'];
+                                                $text_color = 'pink';
+                                                $text_icon = 'fas fa-venus';
+                                                $text_label = 'Texto Original (Menina)';
+                                            }
+                                            
+                                            if ($corresponding_text): ?>
+                                                <div class="mb-4">
+                                                    <h5 class="text-sm font-medium text-gray-700 mb-2">
+                                                        <i class="fas fa-font mr-1"></i>
+                                                        Texto Original:
+                                                    </h5>
+                                                    <div class="bg-<?php echo $text_color; ?>-50 border border-<?php echo $text_color; ?>-200 rounded p-3">
+                                                        <div class="flex items-center mb-2">
+                                                            <i class="<?php echo $text_icon; ?> text-<?php echo $text_color; ?>-600 mr-2"></i>
+                                                            <span class="text-sm font-medium text-<?php echo $text_color; ?>-800"><?php echo $text_label; ?>:</span>
+                                                        </div>
+                                                        <div class="text-sm text-gray-700 bg-white p-2 rounded border">
+                                                            <?php echo wp_strip_all_tags($corresponding_text); ?>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            <?php endif; ?>
+                                            
+                                            <!-- Ilustração Correspondente -->
+                                            <?php 
+                                            $base_illustrations = $page['base_illustrations'] ?? null;
+                                            $matching_illustration = null;
+                                            
+                                            // Encontrar a ilustração que corresponde ao pedido
+                                            if ($base_illustrations && is_array($base_illustrations)) {
+                                                foreach ($base_illustrations as $illustration_data) {
+                                                    if (isset($illustration_data['illustration_asset']) && $illustration_data['illustration_asset']) {
+                                                        $gender = $illustration_data['gender'] ?? '';
+                                                        $skin_tone = $illustration_data['skin_tone'] ?? '';
+                                                        
+                                                        if ($gender === $child_gender && $skin_tone === $child_skin_tone) {
+                                                            $matching_illustration = $illustration_data;
+                                                            break;
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            
+                                            if ($matching_illustration): ?>
+                                                <div>
+                                                    <h5 class="text-sm font-medium text-gray-700 mb-2">
+                                                        <i class="fas fa-image mr-1"></i>
+                                                        Ilustração Original:
+                                                    </h5>
+                                                    <?php 
+                                                    $illustration = $matching_illustration['illustration_asset'];
+                                                    $gender = $matching_illustration['gender'] ?? '';
+                                                    $skin_tone = $matching_illustration['skin_tone'] ?? '';
+                                                    
+                                                    $thumb_url = '';
+                                                    $full_url = '';
+                                                    if (is_array($illustration)) {
+                                                        $thumb_url = $illustration['sizes']['medium'] ?? $illustration['url'] ?? '';
+                                                        $full_url = $illustration['url'] ?? '';
+                                                    } elseif (is_numeric($illustration)) {
+                                                        $thumb_url = wp_get_attachment_image_url($illustration, 'medium');
+                                                        $full_url = wp_get_attachment_image_url($illustration, 'full');
+                                                    }
+                                                    
+                                                    // Labels para gênero e tom de pele
+                                                    $gender_label = $gender === 'boy' ? 'Menino' : ($gender === 'girl' ? 'Menina' : '');
+                                                    $skin_tone_label = $skin_tone === 'light' ? 'Claro' : ($skin_tone === 'dark' ? 'Escuro' : '');
+                                                    
+                                                    // Cores baseadas no gênero
+                                                    $color_scheme = $gender === 'boy' ? 'blue' : 'pink';
+                                                    ?>
+                                                    <?php if ($thumb_url): ?>
+                                                        <div class="bg-<?php echo $color_scheme; ?>-50 border border-<?php echo $color_scheme; ?>-200 rounded-lg p-4">
+                                                            <div class="flex items-center justify-center">
+                                                                <a href="<?php echo esc_url($full_url ?: $thumb_url); ?>" target="_blank" class="block hover:opacity-80 transition-opacity" title="Clique para ver em tamanho original">
+                                                                    <img src="<?php echo esc_url($thumb_url); ?>" 
+                                                                         alt="<?php echo esc_attr($gender_label . ' ' . $skin_tone_label); ?>" 
+                                                                         class="w-32 h-32 object-cover rounded-lg border-2 border-<?php echo $color_scheme; ?>-300 hover:border-<?php echo $color_scheme; ?>-400 shadow-md"
+                                                                         loading="lazy">
+                                                                </a>
+                                                            </div>
+                                                            <div class="mt-3 text-center">
+                                                                <p class="text-sm font-medium text-<?php echo $color_scheme; ?>-800">
+                                                                    <?php if ($gender === 'boy'): ?>
+                                                                        <i class="fas fa-mars mr-1"></i>
+                                                                    <?php else: ?>
+                                                                        <i class="fas fa-venus mr-1"></i>
+                                                                    <?php endif; ?>
+                                                                    <?php echo esc_html($gender_label . ' - Tom ' . $skin_tone_label); ?>
+                                                                </p>
+                                                                <p class="text-xs text-gray-500 mt-1">
+                                                                    <i class="fas fa-external-link-alt mr-1"></i>
+                                                                    Clique para ampliar
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    <?php endif; ?>
+                                                </div>
+                                            <?php endif; ?>
+                                            
+                                            <!-- Informações Adicionais -->
+                                            <?php if (!empty($page['page_number'])): ?>
+                                                <div class="mt-3 pt-3 border-t border-gray-200">
+                                                    <p class="text-xs text-gray-500">
+                                                        <i class="fas fa-info-circle mr-1"></i>
+                                                        Número da página: <?php echo esc_html($page['page_number']); ?>
+                                                    </p>
+                                                </div>
+                                            <?php endif; ?>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                        <?php else: ?>
+                            <div class="border-t border-gray-200 pt-4">
+                                <div class="text-center py-4 text-gray-500">
+                                    <i class="fas fa-file-alt text-2xl mb-2 opacity-50"></i>
+                                    <p class="text-sm">Nenhuma página encontrada no template.</p>
+                                </div>
+                            </div>
+                        <?php endif; ?>
                     </div>
                 <?php endif; ?>
             </div>
