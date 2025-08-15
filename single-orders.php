@@ -289,6 +289,56 @@ $status_colors = array(
                     <?php if ($generated_pdf_link || $generated_pdf_attachment): ?>
                         <div class="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
                             <h3 class="text-lg font-medium text-green-900 mb-2">PDF Final</h3>
+                            
+                            <!-- Visualização em iframe -->
+                            <?php 
+                            $pdf_url_for_iframe = '';
+                            if ($generated_pdf_attachment) {
+                                if (is_array($generated_pdf_attachment)) {
+                                    $pdf_url_for_iframe = $generated_pdf_attachment['url'] ?? '';
+                                } elseif (is_numeric($generated_pdf_attachment)) {
+                                    $pdf_url_for_iframe = wp_get_attachment_url($generated_pdf_attachment);
+                                }
+                            } elseif ($generated_pdf_link) {
+                                $pdf_url_for_iframe = $generated_pdf_link;
+                            }
+                            ?>
+                            
+                            <?php if ($pdf_url_for_iframe): ?>
+                                <div class="mb-4">
+                                    <div class="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                                        <div class="bg-gray-100 px-4 py-2 border-b border-gray-200 flex items-center justify-between">
+                                            <span class="text-sm font-medium text-gray-700">
+                                                <i class="fas fa-eye mr-2"></i>
+                                                Visualização do PDF
+                                            </span>
+                                            <div class="flex items-center space-x-2">
+                                                <button onclick="toggleFullscreen()" class="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors">
+                                                    <i class="fas fa-expand mr-1"></i>
+                                                    Tela Cheia
+                                                </button>
+                                                <button onclick="reloadPDF()" class="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors">
+                                                    <i class="fas fa-redo mr-1"></i>
+                                                    Recarregar
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="relative" style="height: 600px;">
+                                            <iframe 
+                                                id="pdf-viewer"
+                                                src="<?php echo esc_url($pdf_url_for_iframe); ?>#toolbar=1&navpanes=1&scrollbar=1" 
+                                                class="w-full h-full border-0"
+                                                title="Visualização do PDF Final"
+                                                loading="lazy">
+                                                <p>Seu navegador não suporta iframes. 
+                                                <a href="<?php echo esc_url($pdf_url_for_iframe); ?>" target="_blank">Clique aqui para abrir o PDF</a></p>
+                                            </iframe>
+                                        </div>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
+                            
+                            <!-- Botões de ação -->
                             <div class="flex items-center space-x-4 flex-wrap gap-2">
                                 <?php if ($generated_pdf_link): ?>
                                     <a href="<?php echo esc_url($generated_pdf_link); ?>" target="_blank" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
@@ -816,6 +866,25 @@ $status_colors = array(
         
         // Verificar atualizações a cada 30 segundos
         setInterval(checkStatusUpdates, 30000);
+
+        // Funções para controlar o iframe do PDF
+        function toggleFullscreen() {
+            const iframe = document.getElementById('pdf-viewer');
+            if (iframe.requestFullscreen) {
+                iframe.requestFullscreen();
+            } else if (iframe.mozRequestFullScreen) {
+                iframe.mozRequestFullScreen();
+            } else if (iframe.webkitRequestFullscreen) {
+                iframe.webkitRequestFullscreen();
+            } else if (iframe.msRequestFullscreen) {
+                iframe.msRequestFullscreen();
+            }
+        }
+
+        function reloadPDF() {
+            const iframe = document.getElementById('pdf-viewer');
+            iframe.src = iframe.src; // Recarrega o conteúdo do iframe
+        }
     </script>
 </body>
 </html>
