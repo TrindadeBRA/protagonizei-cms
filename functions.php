@@ -18,6 +18,7 @@ require_once THEME_DIR . 'includes/integrations.php';
 require_once THEME_DIR . 'includes/telegram-service.php';
 require_once THEME_DIR . 'includes/github-deploy.php';
 require_once THEME_DIR . 'includes/utils/post-logger.php';
+require_once THEME_DIR . 'includes/ajax-handlers.php';
 require_once THEME_DIR . 'includes/cpt/cpt-contacts.php';
 require_once THEME_DIR . 'includes/scf/scf-contacts.php';
 require_once THEME_DIR . 'includes/cpt/cpt-orders.php';
