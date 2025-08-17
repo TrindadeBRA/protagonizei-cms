@@ -267,6 +267,18 @@ function trinitykit_handle_check_faceswap_webhook($request) {
             if ($status_data['status'] === 'COMPLETED') {
                 // Process the base64 image and save to WordPress
                 $base64_image = $status_data['output'];
+                
+                // Se output for array, tentar extrair a imagem
+                if (is_array($base64_image)) {
+                    if (isset($base64_image['image'])) {
+                        $base64_image = $base64_image['image'];
+                    } elseif (isset($base64_image['data'])) {
+                        $base64_image = $base64_image['data'];
+                    } else {
+                        $base64_image = reset($base64_image); // Primeiro elemento
+                    }
+                }
+                
                 $image_url = save_base64_image_to_wordpress($base64_image, $order_id, $child_name, $index);
                 
                 if ($image_url) {
