@@ -365,14 +365,28 @@ function add_text_overlay_to_image($image_path, $text, $text_position = 'center_
             // Ajustar Y para TTF (baseline, não topo)
             $ttf_y = $line_y + abs($bbox[7]); // Ajustar para baseline
             
-            // // Draw shadow com TTF (sombra sutil e equilibrada)
-            // for ($sx = -1; $sx <= 1; $sx++) {
-            //     for ($sy = -1; $sy <= 1; $sy++) {
-            //         imagettftext($image, $font_size, 0, $text_x + $sx + 2, $ttf_y + $sy + 2, $shadow, $font_path, $line);
-            //     }
-            // }
+            // ✨ NOVA FUNCIONALIDADE: Borda preta de 2px ao redor do texto
+            $border_size = 2; // 2px de borda
+            error_log("[TrinityKit] DEBUG TTF - Aplicando borda preta de {$border_size}px ao texto: " . mb_substr($line, 0, 20, 'UTF-8') . "...");
             
-            // Draw main text com TTF
+            // Criar círculo de pontos para borda suave de 2px
+            $border_points = array();
+            for ($angle = 0; $angle < 360; $angle += 45) { // A cada 45 graus para suavidade
+                $radian = deg2rad($angle);
+                $border_points[] = array(
+                    'x' => $border_size * cos($radian),
+                    'y' => $border_size * sin($radian)
+                );
+            }
+            
+            // Desenhar borda preta em cada ponto calculado
+            foreach ($border_points as $point) {
+                $border_x = $text_x + $point['x'];
+                $border_y = $ttf_y + $point['y'];
+                imagettftext($image, $font_size, 0, $border_x, $border_y, $shadow, $font_path, $line);
+            }
+            
+            // Draw main text (branco) por cima da borda
             imagettftext($image, $font_size, 0, $text_x, $ttf_y, $white, $font_path, $line);
             
         } else {
@@ -383,38 +397,54 @@ function add_text_overlay_to_image($image_path, $text, $text_position = 'center_
             // Criar imagem temporária pequena para desenhar o texto
             $temp_width = strlen($line) * imagefontwidth($font) + 10;
             $temp_height = imagefontheight($font) + 10;
-            $temp_image = imagecreatetruecolor($temp_width, $temp_height);
             
-            // Cores para imagem temporária
-            $temp_bg = imagecolorallocate($temp_image, 255, 0, 255); // Magenta para transparência
-            $temp_white = imagecolorallocate($temp_image, 255, 255, 255);
-            $temp_shadow = imagecolorallocate($temp_image, 0, 0, 0);
-            
-            imagefill($temp_image, 0, 0, $temp_bg);
-            imagecolortransparent($temp_image, $temp_bg);
-            
-            // Desenhar texto na imagem temporária
-            imagestring($temp_image, $font, 5, 5, $line, $temp_white);
-            
-            // Escalar e copiar para imagem principal
+            // ✨ NOVA FUNCIONALIDADE: Borda preta de 2px para built-in fonts
+            $border_size_builtin = 2; // 2px de borda (será escalonado)
+            error_log("[TrinityKit] DEBUG Built-in - Aplicando borda preta de {$border_size_builtin}px (escalado) ao texto: " . substr($line, 0, 20) . "...");
             $scaled_width = $temp_width * $scale_factor;
             $scaled_height = $temp_height * $scale_factor;
             
-            // Draw shadow escalada (offset mais sutil)
-            imagecopyresized($image, $temp_image, 
-                $text_x + 2, $line_y + 2, 0, 0,
-                $scaled_width, $scaled_height, $temp_width, $temp_height);
+            // Criar pontos de borda para built-in fonts
+            $border_points_builtin = array();
+            for ($angle = 0; $angle < 360; $angle += 45) { // A cada 45 graus
+                $radian = deg2rad($angle);
+                $border_points_builtin[] = array(
+                    'x' => $border_size_builtin * cos($radian) * $scale_factor,
+                    'y' => $border_size_builtin * sin($radian) * $scale_factor
+                );
+            }
             
-            // Recriar temp_image para texto principal
-            imagedestroy($temp_image);
+            // Desenhar borda preta em cada ponto
+            foreach ($border_points_builtin as $point) {
+                // Criar imagem temporária para borda
+                $temp_image_border = imagecreatetruecolor($temp_width, $temp_height);
+                $temp_bg_border = imagecolorallocate($temp_image_border, 255, 0, 255); // Magenta para transparência
+                $temp_black_border = imagecolorallocate($temp_image_border, 0, 0, 0); // Preto para borda
+                
+                imagefill($temp_image_border, 0, 0, $temp_bg_border);
+                imagecolortransparent($temp_image_border, $temp_bg_border);
+                
+                // Desenhar texto preto na imagem temporária
+                imagestring($temp_image_border, $font, 5, 5, $line, $temp_black_border);
+                
+                // Copiar borda escalada para posição com offset
+                imagecopyresized($image, $temp_image_border,
+                    $text_x + $point['x'], $line_y + $point['y'], 0, 0,
+                    $scaled_width, $scaled_height, $temp_width, $temp_height);
+                
+                imagedestroy($temp_image_border);
+            }
+            
+            // Desenhar texto principal branco por cima
             $temp_image = imagecreatetruecolor($temp_width, $temp_height);
-            $temp_bg = imagecolorallocate($temp_image, 255, 0, 255);
+            $temp_bg = imagecolorallocate($temp_image, 255, 0, 255); // Magenta para transparência
             $temp_white = imagecolorallocate($temp_image, 255, 255, 255);
+            
             imagefill($temp_image, 0, 0, $temp_bg);
             imagecolortransparent($temp_image, $temp_bg);
             imagestring($temp_image, $font, 5, 5, $line, $temp_white);
             
-            // Draw main text escalado
+            // Draw main text escalado (branco)
             imagecopyresized($image, $temp_image,
                 $text_x, $line_y, 0, 0,
                 $scaled_width, $scaled_height, $temp_width, $temp_height);
