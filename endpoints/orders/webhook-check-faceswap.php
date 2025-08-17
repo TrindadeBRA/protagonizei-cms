@@ -42,8 +42,8 @@ function check_face_swap_status($task_id) {
     $status_url = $base_url . '/status/' . $task_id;
     
     $headers = [
-        'Content-Type: application/json',
-        'x-magicapi-key: ' . $api_key
+        'accept: application/json',
+        'x-api-market-key: ' . $api_key
     ];
 
     $ch = curl_init();
@@ -84,24 +84,33 @@ function check_face_swap_status($task_id) {
 }
 
 /**
- * Save base64 image to WordPress with professional metadata
+ * Download and save image from URL to WordPress with professional metadata
  * 
- * @param string $base64_image String base64 da imagem
+ * @param string $image_url URL da imagem para download
  * @param int $order_id ID do pedido
  * @param string $child_name Nome da criança
  * @param int $page_index Índice da página (0-based)
  * @return string|false URL da imagem salva ou false em caso de erro
  */
-function save_base64_image_to_wordpress($base64_image, $order_id = null, $child_name = '', $page_index = 0) {
-    // Remove the data:image/jpeg;base64, prefix if it exists
-    if (strpos($base64_image, 'data:image/') === 0) {
-        $base64_image = substr($base64_image, strpos($base64_image, ',') + 1);
+function save_image_from_url_to_wordpress($image_url, $order_id = null, $child_name = '', $page_index = 0) {
+    // Download the image
+    $response = wp_remote_get($image_url);
+    
+    if (is_wp_error($response)) {
+        error_log("[TrinityKit] Erro ao baixar imagem: " . $response->get_error_message());
+        return false;
     }
     
-    $image_data = base64_decode($base64_image);
+    $http_code = wp_remote_retrieve_response_code($response);
+    if ($http_code !== 200) {
+        error_log("[TrinityKit] Erro HTTP ao baixar imagem: $http_code");
+        return false;
+    }
     
-    if ($image_data === false) {
-        error_log("[TrinityKit] Erro ao decodificar imagem base64");
+    $image_data = wp_remote_retrieve_body($response);
+    
+    if (empty($image_data)) {
+        error_log("[TrinityKit] Dados da imagem vazios");
         return false;
     }
     
@@ -164,6 +173,7 @@ function save_base64_image_to_wordpress($base64_image, $order_id = null, $child_
         update_post_meta($attach_id, '_trinitykitcms_generation_method', 'face_swap_api');
         update_post_meta($attach_id, '_trinitykitcms_generation_date', current_time('mysql'));
         update_post_meta($attach_id, '_trinitykitcms_file_source', 'webhook_check_faceswap');
+        update_post_meta($attach_id, '_trinitykitcms_original_url', $image_url);
     }
     
     // Add ALT text for accessibility
@@ -265,27 +275,24 @@ function trinitykit_handle_check_faceswap_webhook($request) {
             }
 
             if ($status_data['status'] === 'COMPLETED') {
-                // Process the base64 image and save to WordPress
-                $base64_image = $status_data['output'];
+                // Process the image URL from the API response
+                $output_data = $status_data['output'];
+                $image_url_to_download = $output_data['image_url'] ?? null;
                 
-                // Se output for array, tentar extrair a imagem
-                if (is_array($base64_image)) {
-                    if (isset($base64_image['image'])) {
-                        $base64_image = $base64_image['image'];
-                    } elseif (isset($base64_image['data'])) {
-                        $base64_image = $base64_image['data'];
-                    } else {
-                        $base64_image = reset($base64_image); // Primeiro elemento
-                    }
+                if (empty($image_url_to_download)) {
+                    $error_msg = "URL da imagem não encontrada na resposta da API para página $index do pedido #$order_id";
+                    error_log("[TrinityKit] $error_msg");
+                    $failed_pages++;
+                    continue;
                 }
                 
-                $image_url = save_base64_image_to_wordpress($base64_image, $order_id, $child_name, $index);
+                $saved_image_url = save_image_from_url_to_wordpress($image_url_to_download, $order_id, $child_name, $index);
                 
-                if ($image_url) {
+                if ($saved_image_url) {
                     // Update the page with the new illustration
-                    $attachment_id = attachment_url_to_postid($image_url);
+                    $attachment_id = attachment_url_to_postid($saved_image_url);
                     if (!$attachment_id) {
-                        error_log("[TrinityKit] AVISO: Não foi possível obter o ID do anexo para URL: $image_url");
+                        error_log("[TrinityKit] AVISO: Não foi possível obter o ID do anexo para URL: $saved_image_url");
                         $attachment_id = 0; // Fallback
                     }
                     
@@ -295,7 +302,7 @@ function trinitykit_handle_check_faceswap_webhook($request) {
                     
                     if ($update_result) {
                         $completed_pages++;
-                        error_log("[TrinityKit] Página $index processada com sucesso - URL: $image_url, ID: $attachment_id");
+                        error_log("[TrinityKit] Página $index processada com sucesso - URL: $saved_image_url, ID: $attachment_id");
                     } else {
                         $error_msg = "Falha ao atualizar ilustração da página $index do pedido #$order_id";
                         error_log("[TrinityKit] $error_msg");
