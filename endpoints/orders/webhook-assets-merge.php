@@ -365,11 +365,11 @@ function add_text_overlay_to_image($image_path, $text, $text_position = 'center_
             // Ajustar Y para TTF (baseline, não topo)
             $ttf_y = $line_y + abs($bbox[7]); // Ajustar para baseline
             
-            // ✨ NOVA FUNCIONALIDADE: Borda preta de 2px ao redor do texto
-            $border_size = 2; // 2px de borda
+            // ✨ NOVA FUNCIONALIDADE: Borda preta de 8px ao redor do texto
+            $border_size = 8; // 8px de borda para máximo contraste
             error_log("[TrinityKit] DEBUG TTF - Aplicando borda preta de {$border_size}px ao texto: " . mb_substr($line, 0, 20, 'UTF-8') . "...");
             
-            // Criar círculo de pontos para borda suave de 2px
+            // Criar círculo de pontos para borda suave de 8px
             $border_points = array();
             for ($angle = 0; $angle < 360; $angle += 45) { // A cada 45 graus para suavidade
                 $radian = deg2rad($angle);
@@ -398,8 +398,8 @@ function add_text_overlay_to_image($image_path, $text, $text_position = 'center_
             $temp_width = strlen($line) * imagefontwidth($font) + 10;
             $temp_height = imagefontheight($font) + 10;
             
-            // ✨ NOVA FUNCIONALIDADE: Borda preta de 2px para built-in fonts
-            $border_size_builtin = 2; // 2px de borda (será escalonado)
+            // ✨ NOVA FUNCIONALIDADE: Borda preta de 8px para built-in fonts
+            $border_size_builtin = 8; // 8px de borda (será escalonado)
             error_log("[TrinityKit] DEBUG Built-in - Aplicando borda preta de {$border_size_builtin}px (escalado) ao texto: " . substr($line, 0, 20) . "...");
             $scaled_width = $temp_width * $scale_factor;
             $scaled_height = $temp_height * $scale_factor;
