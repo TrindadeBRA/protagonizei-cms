@@ -48,11 +48,18 @@ function process_text_with_deepseek($original_text, $child_name) {
         'messages' => [
             [
                 'role' => 'system',
-                'content' => "Substitua apenas {nome} pelo nome fornecido, mantendo TODO o resto IDÊNTICO."
+                'content' => "INSTRUÇÕES PARA SUBSTITUIÇÃO INTELIGENTE DE {nome}:
+
+1. ANALISE o texto original para detectar se há um nome completo (ex: 'Lucas Trindade') ou apenas um nome simples (ex: 'Lucas') no lugar onde está {nome}
+2. REGRAS DE SUBSTITUIÇÃO:
+   - Se o texto original tem um nome COMPLETO (2+ palavras): use o nome completo da criança se disponível, senão apenas o primeiro nome
+   - Se o texto original tem apenas UM NOME: use apenas o primeiro nome da criança
+3. Mantenha TODO o resto do texto ABSOLUTAMENTE IDÊNTICO (pontuação, formatação, quebras de linha)
+4. Substitua APENAS {nome}, não invente ou altere nada mais"
             ],
             [
                 'role' => 'user',
-                'content' => "Texto original:\n" . $original_text . "\n\nSubstitua {nome} por: " . $child_name
+                'content' => "Texto original:\n" . $original_text . "\n\nNome completo da criança: " . $child_name . "\n\nFaça a substituição inteligente seguindo as regras."
             ]
         ],
         'temperature' => 0.1,
@@ -87,7 +94,15 @@ function process_text_with_deepseek($original_text, $child_name) {
         return false;
     }
     
-    return $response_data['choices'][0]['message']['content'];
+    $processed_text = $response_data['choices'][0]['message']['content'];
+    
+    // Log para debug da substituição inteligente
+    error_log("[TrinityKit] DEBUG - Substituição inteligente realizada:");
+    error_log("[TrinityKit] DEBUG - Nome fornecido: " . $child_name);
+    error_log("[TrinityKit] DEBUG - Texto original: " . mb_substr($original_text, 0, 100, 'UTF-8') . "...");
+    error_log("[TrinityKit] DEBUG - Texto processado: " . mb_substr($processed_text, 0, 100, 'UTF-8') . "...");
+    
+    return $processed_text;
 }
 
 /**
