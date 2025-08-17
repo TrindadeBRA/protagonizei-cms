@@ -178,7 +178,10 @@ function add_text_overlay_to_image($image_path, $text, $text_position = 'center_
         $text = mb_convert_encoding($text, 'UTF-8', 'auto');
     }
     
-    // Converter para ISO-8859-1 para compatibilidade com GD
+    // Manter texto original UTF-8 para melhor compatibilidade TTF
+    $original_text = $text;
+    
+    // Converter para ISO-8859-1 apenas se não usar TTF
     $text_for_gd = mb_convert_encoding($text, 'ISO-8859-1', 'UTF-8');
     if ($text_for_gd !== $text) {
         $text = $text_for_gd;
@@ -231,7 +234,8 @@ function add_text_overlay_to_image($image_path, $text, $text_position = 'center_
     $shadow = imagecolorallocate($image, 0, 0, 0); // Black shadow
 
     // Calculate REAL font size based on text area dimensions (more responsive)
-    $font_size = max(18, min($text_area_width / 20, $text_area_height / 12)); // Tamanho mais equilibrado
+    // Aumentado o tamanho mínimo para SourGummy semi-bold
+    $font_size = max(22, min($text_area_width / 18, $text_area_height / 10)); // Tamanho maior para semi-bold
     
     // Tentar usar fonte TTF para tamanho real
     $font_path = null;
@@ -239,15 +243,21 @@ function add_text_overlay_to_image($image_path, $text, $text_position = 'center_
     
     // Verificar se há fontes TTF disponíveis no sistema
     $possible_fonts = [
-        ABSPATH . 'wp-content/themes/' . get_template() . '/assets/fonts/Roboto.ttf',
+        ABSPATH . 'wp-content/themes/' . get_template() . '/assets/fonts/SourGummy.ttf',
     ];
     
     foreach ($possible_fonts as $font_file) {
+        error_log("[TrinityKit] DEBUG - Verificando fonte: $font_file");
         if (file_exists($font_file)) {
             $font_path = $font_file;
             $use_ttf = true;
+            error_log("[TrinityKit] DEBUG - ✓ Fonte SourGummy.ttf encontrada e será usada!");
             break;
         }
+    }
+    
+    if (!$use_ttf) {
+        error_log("[TrinityKit] AVISO - Fonte SourGummy.ttf não encontrada, usando fonte built-in");
     }
     
     if (!$use_ttf) {
@@ -259,17 +269,21 @@ function add_text_overlay_to_image($image_path, $text, $text_position = 'center_
         $scale_factor = 1; // Não usado para TTF, mas definir para evitar erros
     }
 
-    // Prepare text for word wrapping (usando funções multibyte para UTF-8)
-    $words = explode(' ', $text);
+    // Usar texto UTF-8 para TTF, ISO-8859-1 para built-in
+    $text_to_use = $use_ttf ? $original_text : $text;
+    
+    // Prepare text for word wrapping (usando texto apropriado para o método de fonte)
+    $words = explode(' ', $text_to_use);
     $lines = array();
     $current_line = '';
     
     // Calculate max characters per line baseado no método de fonte
     if ($use_ttf) {
-        // Para TTF, calcular baseado no tamanho real da fonte
-        $sample_bbox = imagettfbbox($font_size, 0, $font_path, 'A');
-        $char_width = $sample_bbox[4] - $sample_bbox[0];
+        // Para TTF, calcular baseado no tamanho real da fonte usando texto UTF-8
+        $sample_bbox = imagettfbbox($font_size, 0, $font_path, 'Ag'); // Usar caracteres que mostram altura completa
+        $char_width = ($sample_bbox[4] - $sample_bbox[0]) / 2; // Dividir por 2 pois usamos 2 caracteres
         $char_height = $sample_bbox[1] - $sample_bbox[7];
+        error_log("[TrinityKit] DEBUG TTF - Tamanho fonte: {$font_size}px, char_width: {$char_width}px, char_height: {$char_height}px");
     } else {
         // Para built-in font com escalonamento
         $char_width = imagefontwidth($font) * $scale_factor;
@@ -284,20 +298,33 @@ function add_text_overlay_to_image($image_path, $text, $text_position = 'center_
     foreach ($words as $word) {
         $test_line = empty($current_line) ? $word : $current_line . ' ' . $word;
         
-        // Usar strlen para contar caracteres (depois da conversão para ISO-8859-1)
-        if (strlen($test_line) <= $max_chars_per_line) {
+        // Usar mb_strlen para UTF-8 (TTF) ou strlen para ISO-8859-1 (built-in)
+        $line_length = $use_ttf ? mb_strlen($test_line, 'UTF-8') : strlen($test_line);
+        $word_length = $use_ttf ? mb_strlen($word, 'UTF-8') : strlen($word);
+        
+        if ($line_length <= $max_chars_per_line) {
             $current_line = $test_line;
         } else {
             if (!empty($current_line)) {
                 $lines[] = $current_line;
             }
             // Se a palavra é muito longa, quebrar ela também
-            if (strlen($word) > $max_chars_per_line) {
-                // Usar str_split simples para ISO-8859-1
-                $chunks = str_split($word, $max_chars_per_line - 1);
-                
-                foreach ($chunks as $i => $chunk) {
-                    $lines[] = $chunk . ($i < count($chunks) - 1 ? '-' : '');
+            if ($word_length > $max_chars_per_line) {
+                // Quebrar palavra usando função apropriada para o encoding
+                if ($use_ttf) {
+                    // UTF-8: usar mb_substr
+                    $word_len = mb_strlen($word, 'UTF-8');
+                    $chunk_size = $max_chars_per_line - 1;
+                    for ($i = 0; $i < $word_len; $i += $chunk_size) {
+                        $chunk = mb_substr($word, $i, $chunk_size, 'UTF-8');
+                        $lines[] = $chunk . ($i + $chunk_size < $word_len ? '-' : '');
+                    }
+                } else {
+                    // ISO-8859-1: usar str_split
+                    $chunks = str_split($word, $max_chars_per_line - 1);
+                    foreach ($chunks as $i => $chunk) {
+                        $lines[] = $chunk . ($i < count($chunks) - 1 ? '-' : '');
+                    }
                 }
                 $current_line = '';
             } else {
@@ -310,9 +337,11 @@ function add_text_overlay_to_image($image_path, $text, $text_position = 'center_
         $lines[] = $current_line;
     }
 
-    // Calculate total text height baseado no método (espaçamento mais moderado)
+    // Calculate total text height com line height otimizado para SourGummy semi-bold
     if ($use_ttf) {
-        $line_height = $char_height + 10; // TTF com espaçamento reduzido
+        // Para SourGummy semi-bold: line height mais generoso para melhor legibilidade
+        $line_height = $char_height * 1.4; // 140% do tamanho da fonte (padrão tipográfico)
+        error_log("[TrinityKit] DEBUG TTF - Line height calculado: {$line_height}px (140% de {$char_height}px)");
     } else {
         $line_height = $char_height + 8; // Built-in escalado com espaçamento reduzido
     }
