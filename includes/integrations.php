@@ -116,7 +116,7 @@ function trinitykitcms_render_integrations_page() {
 
         <!-- Bloco de configurações do FaceSwap -->
         <div class="card" style="max-width: 800px; padding: 20px; margin-bottom: 20px;">
-            <h2>Configurações do FaceSwap</h2>
+            <h2 style="display: flex; align-items: center; gap: 10px;">Configurações do FaceSwap - <a href="https://api.market/store/magicapi/faceswap-image-v3" target="_blank">FaceSwap V3</a></h2>
             <form method="post" action="options.php">
                 <?php
                 settings_fields('trinitykitcms_faceswap_settings');
