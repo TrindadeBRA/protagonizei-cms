@@ -186,6 +186,7 @@ function trinitykit_handle_initiate_faceswap_webhook($request) {
 
         $template_pages = get_field('template_book_pages', $book_template->ID);
         $page_errors = 0;
+        $page_error_messages = array(); // Array para armazenar mensagens de erro específicas de páginas
         $initiated_pages = 0;
         $skipped_pages = 0;
         
@@ -228,12 +229,14 @@ function trinitykit_handle_initiate_faceswap_webhook($request) {
                         $error_msg = "Falha ao copiar ilustração base da página $index do pedido #$order_id (página sem face swap)";
                         error_log("[TrinityKit] $error_msg");
                         $page_errors++;
+                        $page_error_messages[] = $error_msg;
                         send_telegram_error_notification("Pedido #$order_id: $error_msg");
                     }
                 } else {
                     $error_msg = "Imagem base não encontrada para página $index do pedido #$order_id (página sem face swap)";
                     error_log("[TrinityKit] $error_msg");
                     $page_errors++;
+                    $page_error_messages[] = $error_msg;
                     send_telegram_error_notification("Pedido #$order_id: $error_msg");
                 }
                 continue;
@@ -280,6 +283,7 @@ function trinitykit_handle_initiate_faceswap_webhook($request) {
                 $error_msg = "Erro ao iniciar face swap da página $index do pedido #$order_id";
                 error_log("[TrinityKit] $error_msg");
                 $page_errors++;
+                $page_error_messages[] = $error_msg;
                 send_telegram_error_notification("Pedido #$order_id: $error_msg");
                 continue;
             }
@@ -295,20 +299,28 @@ function trinitykit_handle_initiate_faceswap_webhook($request) {
                 $error_msg = "Falha ao salvar task ID da página $index do pedido #$order_id";
                 error_log("[TrinityKit] $error_msg");
                 $page_errors++;
+                $page_error_messages[] = $error_msg;
                 send_telegram_error_notification("Pedido #$order_id: $error_msg");
             }
-        }
-
-        if ($page_errors > 0) {
-            $error_msg = "Falha ao iniciar face swap para $page_errors páginas do pedido #$order_id, erros: " . implode(', ', $errors);
-            error_log("[TrinityKit] $error_msg");
-            $errors[] = $error_msg;
-            continue;
         }
 
         // Mark face swap as initiated if all pages were processed successfully
         // (initiated pages + skipped pages should equal total pages)
         $total_processed_pages = $initiated_pages + $skipped_pages;
+        
+        // Se houver erros, adicionar aos erros globais mas ainda tentar processar se possível
+        if ($page_errors > 0) {
+            $error_msg = "Falha ao iniciar face swap para $page_errors páginas do pedido #$order_id. Erros: " . implode(' | ', $page_error_messages);
+            error_log("[TrinityKit] $error_msg");
+            $errors[] = $error_msg;
+            
+            // Se não conseguiu processar nenhuma página, pular este pedido
+            if ($total_processed_pages === 0) {
+                continue;
+            }
+        }
+        
+        // Marcar como iniciado se todas as páginas foram processadas (com sucesso ou puladas)
         if ($total_processed_pages === count($template_pages)) {
             $face_swap_initiated = update_field('face_swap_initiated', true, $order_id);
             
