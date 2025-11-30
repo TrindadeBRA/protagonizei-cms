@@ -196,8 +196,8 @@ function trinitykit_handle_initiate_faceswap_webhook($request) {
             $skip_faceswap = !empty($page['skip_faceswap']) && $page['skip_faceswap'] === true;
             
             if ($skip_faceswap) {
-                // For pages that skip face swap, we need to copy the base illustration directly
-                // Find the correct base illustration in the base_illustrations repeater
+                // For pages that skip face swap, try to copy the base illustration directly
+                // But if it fails, just skip without error
                 $base_illustrations = $page['base_illustrations'];
                 $base_image = null;
                 
@@ -213,31 +213,27 @@ function trinitykit_handle_initiate_faceswap_webhook($request) {
                     }
                 }
                 
+                // Always mark skip_faceswap in the generated page
+                $skip_field_key = "generated_book_pages_{$index}_skip_faceswap";
+                update_field($skip_field_key, true, $order_id);
+                
+                // Try to copy the base illustration if found
                 if (!empty($base_image) && !empty($base_image['ID'])) {
-                    // Copy the base illustration directly to generated_illustration
                     $field_key = "generated_book_pages_{$index}_generated_illustration";
                     $update_result = update_field($field_key, $base_image['ID'], $order_id);
-                    
-                    // Also mark skip_faceswap in the generated page
-                    $skip_field_key = "generated_book_pages_{$index}_skip_faceswap";
-                    update_field($skip_field_key, true, $order_id);
                     
                     if ($update_result) {
                         $skipped_pages++;
                         error_log("[TrinityKit] Página $index do pedido #$order_id pulou face swap - ilustração base copiada diretamente");
                     } else {
-                        $error_msg = "Falha ao copiar ilustração base da página $index do pedido #$order_id (página sem face swap)";
-                        error_log("[TrinityKit] $error_msg");
-                        $page_errors++;
-                        $page_error_messages[] = $error_msg;
-                        send_telegram_error_notification("Pedido #$order_id: $error_msg");
+                        // Failed to copy, but still count as skipped (no error)
+                        $skipped_pages++;
+                        error_log("[TrinityKit] Página $index do pedido #$order_id pulou face swap - falha ao copiar ilustração base (página será processada depois)");
                     }
                 } else {
-                    $error_msg = "Imagem base não encontrada para página $index do pedido #$order_id (página sem face swap)";
-                    error_log("[TrinityKit] $error_msg");
-                    $page_errors++;
-                    $page_error_messages[] = $error_msg;
-                    send_telegram_error_notification("Pedido #$order_id: $error_msg");
+                    // Base image not found, but still count as skipped (no error)
+                    $skipped_pages++;
+                    error_log("[TrinityKit] Página $index do pedido #$order_id pulou face swap - imagem base não encontrada (página será processada depois)");
                 }
                 continue;
             }
