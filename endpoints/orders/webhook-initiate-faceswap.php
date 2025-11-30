@@ -300,7 +300,7 @@ function trinitykit_handle_initiate_faceswap_webhook($request) {
         }
 
         if ($page_errors > 0) {
-            $error_msg = "Falha ao iniciar face swap para $page_errors páginas do pedido #$order_id";
+            $error_msg = "Falha ao iniciar face swap para $page_errors páginas do pedido #$order_id, erros: " . implode(', ', $errors);
             error_log("[TrinityKit] $error_msg");
             $errors[] = $error_msg;
             continue;
