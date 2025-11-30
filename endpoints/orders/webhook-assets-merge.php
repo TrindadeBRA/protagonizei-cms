@@ -30,8 +30,6 @@ add_action('rest_api_init', function () {
  * @return array Array with x, y, width, height of text area
  */
 function calculate_text_area($image_width, $image_height, $position) {
-    error_log("[TrinityKit] DEBUG - calculate_text_area chamada com posição: '$position'");
-    
     // Responsive padding based on image size
     $padding = max(30, min($image_width * 0.03, $image_height * 0.03)); // 3% of smallest dimension, min 30px
     
@@ -58,14 +56,12 @@ function calculate_text_area($image_width, $image_height, $position) {
     
     switch ($position) {
         case 'top_right':
-            $coords = array(
+            return array(
                 'x' => $image_width / 2 + $padding,
                 'y' => $padding,
                 'width' => $area_width,
                 'height' => $area_height
             );
-            error_log("[TrinityKit] DEBUG - Posição TOP_RIGHT: x={$coords['x']}, y={$coords['y']}, w={$coords['width']}, h={$coords['height']}");
-            return $coords;
             
         case 'center_right':
             return array(
@@ -101,24 +97,20 @@ function calculate_text_area($image_width, $image_height, $position) {
             );
             
         case 'center_left':
-            $coords = array(
+            return array(
                 'x' => $padding,
                 'y' => ($image_height - $area_height) / 2, // Vertically centered
                 'width' => $area_width,
                 'height' => $area_height
             );
-            error_log("[TrinityKit] DEBUG - Posição CENTER_LEFT: x={$coords['x']}, y={$coords['y']}, w={$coords['width']}, h={$coords['height']}");
-            return $coords;
             
         case 'bottom_left':
-            $coords = array(
+            return array(
                 'x' => $padding,
                 'y' => $image_height - $area_height - $padding,
                 'width' => $area_width,
                 'height' => $area_height
             );
-            error_log("[TrinityKit] DEBUG - Posição BOTTOM_LEFT: x={$coords['x']}, y={$coords['y']}, w={$coords['width']}, h={$coords['height']}");
-            return $coords;
         
         case 'bottom_center':
             // Full-width area centered horizontally, aligned to bottom
@@ -139,7 +131,6 @@ function calculate_text_area($image_width, $image_height, $position) {
             );
             
         default: // fallback to center_right
-            error_log("[TrinityKit] DEBUG - POSIÇÃO DESCONHECIDA '$position' - usando fallback CENTER_RIGHT");
             return array(
                 'x' => $image_width / 2 + $padding,
                 'y' => ($image_height - $area_height) / 2,
@@ -256,8 +247,6 @@ function add_text_overlay_to_image($image_path, $text, $text_position = 'center_
     $multiplier = isset($font_size_multiplier[$font_size]) ? $font_size_multiplier[$font_size] : 1.0;
     $calculated_font_size = $base_font_size * $multiplier;
     
-    error_log("[TrinityKit] DEBUG - Tamanho fonte: base={$base_font_size}px, selecionado='{$font_size}', multiplicador={$multiplier}, final={$calculated_font_size}px");
-    
     // Tentar usar fonte TTF para tamanho real
     $font_path = null;
     $use_ttf = false;
@@ -268,11 +257,9 @@ function add_text_overlay_to_image($image_path, $text, $text_position = 'center_
     ];
     
     foreach ($possible_fonts as $font_file) {
-        error_log("[TrinityKit] DEBUG - Verificando fonte: $font_file");
         if (file_exists($font_file)) {
             $font_path = $font_file;
             $use_ttf = true;
-            error_log("[TrinityKit] DEBUG - ✓ Fonte SourGummy.ttf encontrada e será usada!");
             break;
         }
     }
@@ -304,7 +291,6 @@ function add_text_overlay_to_image($image_path, $text, $text_position = 'center_
         $sample_bbox = imagettfbbox($calculated_font_size, 0, $font_path, 'Ag'); // Usar caracteres que mostram altura completa
         $char_width = ($sample_bbox[4] - $sample_bbox[0]) / 2; // Dividir por 2 pois usamos 2 caracteres
         $char_height = $sample_bbox[1] - $sample_bbox[7];
-        error_log("[TrinityKit] DEBUG TTF - Tamanho fonte: {$calculated_font_size}px, char_width: {$char_width}px, char_height: {$char_height}px");
     } else {
         // Para built-in font com escalonamento
         $char_width = imagefontwidth($font) * $scale_factor;
@@ -362,7 +348,6 @@ function add_text_overlay_to_image($image_path, $text, $text_position = 'center_
     if ($use_ttf) {
         // Para SourGummy semi-bold: line height reduzido para melhor compactação
         $line_height = $char_height * 1.2; // 120% do tamanho da fonte (reduzido de 140%)
-        error_log("[TrinityKit] DEBUG TTF - Line height calculado: {$line_height}px (120% de {$char_height}px)");
     } else {
         $line_height = $char_height + 6; // Built-in escalado com espaçamento reduzido (de 8 para 6)
     }
@@ -388,7 +373,6 @@ function add_text_overlay_to_image($image_path, $text, $text_position = 'center_
             
             // ✨ NOVA FUNCIONALIDADE: Borda preta de 8px ao redor do texto
             $border_size = 8; // 8px de borda para máximo contraste
-            error_log("[TrinityKit] DEBUG TTF - Aplicando borda preta de {$border_size}px ao texto: " . mb_substr($line, 0, 20, 'UTF-8') . "...");
             
             // Criar círculo de pontos para borda suave de 8px
             $border_points = array();
@@ -421,7 +405,6 @@ function add_text_overlay_to_image($image_path, $text, $text_position = 'center_
             
             // ✨ NOVA FUNCIONALIDADE: Borda preta de 8px para built-in fonts
             $border_size_builtin = 8; // 8px de borda (será escalonado)
-            error_log("[TrinityKit] DEBUG Built-in - Aplicando borda preta de {$border_size_builtin}px (escalado) ao texto: " . substr($line, 0, 20) . "...");
             $scaled_width = $temp_width * $scale_factor;
             $scaled_height = $temp_height * $scale_factor;
             
@@ -705,23 +688,6 @@ function trinitykit_handle_merge_assets_webhook($request) {
         $template_pages = array();
         if ($book_template && $book_template->ID) {
             $template_pages = get_field('template_book_pages', $book_template->ID);
-            error_log("[TrinityKit] DEBUG - Template ID: " . $book_template->ID);
-            error_log("[TrinityKit] DEBUG - Template pages encontradas: " . count($template_pages));
-            
-            // Log estrutura do primeiro template page para debug
-            if (!empty($template_pages) && isset($template_pages[0])) {
-                error_log("[TrinityKit] DEBUG - Primeira página do template - chaves: " . implode(', ', array_keys($template_pages[0])));
-                if (isset($template_pages[0]['text_position'])) {
-                    error_log("[TrinityKit] DEBUG - Primeira página - text_position: " . $template_pages[0]['text_position']);
-                }
-                if (isset($template_pages[0]['font_size'])) {
-                    error_log("[TrinityKit] DEBUG - Primeira página - font_size: " . var_export($template_pages[0]['font_size'], true));
-                } else {
-                    error_log("[TrinityKit] DEBUG - Primeira página - font_size: NÃO DEFINIDO");
-                }
-            }
-        } else {
-            error_log("[TrinityKit] DEBUG - Book template não encontrado ou inválido");
         }
         
         // Check required fields
@@ -760,31 +726,24 @@ function trinitykit_handle_merge_assets_webhook($request) {
             // PRIORIDADE 1: Pegar do template (fonte da verdade)
             if (isset($template_pages[$index])) {
                 $template_page_data = $template_pages[$index];
-                error_log("[TrinityKit] DEBUG - Página $index: template_page chaves = " . implode(', ', array_keys($template_page_data)));
                 
                 if (isset($template_page_data['font_size'])) {
                     $raw_font_size = $template_page_data['font_size'];
-                    error_log("[TrinityKit] DEBUG - Página $index: font_size vindo do TEMPLATE (prioridade) = " . var_export($raw_font_size, true));
                 } else {
-                    error_log("[TrinityKit] DEBUG - Página $index: font_size NÃO encontrado no template");
                     // PRIORIDADE 2: Se não tiver no template, pegar da página gerada
                     if (isset($page['font_size']) && !empty($page['font_size'])) {
                         $raw_font_size = $page['font_size'];
-                        error_log("[TrinityKit] DEBUG - Página $index: font_size vindo da PÁGINA GERADA (fallback)");
                     }
                 }
             } else {
-                error_log("[TrinityKit] DEBUG - Página $index: template_pages[$index] não existe");
                 // PRIORIDADE 2: Se não tiver no template, pegar da página gerada
                 if (isset($page['font_size']) && !empty($page['font_size'])) {
                     $raw_font_size = $page['font_size'];
-                    error_log("[TrinityKit] DEBUG - Página $index: font_size vindo da PÁGINA GERADA (fallback)");
                 }
             }
             
             // PRIORIDADE 3: Se ainda não tiver valor, usar 'medio' como padrão
             if (!isset($raw_font_size) || empty($raw_font_size)) {
-                error_log("[TrinityKit] DEBUG - Página $index: font_size não encontrado, usando padrão 'medio'");
                 $raw_font_size = null; // Será tratado abaixo para usar 'medio'
             }
             
@@ -803,16 +762,6 @@ function trinitykit_handle_merge_assets_webhook($request) {
                 error_log("[TrinityKit] AVISO - Página $index: font_size inválido '$font_size', usando 'medio'");
                 $font_size = 'medio';
             }
-            
-            // Debug: verificar valor do font_size
-            error_log("[TrinityKit] DEBUG - Página $index: font_size raw = " . var_export($raw_font_size, true));
-            error_log("[TrinityKit] DEBUG - Página $index: font_size normalizado = '$font_size'");
-            
-            // Debug adicional: mostrar valores do template e página gerada
-            $template_font_size = isset($template_pages[$index]['font_size']) ? $template_pages[$index]['font_size'] : 'NÃO DEFINIDO';
-            $page_font_size = isset($page['font_size']) ? $page['font_size'] : 'NÃO DEFINIDO';
-            error_log("[TrinityKit] DEBUG - Página $index: template font_size = " . var_export($template_font_size, true));
-            error_log("[TrinityKit] DEBUG - Página $index: página gerada font_size = " . var_export($page_font_size, true));
             
             // Get text position from template page (fallback to center_right if not found)
             $text_position = 'center_right'; // Default position
@@ -843,15 +792,6 @@ function trinitykit_handle_merge_assets_webhook($request) {
                 );
                 
                 $text_position = isset($position_map[$raw_position]) ? $position_map[$raw_position] : 'center_right';
-                error_log("[TrinityKit] DEBUG - Página $index: posição template='$raw_position' → convertida='$text_position'");
-            } else {
-                error_log("[TrinityKit] DEBUG - Página $index: posição NÃO encontrada no template, usando padrão = $text_position");
-                if (isset($template_pages[$index])) {
-                    error_log("[TrinityKit] DEBUG - Página $index: chaves disponíveis = " . implode(', ', array_keys($template_pages[$index])));
-                } else {
-                    error_log("[TrinityKit] DEBUG - Página $index: template_pages[$index] não existe");
-                    error_log("[TrinityKit] DEBUG - Template pages total: " . count($template_pages));
-                }
             }
             
             if (empty($text_content)) {
@@ -913,7 +853,6 @@ function trinitykit_handle_merge_assets_webhook($request) {
             }
             
             // Create merged image with text overlay using position and font size from template
-            error_log("[TrinityKit] DEBUG - Página $index: aplicando posição '$text_position' e tamanho fonte '$font_size' na imagem");
             $merged_image_path = add_text_overlay_to_image($illustration_path, $text_content, $text_position, $font_size);
             
             if ($merged_image_path === false) {
