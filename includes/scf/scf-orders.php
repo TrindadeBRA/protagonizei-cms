@@ -267,6 +267,21 @@ function register_order_fields() {
                             'media_upload' => 0,
                         ),
                         array(
+                            'key' => 'field_font_size',
+                            'label' => 'Tamanho da Fonte',
+                            'name' => 'font_size',
+                            'type' => 'select',
+                            'instructions' => 'Tamanho da fonte para o texto desta página',
+                            'required' => 0,
+                            'choices' => array(
+                                'pequeno' => 'Pequeno',
+                                'medio' => 'Médio',
+                                'grande' => 'Grande',
+                            ),
+                            'default_value' => 'medio',
+                            'return_format' => 'value',
+                        ),
+                        array(
                             'key' => 'field_skip_faceswap',
                             'label' => 'Não há um rosto para o faceswap',
                             'name' => 'skip_faceswap',

@@ -155,9 +155,10 @@ function calculate_text_area($image_width, $image_height, $position) {
  * @param string $image_path Path to the base image
  * @param string $text Text to overlay
  * @param string $text_position Position where text should be placed
+ * @param string $font_size Tamanho da fonte (pequeno, medio, grande)
  * @return string|false Path to the new image with text overlay or false on error
  */
-function add_text_overlay_to_image($image_path, $text, $text_position = 'center_right') {
+function add_text_overlay_to_image($image_path, $text, $text_position = 'center_right', $font_size = 'medio') {
     // Check if GD extension is loaded
     if (!extension_loaded('gd')) {
         error_log("[TrinityKit] Extensão GD não encontrada");
@@ -242,9 +243,20 @@ function add_text_overlay_to_image($image_path, $text, $text_position = 'center_
     $white = imagecolorallocate($image, 255, 255, 255);
     $shadow = imagecolorallocate($image, 0, 0, 0); // Black shadow
 
-    // Calculate REAL font size based on text area dimensions (more responsive)
-    // Aumentado o tamanho mínimo para SourGummy semi-bold
-    $font_size = max(22, min($text_area_width / 18, $text_area_height / 10)); // Tamanho maior para semi-bold
+    // Calculate REAL font size based on text area dimensions and font_size setting
+    $base_font_size = max(22, min($text_area_width / 18, $text_area_height / 10)); // Tamanho base
+    
+    // Aplicar multiplicador baseado no tamanho selecionado
+    $font_size_multiplier = array(
+        'pequeno' => 0.75,  // 75% do tamanho base
+        'medio' => 1.0,     // 100% do tamanho base (padrão)
+        'grande' => 1.35    // 135% do tamanho base
+    );
+    
+    $multiplier = isset($font_size_multiplier[$font_size]) ? $font_size_multiplier[$font_size] : 1.0;
+    $calculated_font_size = $base_font_size * $multiplier;
+    
+    error_log("[TrinityKit] DEBUG - Tamanho fonte: base={$base_font_size}px, selecionado='{$font_size}', multiplicador={$multiplier}, final={$calculated_font_size}px");
     
     // Tentar usar fonte TTF para tamanho real
     $font_path = null;
@@ -271,7 +283,7 @@ function add_text_overlay_to_image($image_path, $text, $text_position = 'center_
     
     if (!$use_ttf) {
         $font = 5; // Built-in largest font
-        $scale_factor = max(2, intval($font_size / 13)); // Font 5 tem ~13px, escalar proporcionalmente (reduzido)
+        $scale_factor = max(2, intval($calculated_font_size / 13)); // Font 5 tem ~13px, escalar proporcionalmente (reduzido)
         $scale_factor = min($scale_factor, 4); // Limitar escala máxima para não ficar gigante
     } else {
         $font = 5; // Definir para compatibilidade, mas não será usado
@@ -289,10 +301,10 @@ function add_text_overlay_to_image($image_path, $text, $text_position = 'center_
     // Calculate max characters per line baseado no método de fonte
     if ($use_ttf) {
         // Para TTF, calcular baseado no tamanho real da fonte usando texto UTF-8
-        $sample_bbox = imagettfbbox($font_size, 0, $font_path, 'Ag'); // Usar caracteres que mostram altura completa
+        $sample_bbox = imagettfbbox($calculated_font_size, 0, $font_path, 'Ag'); // Usar caracteres que mostram altura completa
         $char_width = ($sample_bbox[4] - $sample_bbox[0]) / 2; // Dividir por 2 pois usamos 2 caracteres
         $char_height = $sample_bbox[1] - $sample_bbox[7];
-        error_log("[TrinityKit] DEBUG TTF - Tamanho fonte: {$font_size}px, char_width: {$char_width}px, char_height: {$char_height}px");
+        error_log("[TrinityKit] DEBUG TTF - Tamanho fonte: {$calculated_font_size}px, char_width: {$char_width}px, char_height: {$char_height}px");
     } else {
         // Para built-in font com escalonamento
         $char_width = imagefontwidth($font) * $scale_factor;
@@ -366,7 +378,7 @@ function add_text_overlay_to_image($image_path, $text, $text_position = 'center_
         
         if ($use_ttf) {
             // Usar TTF para tamanho real
-            $bbox = imagettfbbox($font_size, 0, $font_path, $line);
+            $bbox = imagettfbbox($calculated_font_size, 0, $font_path, $line);
             $text_width = $bbox[4] - $bbox[0];
             $text_height = $bbox[1] - $bbox[7];
             $text_x = intval($text_area_x + ($text_area_width - $text_width) / 2);
@@ -392,11 +404,11 @@ function add_text_overlay_to_image($image_path, $text, $text_position = 'center_
             foreach ($border_points as $point) {
                 $border_x = $text_x + $point['x'];
                 $border_y = $ttf_y + $point['y'];
-                imagettftext($image, $font_size, 0, $border_x, $border_y, $shadow, $font_path, $line);
+                imagettftext($image, $calculated_font_size, 0, $border_x, $border_y, $shadow, $font_path, $line);
             }
             
             // Draw main text (branco) por cima da borda
-            imagettftext($image, $font_size, 0, $text_x, $ttf_y, $white, $font_path, $line);
+            imagettftext($image, $calculated_font_size, 0, $text_x, $ttf_y, $white, $font_path, $line);
             
         } else {
             // Método de escalonamento para built-in fonts
@@ -736,6 +748,9 @@ function trinitykit_handle_merge_assets_webhook($request) {
             $text_content = $page['generated_text_content'] ?? '';
             $illustration_id = $page['generated_illustration'] ?? null;
             
+            // Get font size from generated page (fallback to 'medio' if not found)
+            $font_size = $page['font_size'] ?? 'medio';
+            
             // Get text position from template page (fallback to center_right if not found)
             $text_position = 'center_right'; // Default position
             if (isset($template_pages[$index]) && isset($template_pages[$index]['text_position'])) {
@@ -834,9 +849,9 @@ function trinitykit_handle_merge_assets_webhook($request) {
                 }
             }
             
-            // Create merged image with text overlay using position from template
-            error_log("[TrinityKit] DEBUG - Página $index: aplicando posição '$text_position' na imagem");
-            $merged_image_path = add_text_overlay_to_image($illustration_path, $text_content, $text_position);
+            // Create merged image with text overlay using position and font size from template
+            error_log("[TrinityKit] DEBUG - Página $index: aplicando posição '$text_position' e tamanho fonte '$font_size' na imagem");
+            $merged_image_path = add_text_overlay_to_image($illustration_path, $text_content, $text_position, $font_size);
             
             if ($merged_image_path === false) {
                 $error_msg = "[TrinityKit] Erro ao criar imagem mesclada para página $index do pedido #$order_id";

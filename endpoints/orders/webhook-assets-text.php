@@ -169,10 +169,14 @@ function trinitykit_handle_text_assets_webhook($request) {
 
             // Copy skip_faceswap flag from template to generated page
             $skip_faceswap = !empty($page['skip_faceswap']) && $page['skip_faceswap'] === true;
+            
+            // Copy font_size from template to generated page (default to 'medio' if not set)
+            $font_size = !empty($page['font_size']) ? $page['font_size'] : 'medio';
 
             $generated_pages[] = array(
                 'generated_text_content' => $processed_text,
-                'skip_faceswap' => $skip_faceswap
+                'skip_faceswap' => $skip_faceswap,
+                'font_size' => $font_size
             );
         }
 
