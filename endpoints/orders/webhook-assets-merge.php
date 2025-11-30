@@ -714,6 +714,11 @@ function trinitykit_handle_merge_assets_webhook($request) {
                 if (isset($template_pages[0]['text_position'])) {
                     error_log("[TrinityKit] DEBUG - Primeira página - text_position: " . $template_pages[0]['text_position']);
                 }
+                if (isset($template_pages[0]['font_size'])) {
+                    error_log("[TrinityKit] DEBUG - Primeira página - font_size: " . var_export($template_pages[0]['font_size'], true));
+                } else {
+                    error_log("[TrinityKit] DEBUG - Primeira página - font_size: NÃO DEFINIDO");
+                }
             }
         } else {
             error_log("[TrinityKit] DEBUG - Book template não encontrado ou inválido");
@@ -748,14 +753,32 @@ function trinitykit_handle_merge_assets_webhook($request) {
             $text_content = $page['generated_text_content'] ?? '';
             $illustration_id = $page['generated_illustration'] ?? null;
             
-            // Get font size from generated page, fallback to template, then to 'medio'
+            // Get font size: PRIORIDADE para o template (fonte da verdade), depois página gerada, depois 'medio'
             // Normalizar o valor: pode vir como string, array ou null
-            $raw_font_size = $page['font_size'] ?? null;
+            $raw_font_size = null;
             
-            // Se não tiver na página gerada, tentar pegar do template
-            if (empty($raw_font_size) && isset($template_pages[$index]) && isset($template_pages[$index]['font_size'])) {
-                $raw_font_size = $template_pages[$index]['font_size'];
-                error_log("[TrinityKit] DEBUG - Página $index: font_size não encontrado na página gerada, usando do template");
+            // PRIORIDADE 1: Pegar do template (fonte da verdade)
+            if (isset($template_pages[$index])) {
+                $template_page_data = $template_pages[$index];
+                error_log("[TrinityKit] DEBUG - Página $index: template_page chaves = " . implode(', ', array_keys($template_page_data)));
+                
+                if (isset($template_page_data['font_size'])) {
+                    $raw_font_size = $template_page_data['font_size'];
+                    error_log("[TrinityKit] DEBUG - Página $index: font_size vindo do TEMPLATE (prioridade) = " . var_export($raw_font_size, true));
+                } else {
+                    error_log("[TrinityKit] DEBUG - Página $index: font_size NÃO encontrado no template");
+                }
+            } else {
+                error_log("[TrinityKit] DEBUG - Página $index: template_pages[$index] não existe");
+            }
+            // PRIORIDADE 2: Se não tiver no template, pegar da página gerada
+            elseif (isset($page['font_size']) && !empty($page['font_size'])) {
+                $raw_font_size = $page['font_size'];
+                error_log("[TrinityKit] DEBUG - Página $index: font_size vindo da PÁGINA GERADA (fallback)");
+            }
+            // PRIORIDADE 3: Usar 'medio' como padrão
+            else {
+                error_log("[TrinityKit] DEBUG - Página $index: font_size não encontrado, usando padrão 'medio'");
             }
             
             // Se for array, pegar o primeiro valor ou o valor 'value'
@@ -777,6 +800,12 @@ function trinitykit_handle_merge_assets_webhook($request) {
             // Debug: verificar valor do font_size
             error_log("[TrinityKit] DEBUG - Página $index: font_size raw = " . var_export($raw_font_size, true));
             error_log("[TrinityKit] DEBUG - Página $index: font_size normalizado = '$font_size'");
+            
+            // Debug adicional: mostrar valores do template e página gerada
+            $template_font_size = isset($template_pages[$index]['font_size']) ? $template_pages[$index]['font_size'] : 'NÃO DEFINIDO';
+            $page_font_size = isset($page['font_size']) ? $page['font_size'] : 'NÃO DEFINIDO';
+            error_log("[TrinityKit] DEBUG - Página $index: template font_size = " . var_export($template_font_size, true));
+            error_log("[TrinityKit] DEBUG - Página $index: página gerada font_size = " . var_export($page_font_size, true));
             
             // Get text position from template page (fallback to center_right if not found)
             $text_position = 'center_right'; // Default position
