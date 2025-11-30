@@ -167,8 +167,12 @@ function trinitykit_handle_text_assets_webhook($request) {
                 continue;
             }
 
+            // Copy skip_faceswap flag from template to generated page
+            $skip_faceswap = !empty($page['skip_faceswap']) && $page['skip_faceswap'] === true;
+
             $generated_pages[] = array(
-                'generated_text_content' => $processed_text
+                'generated_text_content' => $processed_text,
+                'skip_faceswap' => $skip_faceswap
             );
         }
 

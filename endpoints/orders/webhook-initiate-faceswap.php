@@ -187,9 +187,58 @@ function trinitykit_handle_initiate_faceswap_webhook($request) {
         $template_pages = get_field('template_book_pages', $book_template->ID);
         $page_errors = 0;
         $initiated_pages = 0;
+        $skipped_pages = 0;
         
         // Process each page individually
         foreach ($template_pages as $index => $page) {
+            // Check if this page should skip face swap
+            $skip_faceswap = !empty($page['skip_faceswap']) && $page['skip_faceswap'] === true;
+            
+            if ($skip_faceswap) {
+                // For pages that skip face swap, we need to copy the base illustration directly
+                // Find the correct base illustration in the base_illustrations repeater
+                $base_illustrations = $page['base_illustrations'];
+                $base_image = null;
+                
+                if (!empty($base_illustrations)) {
+                    foreach ($base_illustrations as $illustration) {
+                        $ill_gender = strtolower(trim((string) ($illustration['gender'] ?? '')));
+                        $ill_skin = strtolower(trim((string) ($illustration['skin_tone'] ?? '')));
+
+                        if ($ill_gender === $child_gender && $ill_skin === $child_skin_tone) {
+                            $base_image = $illustration['illustration_asset'];
+                            break;
+                        }
+                    }
+                }
+                
+                if (!empty($base_image) && !empty($base_image['ID'])) {
+                    // Copy the base illustration directly to generated_illustration
+                    $field_key = "generated_book_pages_{$index}_generated_illustration";
+                    $update_result = update_field($field_key, $base_image['ID'], $order_id);
+                    
+                    // Also mark skip_faceswap in the generated page
+                    $skip_field_key = "generated_book_pages_{$index}_skip_faceswap";
+                    update_field($skip_field_key, true, $order_id);
+                    
+                    if ($update_result) {
+                        $skipped_pages++;
+                        error_log("[TrinityKit] Página $index do pedido #$order_id pulou face swap - ilustração base copiada diretamente");
+                    } else {
+                        $error_msg = "Falha ao copiar ilustração base da página $index do pedido #$order_id (página sem face swap)";
+                        error_log("[TrinityKit] $error_msg");
+                        $page_errors++;
+                        send_telegram_error_notification("Pedido #$order_id: $error_msg");
+                    }
+                } else {
+                    $error_msg = "Imagem base não encontrada para página $index do pedido #$order_id (página sem face swap)";
+                    error_log("[TrinityKit] $error_msg");
+                    $page_errors++;
+                    send_telegram_error_notification("Pedido #$order_id: $error_msg");
+                }
+                continue;
+            }
+            
             // Find the correct base illustration in the base_illustrations repeater
             $base_illustrations = $page['base_illustrations'];
             $base_image = null;
@@ -258,21 +307,29 @@ function trinitykit_handle_initiate_faceswap_webhook($request) {
         }
 
         // Mark face swap as initiated if all pages were processed successfully
-        if ($initiated_pages === count($template_pages)) {
+        // (initiated pages + skipped pages should equal total pages)
+        $total_processed_pages = $initiated_pages + $skipped_pages;
+        if ($total_processed_pages === count($template_pages)) {
             $face_swap_initiated = update_field('face_swap_initiated', true, $order_id);
             
             if ($face_swap_initiated) {
                 // Add log entry
+                $log_message = "Face swap iniciado para $initiated_pages páginas";
+                if ($skipped_pages > 0) {
+                    $log_message .= " e $skipped_pages páginas sem face swap";
+                }
+                $log_message .= " de $child_name";
+                
                 trinitykit_add_post_log(
                     $order_id,
                     'webhook-initiate-faceswap',
-                    "Face swap iniciado para todas as $initiated_pages páginas de $child_name",
+                    $log_message,
                     'created_assets_text',
                     'created_assets_text'
                 );
                 
                 $processed++;
-                error_log("[TrinityKit] Face swap iniciado com sucesso para pedido #$order_id ($initiated_pages páginas)");
+                error_log("[TrinityKit] Face swap iniciado com sucesso para pedido #$order_id ($initiated_pages páginas com face swap, $skipped_pages sem face swap)");
             } else {
                 $error_msg = "Falha ao marcar face_swap_initiated para pedido #$order_id";
                 error_log("[TrinityKit] $error_msg");

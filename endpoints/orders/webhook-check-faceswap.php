@@ -246,6 +246,61 @@ function trinitykit_handle_check_faceswap_webhook($request) {
         
         // Check each page's face swap status
         foreach ($generated_pages as $index => $page) {
+            // Check if this page should skip face swap
+            $skip_faceswap = !empty($page['skip_faceswap']) && $page['skip_faceswap'] === true;
+            
+            // If page skips face swap, check if it has the illustration already
+            if ($skip_faceswap) {
+                if (!empty($page['generated_illustration'])) {
+                    $completed_pages++;
+                    error_log("[TrinityKit] Página $index do pedido #$order_id já tem ilustração (sem face swap)");
+                } else {
+                    // Try to get the base illustration from template and copy it
+                    $book_template = get_field('book_template', $order_id);
+                    if ($book_template) {
+                        $template_pages = get_field('template_book_pages', $book_template->ID);
+                        if (!empty($template_pages[$index])) {
+                            $template_page = $template_pages[$index];
+                            $base_illustrations = $template_page['base_illustrations'] ?? array();
+                            $child_gender = strtolower(trim((string) get_field('child_gender', $order_id)));
+                            $child_skin_tone = strtolower(trim((string) get_field('child_skin_tone', $order_id)));
+                            
+                            $base_image = null;
+                            foreach ($base_illustrations as $illustration) {
+                                $ill_gender = strtolower(trim((string) ($illustration['gender'] ?? '')));
+                                $ill_skin = strtolower(trim((string) ($illustration['skin_tone'] ?? '')));
+
+                                if ($ill_gender === $child_gender && $ill_skin === $child_skin_tone) {
+                                    $base_image = $illustration['illustration_asset'];
+                                    break;
+                                }
+                            }
+                            
+                            if (!empty($base_image) && !empty($base_image['ID'])) {
+                                $field_key = "generated_book_pages_{$index}_generated_illustration";
+                                $update_result = update_field($field_key, $base_image['ID'], $order_id);
+                                
+                                if ($update_result) {
+                                    $completed_pages++;
+                                    error_log("[TrinityKit] Página $index do pedido #$order_id - ilustração base copiada (sem face swap)");
+                                } else {
+                                    $pending_pages++;
+                                    error_log("[TrinityKit] Falha ao copiar ilustração base da página $index do pedido #$order_id (sem face swap)");
+                                }
+                            } else {
+                                $pending_pages++;
+                                error_log("[TrinityKit] Imagem base não encontrada para página $index do pedido #$order_id (sem face swap)");
+                            }
+                        } else {
+                            $pending_pages++;
+                        }
+                    } else {
+                        $pending_pages++;
+                    }
+                }
+                continue;
+            }
+            
             $task_id = $page['faceswap_task_id'] ?? null;
             
             if (empty($task_id)) {

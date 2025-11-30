@@ -76,6 +76,18 @@ function register_book_template_fields() {
                             'return_format' => 'value',
                         ),
                         array(
+                            'key' => 'field_skip_faceswap',
+                            'label' => 'Não há um rosto para o faceswap',
+                            'name' => 'skip_faceswap',
+                            'type' => 'true_false',
+                            'instructions' => 'Marque esta opção se esta página não precisa de face swap. A ilustração base será usada diretamente.',
+                            'required' => 0,
+                            'default_value' => 0,
+                            'ui' => 1,
+                            'ui_on_text' => 'Sim',
+                            'ui_off_text' => 'Não',
+                        ),
+                        array(
                             'key' => 'field_base_illustrations',
                             'label' => 'Ilustrações Base',
                             'name' => 'base_illustrations',

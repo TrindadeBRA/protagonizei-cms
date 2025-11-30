@@ -267,6 +267,18 @@ function register_order_fields() {
                             'media_upload' => 0,
                         ),
                         array(
+                            'key' => 'field_skip_faceswap',
+                            'label' => 'Não há um rosto para o faceswap',
+                            'name' => 'skip_faceswap',
+                            'type' => 'true_false',
+                            'instructions' => 'Marque esta opção se esta página não precisa de face swap. A ilustração base será usada diretamente.',
+                            'required' => 0,
+                            'default_value' => 0,
+                            'ui' => 1,
+                            'ui_on_text' => 'Sim',
+                            'ui_off_text' => 'Não',
+                        ),
+                        array(
                             'key' => 'field_faceswap_task_id',
                             'label' => 'FaceSwap Task ID',
                             'name' => 'faceswap_task_id',

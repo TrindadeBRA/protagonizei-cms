@@ -377,7 +377,45 @@ $status_colors = array(
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <?php foreach ($generated_book_pages as $index => $page): ?>
                                     <div class="border border-gray-200 rounded-lg p-4">
-                                        <h4 class="font-medium text-gray-900 mb-2">Página <?php echo $index + 1; ?></h4>
+                                        <div class="flex items-center justify-between mb-2">
+                                            <h4 class="font-medium text-gray-900">Página <?php echo $index + 1; ?></h4>
+                                            <?php 
+                                            $skip_faceswap = !empty($page['skip_faceswap']) && $page['skip_faceswap'] === true;
+                                            if ($skip_faceswap): ?>
+                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800" title="Esta página não precisa de face swap">
+                                                    <i class="fas fa-ban mr-1"></i>
+                                                    Sem Face Swap
+                                                </span>
+                                            <?php endif; ?>
+                                        </div>
+                                        
+                                        <?php 
+                                        // Mostrar informações do Face Swap se aplicável
+                                        if (!$skip_faceswap): ?>
+                                            <?php if (isset($page['faceswap_task_id']) && !empty($page['faceswap_task_id'])): ?>
+                                                <div class="mb-3 p-2 bg-blue-50 border border-blue-200 rounded text-xs">
+                                                    <p class="text-blue-800">
+                                                        <i class="fas fa-sync-alt mr-1"></i>
+                                                        <strong>Face Swap Task ID:</strong> 
+                                                        <code class="bg-blue-100 px-1 rounded"><?php echo esc_html($page['faceswap_task_id']); ?></code>
+                                                    </p>
+                                                </div>
+                                            <?php elseif (!isset($page['generated_illustration']) || empty($page['generated_illustration'])): ?>
+                                                <div class="mb-3 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs">
+                                                    <p class="text-yellow-800">
+                                                        <i class="fas fa-clock mr-1"></i>
+                                                        Face swap pendente
+                                                    </p>
+                                                </div>
+                                            <?php endif; ?>
+                                        <?php else: ?>
+                                            <div class="mb-3 p-2 bg-green-50 border border-green-200 rounded text-xs">
+                                                <p class="text-green-800">
+                                                    <i class="fas fa-check-circle mr-1"></i>
+                                                    Ilustração base usada diretamente (sem face swap)
+                                                </p>
+                                            </div>
+                                        <?php endif; ?>
                                         
                                         <?php if (isset($page['generated_text_content'])): ?>
                                             <div class="mb-3">
@@ -829,17 +867,27 @@ $status_colors = array(
                                 <div class="space-y-4">
                                     <?php foreach ($template_pages as $index => $page): ?>
                                         <div class="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                                            <h4 class="font-medium text-gray-900 mb-3 flex items-center">
-                                                <span class="inline-flex items-center justify-center w-6 h-6 bg-indigo-100 text-indigo-800 text-xs font-medium rounded-full mr-2">
-                                                    <?php echo $index + 1; ?>
-                                                </span>
-                                                Página <?php echo $index + 1; ?>
-                                                <?php if ($child_gender === 'boy'): ?>
-                                                    <i class="fas fa-mars text-blue-600 ml-2" title="Menino"></i>
-                                                <?php elseif ($child_gender === 'girl'): ?>
-                                                    <i class="fas fa-venus text-pink-600 ml-2" title="Menina"></i>
+                                            <div class="flex items-center justify-between mb-3">
+                                                <h4 class="font-medium text-gray-900 flex items-center">
+                                                    <span class="inline-flex items-center justify-center w-6 h-6 bg-indigo-100 text-indigo-800 text-xs font-medium rounded-full mr-2">
+                                                        <?php echo $index + 1; ?>
+                                                    </span>
+                                                    Página <?php echo $index + 1; ?>
+                                                    <?php if ($child_gender === 'boy'): ?>
+                                                        <i class="fas fa-mars text-blue-600 ml-2" title="Menino"></i>
+                                                    <?php elseif ($child_gender === 'girl'): ?>
+                                                        <i class="fas fa-venus text-pink-600 ml-2" title="Menina"></i>
+                                                    <?php endif; ?>
+                                                </h4>
+                                                <?php 
+                                                $template_skip_faceswap = !empty($page['skip_faceswap']) && $page['skip_faceswap'] === true;
+                                                if ($template_skip_faceswap): ?>
+                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800" title="Esta página do template não precisa de face swap">
+                                                        <i class="fas fa-ban mr-1"></i>
+                                                        Sem Face Swap
+                                                    </span>
                                                 <?php endif; ?>
-                                            </h4>
+                                            </div>
                                             
                                             <!-- Texto Original Correspondente -->
                                             <?php 
