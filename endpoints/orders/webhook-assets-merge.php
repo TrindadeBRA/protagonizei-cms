@@ -767,18 +767,25 @@ function trinitykit_handle_merge_assets_webhook($request) {
                     error_log("[TrinityKit] DEBUG - Página $index: font_size vindo do TEMPLATE (prioridade) = " . var_export($raw_font_size, true));
                 } else {
                     error_log("[TrinityKit] DEBUG - Página $index: font_size NÃO encontrado no template");
+                    // PRIORIDADE 2: Se não tiver no template, pegar da página gerada
+                    if (isset($page['font_size']) && !empty($page['font_size'])) {
+                        $raw_font_size = $page['font_size'];
+                        error_log("[TrinityKit] DEBUG - Página $index: font_size vindo da PÁGINA GERADA (fallback)");
+                    }
                 }
             } else {
                 error_log("[TrinityKit] DEBUG - Página $index: template_pages[$index] não existe");
+                // PRIORIDADE 2: Se não tiver no template, pegar da página gerada
+                if (isset($page['font_size']) && !empty($page['font_size'])) {
+                    $raw_font_size = $page['font_size'];
+                    error_log("[TrinityKit] DEBUG - Página $index: font_size vindo da PÁGINA GERADA (fallback)");
+                }
             }
-            // PRIORIDADE 2: Se não tiver no template, pegar da página gerada
-            elseif (isset($page['font_size']) && !empty($page['font_size'])) {
-                $raw_font_size = $page['font_size'];
-                error_log("[TrinityKit] DEBUG - Página $index: font_size vindo da PÁGINA GERADA (fallback)");
-            }
-            // PRIORIDADE 3: Usar 'medio' como padrão
-            else {
+            
+            // PRIORIDADE 3: Se ainda não tiver valor, usar 'medio' como padrão
+            if (!isset($raw_font_size) || empty($raw_font_size)) {
                 error_log("[TrinityKit] DEBUG - Página $index: font_size não encontrado, usando padrão 'medio'");
+                $raw_font_size = null; // Será tratado abaixo para usar 'medio'
             }
             
             // Se for array, pegar o primeiro valor ou o valor 'value'
