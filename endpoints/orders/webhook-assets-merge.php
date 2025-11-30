@@ -348,11 +348,11 @@ function add_text_overlay_to_image($image_path, $text, $text_position = 'center_
 
     // Calculate total text height com line height otimizado para SourGummy semi-bold
     if ($use_ttf) {
-        // Para SourGummy semi-bold: line height mais generoso para melhor legibilidade
-        $line_height = $char_height * 1.4; // 140% do tamanho da fonte (padrão tipográfico)
-        error_log("[TrinityKit] DEBUG TTF - Line height calculado: {$line_height}px (140% de {$char_height}px)");
+        // Para SourGummy semi-bold: line height reduzido para melhor compactação
+        $line_height = $char_height * 1.2; // 120% do tamanho da fonte (reduzido de 140%)
+        error_log("[TrinityKit] DEBUG TTF - Line height calculado: {$line_height}px (120% de {$char_height}px)");
     } else {
-        $line_height = $char_height + 8; // Built-in escalado com espaçamento reduzido
+        $line_height = $char_height + 6; // Built-in escalado com espaçamento reduzido (de 8 para 6)
     }
     
     $total_text_height = count($lines) * $line_height;
