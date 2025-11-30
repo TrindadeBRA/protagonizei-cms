@@ -97,6 +97,10 @@ $font_size_labels = array(
                         <i class="fas fa-arrow-left mr-2"></i>
                         Voltar para Lista
                     </a>
+                    <a href="<?php echo esc_url(get_template_directory_uri() . '/download-book-template.php?id=' . $template_id); ?>" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors">
+                        <i class="fas fa-download mr-2"></i>
+                        Baixar Template
+                    </a>
                     <a href="<?php echo esc_url(get_edit_post_link($template_id)); ?>" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
                         <i class="fas fa-edit mr-2"></i>
                         Editar Modelo
