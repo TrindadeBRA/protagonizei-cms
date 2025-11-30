@@ -4,7 +4,7 @@
  * 
  * Este script gera um arquivo ZIP contendo:
  * - Páginas separadas por pastas (page-1, page-2, etc)
- * - Arquivos TXT para cada texto (texto-boy.txt, texto-girl.txt)
+ * - Arquivos TXT para cada texto (text-boy.txt, text-girl.txt)
  * - Imagens JPG com formato: page-{número}-{gênero}-{tom}.jpg
  * 
  * @since 1.0.0
@@ -102,10 +102,10 @@ try {
 
         // Adiciona arquivos de texto
         if (!empty($text_boy_clean)) {
-            $zip->addFromString("{$page_folder}/texto-boy.txt", $text_boy_clean);
+            $zip->addFromString("{$page_folder}/text-boy.txt", $text_boy_clean);
         }
         if (!empty($text_girl_clean)) {
-            $zip->addFromString("{$page_folder}/texto-girl.txt", $text_girl_clean);
+            $zip->addFromString("{$page_folder}/text-girl.txt", $text_girl_clean);
         }
 
         // Processa ilustrações
