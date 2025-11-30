@@ -129,6 +129,15 @@ function calculate_text_area($image_width, $image_height, $position) {
                 'height' => $area_height
             );
             
+        case 'center_center':
+            // Full-width area centered both horizontally and vertically
+            return array(
+                'x' => $padding,
+                'y' => ($image_height - $area_height) / 2, // Vertically centered
+                'width' => $area_width,
+                'height' => $area_height
+            );
+            
         default: // fallback to center_right
             error_log("[TrinityKit] DEBUG - POSIÇÃO DESCONHECIDA '$position' - usando fallback CENTER_RIGHT");
             return array(
@@ -742,6 +751,7 @@ function trinitykit_handle_merge_assets_webhook($request) {
                     'esquerda_inferior' => 'bottom_left',
                     'superior_centralizado' => 'top_center',
                     'inferior_centralizado' => 'bottom_center',
+                    'centro_centralizado' => 'center_center',
                     // Keep English values as-is
                     'top_right' => 'top_right',
                     'center_right' => 'center_right', 
@@ -750,7 +760,8 @@ function trinitykit_handle_merge_assets_webhook($request) {
                     'center_left' => 'center_left',
                     'bottom_left' => 'bottom_left',
                     'top_center' => 'top_center',
-                    'bottom_center' => 'bottom_center'
+                    'bottom_center' => 'bottom_center',
+                    'center_center' => 'center_center'
                 );
                 
                 $text_position = isset($position_map[$raw_position]) ? $position_map[$raw_position] : 'center_right';

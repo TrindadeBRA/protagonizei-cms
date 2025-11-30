@@ -71,6 +71,7 @@ function register_book_template_fields() {
                                 'center_left' => 'Esquerda Centralizado',
                                  'bottom_center' => 'Inferior Centralizado',
                                 'bottom_left' => 'Esquerda Inferior',
+                                'center_center' => 'Centro Centralizado',
                             ),
                             'default_value' => 'center_right',
                             'return_format' => 'value',
