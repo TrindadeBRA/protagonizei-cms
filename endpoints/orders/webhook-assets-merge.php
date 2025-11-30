@@ -748,8 +748,35 @@ function trinitykit_handle_merge_assets_webhook($request) {
             $text_content = $page['generated_text_content'] ?? '';
             $illustration_id = $page['generated_illustration'] ?? null;
             
-            // Get font size from generated page (fallback to 'medio' if not found)
-            $font_size = $page['font_size'] ?? 'medio';
+            // Get font size from generated page, fallback to template, then to 'medio'
+            // Normalizar o valor: pode vir como string, array ou null
+            $raw_font_size = $page['font_size'] ?? null;
+            
+            // Se não tiver na página gerada, tentar pegar do template
+            if (empty($raw_font_size) && isset($template_pages[$index]) && isset($template_pages[$index]['font_size'])) {
+                $raw_font_size = $template_pages[$index]['font_size'];
+                error_log("[TrinityKit] DEBUG - Página $index: font_size não encontrado na página gerada, usando do template");
+            }
+            
+            // Se for array, pegar o primeiro valor ou o valor 'value'
+            if (is_array($raw_font_size)) {
+                $font_size = $raw_font_size['value'] ?? $raw_font_size[0] ?? 'medio';
+            } elseif (is_string($raw_font_size) && !empty(trim($raw_font_size))) {
+                $font_size = trim($raw_font_size);
+            } else {
+                $font_size = 'medio';
+            }
+            
+            // Garantir que seja um dos valores válidos
+            $valid_sizes = array('pequeno', 'medio', 'grande');
+            if (!in_array($font_size, $valid_sizes)) {
+                error_log("[TrinityKit] AVISO - Página $index: font_size inválido '$font_size', usando 'medio'");
+                $font_size = 'medio';
+            }
+            
+            // Debug: verificar valor do font_size
+            error_log("[TrinityKit] DEBUG - Página $index: font_size raw = " . var_export($raw_font_size, true));
+            error_log("[TrinityKit] DEBUG - Página $index: font_size normalizado = '$font_size'");
             
             // Get text position from template page (fallback to center_right if not found)
             $text_position = 'center_right'; // Default position

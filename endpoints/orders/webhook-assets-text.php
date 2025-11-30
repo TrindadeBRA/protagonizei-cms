@@ -171,7 +171,28 @@ function trinitykit_handle_text_assets_webhook($request) {
             $skip_faceswap = !empty($page['skip_faceswap']) && $page['skip_faceswap'] === true;
             
             // Copy font_size from template to generated page (default to 'medio' if not set)
-            $font_size = !empty($page['font_size']) ? $page['font_size'] : 'medio';
+            // Normalizar o valor: pode vir como string, array ou null
+            $raw_template_font_size = $page['font_size'] ?? null;
+            
+            // Se for array, pegar o primeiro valor ou o valor 'value'
+            if (is_array($raw_template_font_size)) {
+                $font_size = $raw_template_font_size['value'] ?? $raw_template_font_size[0] ?? 'medio';
+            } elseif (is_string($raw_template_font_size) && !empty(trim($raw_template_font_size))) {
+                $font_size = trim($raw_template_font_size);
+            } else {
+                $font_size = 'medio';
+            }
+            
+            // Garantir que seja um dos valores válidos
+            $valid_sizes = array('pequeno', 'medio', 'grande');
+            if (!in_array($font_size, $valid_sizes)) {
+                error_log("[TrinityKit] AVISO - Página $index: font_size do template inválido '$font_size', usando 'medio'");
+                $font_size = 'medio';
+            }
+            
+            // Debug: verificar valor do font_size do template
+            error_log("[TrinityKit] DEBUG - Página $index: font_size raw do template = " . var_export($raw_template_font_size, true));
+            error_log("[TrinityKit] DEBUG - Página $index: font_size normalizado copiado = '$font_size'");
 
             $generated_pages[] = array(
                 'generated_text_content' => $processed_text,
