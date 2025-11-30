@@ -224,16 +224,13 @@ function trinitykit_handle_initiate_faceswap_webhook($request) {
                     
                     if ($update_result) {
                         $skipped_pages++;
-                        error_log("[TrinityKit] Página $index do pedido #$order_id pulou face swap - ilustração base copiada diretamente");
                     } else {
                         // Failed to copy, but still count as skipped (no error)
                         $skipped_pages++;
-                        error_log("[TrinityKit] Página $index do pedido #$order_id pulou face swap - falha ao copiar ilustração base (página será processada depois)");
                     }
                 } else {
                     // Base image not found, but still count as skipped (no error)
                     $skipped_pages++;
-                    error_log("[TrinityKit] Página $index do pedido #$order_id pulou face swap - imagem base não encontrada (página será processada depois)");
                 }
                 continue;
             }
@@ -243,20 +240,14 @@ function trinitykit_handle_initiate_faceswap_webhook($request) {
             $base_image = null;
             
             if (!empty($base_illustrations)) {
-                $available_combos = array();
                 foreach ($base_illustrations as $illustration) {
                     $ill_gender = strtolower(trim((string) ($illustration['gender'] ?? '')));
                     $ill_skin = strtolower(trim((string) ($illustration['skin_tone'] ?? '')));
-                    $available_combos[] = $ill_gender . ':' . $ill_skin;
 
                     if ($ill_gender === $child_gender && $ill_skin === $child_skin_tone) {
                         $base_image = $illustration['illustration_asset'];
-                        error_log("[TrinityKit] Base encontrada (pedido #$order_id, página $index): genero=$child_gender, tom=$child_skin_tone, url=" . ($base_image['url'] ?? 'sem url'));
                         break;
                     }
-                }
-                if (empty($base_image)) {
-                    error_log("[TrinityKit] Nenhuma base casou exatamente (pedido #$order_id, página $index). Solicitado genero=$child_gender, tom=$child_skin_tone. Disponíveis: " . implode(',', $available_combos));
                 }
             }
             
@@ -290,7 +281,6 @@ function trinitykit_handle_initiate_faceswap_webhook($request) {
             
             if ($update_result) {
                 $initiated_pages++;
-                error_log("[TrinityKit] Face swap iniciado para página $index do pedido #$order_id - Task ID: $task_id");
             } else {
                 $error_msg = "Falha ao salvar task ID da página $index do pedido #$order_id";
                 error_log("[TrinityKit] $error_msg");
@@ -337,7 +327,6 @@ function trinitykit_handle_initiate_faceswap_webhook($request) {
                 );
                 
                 $processed++;
-                error_log("[TrinityKit] Face swap iniciado com sucesso para pedido #$order_id ($initiated_pages páginas com face swap, $skipped_pages sem face swap)");
             } else {
                 $error_msg = "Falha ao marcar face_swap_initiated para pedido #$order_id";
                 error_log("[TrinityKit] $error_msg");

@@ -249,52 +249,64 @@ function trinitykit_handle_check_faceswap_webhook($request) {
             // Check if this page should skip face swap
             $skip_faceswap = !empty($page['skip_faceswap']) && $page['skip_faceswap'] === true;
             
-            // If page skips face swap, check if it has the illustration already
+            // If page skips face swap, just copy the base illustration
             if ($skip_faceswap) {
                 if (!empty($page['generated_illustration'])) {
                     $completed_pages++;
-                    error_log("[TrinityKit] Página $index do pedido #$order_id já tem ilustração (sem face swap)");
                 } else {
-                    // Try to get the base illustration from template and copy it
+                    // Get the base illustration from template matching gender and skin tone
                     $book_template = get_field('book_template', $order_id);
-                    if ($book_template) {
-                        $template_pages = get_field('template_book_pages', $book_template->ID);
-                        if (!empty($template_pages[$index])) {
-                            $template_page = $template_pages[$index];
-                            $base_illustrations = $template_page['base_illustrations'] ?? array();
-                            $child_gender = strtolower(trim((string) get_field('child_gender', $order_id)));
-                            $child_skin_tone = strtolower(trim((string) get_field('child_skin_tone', $order_id)));
-                            
-                            $base_image = null;
-                            foreach ($base_illustrations as $illustration) {
-                                $ill_gender = strtolower(trim((string) ($illustration['gender'] ?? '')));
-                                $ill_skin = strtolower(trim((string) ($illustration['skin_tone'] ?? '')));
+                    if (!$book_template) {
+                        $error_msg = "Template do livro não encontrado para pedido #$order_id";
+                        error_log("[TrinityKit] $error_msg");
+                        $errors[] = $error_msg;
+                        $pending_pages++;
+                        continue;
+                    }
+                    
+                    $template_pages = get_field('template_book_pages', $book_template->ID);
+                    if (empty($template_pages[$index])) {
+                        $error_msg = "Página $index do template não encontrada para pedido #$order_id";
+                        error_log("[TrinityKit] $error_msg");
+                        $errors[] = $error_msg;
+                        $pending_pages++;
+                        continue;
+                    }
+                    
+                    $template_page = $template_pages[$index];
+                    $base_illustrations = $template_page['base_illustrations'] ?? array();
+                    $child_gender = strtolower(trim((string) get_field('child_gender', $order_id)));
+                    $child_skin_tone = strtolower(trim((string) get_field('child_skin_tone', $order_id)));
+                    
+                    $base_image = null;
+                    foreach ($base_illustrations as $illustration) {
+                        $ill_gender = strtolower(trim((string) ($illustration['gender'] ?? '')));
+                        $ill_skin = strtolower(trim((string) ($illustration['skin_tone'] ?? '')));
 
-                                if ($ill_gender === $child_gender && $ill_skin === $child_skin_tone) {
-                                    $base_image = $illustration['illustration_asset'];
-                                    break;
-                                }
-                            }
-                            
-                            if (!empty($base_image) && !empty($base_image['ID'])) {
-                                $field_key = "generated_book_pages_{$index}_generated_illustration";
-                                $update_result = update_field($field_key, $base_image['ID'], $order_id);
-                                
-                                if ($update_result) {
-                                    $completed_pages++;
-                                    error_log("[TrinityKit] Página $index do pedido #$order_id - ilustração base copiada (sem face swap)");
-                                } else {
-                                    $pending_pages++;
-                                    error_log("[TrinityKit] Falha ao copiar ilustração base da página $index do pedido #$order_id (sem face swap)");
-                                }
-                            } else {
-                                $pending_pages++;
-                                error_log("[TrinityKit] Imagem base não encontrada para página $index do pedido #$order_id (sem face swap)");
-                            }
-                        } else {
-                            $pending_pages++;
+                        if ($ill_gender === $child_gender && $ill_skin === $child_skin_tone) {
+                            $base_image = $illustration['illustration_asset'];
+                            break;
                         }
+                    }
+                    
+                    if (empty($base_image) || empty($base_image['ID'])) {
+                        $error_msg = "Imagem base não encontrada para página $index do pedido #$order_id (gênero: $child_gender, tom: $child_skin_tone)";
+                        error_log("[TrinityKit] $error_msg");
+                        $errors[] = $error_msg;
+                        $pending_pages++;
+                        continue;
+                    }
+                    
+                    // Copy the base illustration to generated_illustration
+                    $field_key = "generated_book_pages_{$index}_generated_illustration";
+                    $update_result = update_field($field_key, $base_image['ID'], $order_id);
+                    
+                    if ($update_result) {
+                        $completed_pages++;
                     } else {
+                        $error_msg = "Falha ao copiar ilustração base da página $index do pedido #$order_id";
+                        error_log("[TrinityKit] $error_msg");
+                        $errors[] = $error_msg;
                         $pending_pages++;
                     }
                 }
@@ -324,7 +336,6 @@ function trinitykit_handle_check_faceswap_webhook($request) {
                 continue;
             }
             if (is_array($status_data) && isset($status_data['status']) && $status_data['status'] === 'NOT_FOUND') {
-                error_log("[TrinityKit] Task não encontrada para página $index do pedido #$order_id (pendente para reprocessar)");
                 $pending_pages++;
                 continue;
             }
@@ -347,7 +358,6 @@ function trinitykit_handle_check_faceswap_webhook($request) {
                     // Update the page with the new illustration
                     $attachment_id = attachment_url_to_postid($saved_image_url);
                     if (!$attachment_id) {
-                        error_log("[TrinityKit] AVISO: Não foi possível obter o ID do anexo para URL: $saved_image_url");
                         $attachment_id = 0; // Fallback
                     }
                     
@@ -357,7 +367,6 @@ function trinitykit_handle_check_faceswap_webhook($request) {
                     
                     if ($update_result) {
                         $completed_pages++;
-                        error_log("[TrinityKit] Página $index processada com sucesso - URL: $saved_image_url, ID: $attachment_id");
                     } else {
                         $error_msg = "Falha ao atualizar ilustração da página $index do pedido #$order_id";
                         error_log("[TrinityKit] $error_msg");
@@ -463,7 +472,6 @@ function trinitykit_handle_check_faceswap_webhook($request) {
                 );
                 
                 $processed++;
-                error_log("[TrinityKit] Pedido #$order_id concluído com sucesso - $completed_pages páginas processadas");
             } else {
                 $error_msg = "Falha ao atualizar status do pedido #$order_id";
                 error_log("[TrinityKit] $error_msg");
@@ -471,9 +479,6 @@ function trinitykit_handle_check_faceswap_webhook($request) {
                 send_telegram_error_notification("Pedido #$order_id: $error_msg");
             }
         } else {
-            // Log current status
-            error_log("[TrinityKit] Pedido #$order_id - Status: $completed_pages/$total_pages concluídas, $failed_pages falharam, $pending_pages pendentes");
-            
             if ($failed_pages > 0) {
                 $error_msg = "Pedido #$order_id tem $failed_pages páginas com falha no face swap";
                 $errors[] = $error_msg;
