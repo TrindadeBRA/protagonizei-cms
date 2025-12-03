@@ -155,8 +155,15 @@ $font_size_labels = array(
                             $total_illustrations = 0;
                             if ($template_pages) {
                                 foreach ($template_pages as $page) {
-                                    $illustrations = $page['base_illustrations'] ?? array();
-                                    $total_illustrations += count($illustrations);
+                                    $skip_faceswap = !empty($page['skip_faceswap']) && $page['skip_faceswap'] === true;
+                                    if ($skip_faceswap) {
+                                        // Se skip_faceswap é true, conta apenas 1 ilustração
+                                        $total_illustrations += 1;
+                                    } else {
+                                        // Se skip_faceswap é false, conta todas as ilustrações
+                                        $illustrations = $page['base_illustrations'] ?? array();
+                                        $total_illustrations += count($illustrations);
+                                    }
                                 }
                             }
                             echo $total_illustrations;
