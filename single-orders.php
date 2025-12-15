@@ -190,7 +190,7 @@ $status_colors = array(
             <div class="lg:col-span-2 space-y-6">
                 
                 <!-- Gerenciamento de Status -->
-                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6" x-data="{ showStatusModal: false, showDeliverModal: false, isDelivering: false }">
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6" x-data="{ showStatusModal: false, isDelivering: false }">
                     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-4">
                         <h2 class="text-lg sm:text-xl font-semibold text-gray-900">
                             <i class="fas fa-tasks mr-2 text-blue-600"></i>
@@ -198,18 +198,24 @@ $status_colors = array(
                         </h2>
                         <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 sm:space-x-0">
                             <button 
-                                @click="showDeliverModal = true" 
-                                <?php if ($order_status !== 'ready_for_delivery'): ?>
-                                    disabled
-                                    class="inline-flex items-center justify-center px-3 sm:px-4 py-2 bg-green-300 text-gray-500 rounded-md cursor-not-allowed opacity-60 text-sm"
-                                    title="Pedido precisa estar no status 'Pronto para Entrega'"
-                                <?php else: ?>
-                                    class="inline-flex items-center justify-center px-3 sm:px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors text-sm"
-                                <?php endif; ?>
+                                @click="isDelivering = true; deliverOrder($el)" 
+                                :disabled="isDelivering || <?php echo $order_status !== 'ready_for_delivery' ? 'true' : 'false'; ?>"
+                                :class="isDelivering || <?php echo $order_status !== 'ready_for_delivery' ? 'true' : 'false'; ?> ? 'bg-green-300 text-gray-500 cursor-not-allowed opacity-60' : 'bg-green-600 text-white hover:bg-green-700'"
+                                class="inline-flex items-center justify-center px-3 sm:px-4 py-2 rounded-md transition-colors text-sm"
+                                title="<?php echo $order_status !== 'ready_for_delivery' ? 'Pedido precisa estar no status \'Pronto para Entrega\'' : 'Clique para entregar o pedido'; ?>"
                             >
-                                <i class="fas fa-paper-plane mr-2"></i>
-                                <span class="hidden sm:inline">Entregar Pedido</span>
-                                <span class="sm:hidden">Entregar</span>
+                                <span x-show="!isDelivering" class="flex items-center">
+                                    <i class="fas fa-paper-plane mr-2"></i>
+                                    <span class="hidden sm:inline">Entregar Pedido</span>
+                                    <span class="sm:hidden">Entregar</span>
+                                </span>
+                                <span x-show="isDelivering" class="flex items-center">
+                                    <svg class="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    <span>Entregando...</span>
+                                </span>
                             </button>
                             <button @click="showStatusModal = true" class="inline-flex items-center justify-center px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm">
                                 <i class="fas fa-edit mr-2"></i>
@@ -307,61 +313,6 @@ $status_colors = array(
                         </div>
                     </div>
 
-                    <!-- Modal para Entregar Pedido -->
-                    <div x-show="showDeliverModal" x-cloak class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 p-4" style="display: none;" @click.away="showDeliverModal = false">
-                        <div class="relative top-4 sm:top-20 mx-auto p-4 sm:p-5 border w-full max-w-md sm:w-96 shadow-lg rounded-md bg-white">
-                            <div class="mt-0 sm:mt-3">
-                                <div class="text-center mb-4">
-                                    <div class="mx-auto flex items-center justify-center h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-green-100 mb-3">
-                                        <i class="fas fa-paper-plane text-green-600 text-lg sm:text-xl"></i>
-                                    </div>
-                                    <h3 class="text-base sm:text-lg font-medium text-gray-900 mb-2">Confirmar Entrega do Pedido</h3>
-                                    <p class="text-xs sm:text-sm text-gray-500">
-                                        Tem certeza que deseja entregar este pedido?
-                                    </p>
-                                </div>
-                                
-                                <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
-                                    <p class="text-xs text-blue-800">
-                                        <i class="fas fa-info-circle mr-1"></i>
-                                        <strong>O que vai acontecer:</strong>
-                                    </p>
-                                    <ul class="text-xs text-blue-700 mt-2 space-y-1 ml-4 break-words">
-                                        <li>• Email de entrega será enviado para: <strong class="break-all"><?php echo esc_html($buyer_email); ?></strong></li>
-                                        <li>• Status será atualizado para "Entregue"</li>
-                                        <li>• Notificação será enviada no Telegram</li>
-                                    </ul>
-                                </div>
-                                
-                                <div class="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 sm:space-x-0">
-                                    <button 
-                                        type="button" 
-                                        @click="showDeliverModal = false" 
-                                        :disabled="isDelivering"
-                                        class="w-full sm:w-auto px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base">
-                                        Cancelar
-                                    </button>
-                                    <button 
-                                        type="button"
-                                        @click="isDelivering = true; deliverOrder($el)"
-                                        :disabled="isDelivering"
-                                        class="w-full sm:w-auto px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base">
-                                        <span x-show="!isDelivering" class="flex items-center justify-center">
-                                            <i class="fas fa-paper-plane mr-2"></i>
-                                            Confirmar Entrega
-                                        </span>
-                                        <span x-show="isDelivering" class="flex items-center justify-center">
-                                            <svg class="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                            </svg>
-                                            Entregando...
-                                        </span>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
 
                 <!-- Assets Gerados -->
@@ -1239,7 +1190,6 @@ $status_colors = array(
                     // Resetar estado se o Alpine estiver disponível
                     if (alpineComponent) {
                         alpineComponent.isDelivering = false;
-                        alpineComponent.showDeliverModal = false;
                     }
                 }
             } catch (error) {
@@ -1249,7 +1199,6 @@ $status_colors = array(
                 // Resetar estado se o Alpine estiver disponível
                 if (alpineComponent) {
                     alpineComponent.isDelivering = false;
-                    alpineComponent.showDeliverModal = false;
                 }
             }
         }
