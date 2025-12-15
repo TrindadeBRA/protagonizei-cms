@@ -328,7 +328,7 @@ $status_colors = array(
                                     </button>
                                     <button 
                                         type="button"
-                                        @click="deliverOrder()"
+                                        @click="isDelivering = true; deliverOrder($el)"
                                         :disabled="isDelivering"
                                         class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                                         <span x-show="!isDelivering">
@@ -1153,13 +1153,25 @@ $status_colors = array(
         }
 
         // Função para entregar pedido individual
-        async function deliverOrder() {
+        async function deliverOrder(element) {
             const orderId = <?php echo $order_id; ?>;
             const apiKey = '<?php echo esc_js(get_option('trinitykitcms_api_key')); ?>';
             
-            // Atualizar estado do Alpine.js
-            const component = document.querySelector('[x-data]').__x.$data;
-            component.isDelivering = true;
+            // Encontrar o componente Alpine.js mais próximo
+            let alpineComponent = null;
+            try {
+                // Tentar acessar o Alpine através do elemento
+                let currentElement = element;
+                while (currentElement && !alpineComponent) {
+                    if (currentElement._x_dataStack && currentElement._x_dataStack.length > 0) {
+                        alpineComponent = currentElement._x_dataStack[0];
+                        break;
+                    }
+                    currentElement = currentElement.parentElement;
+                }
+            } catch (e) {
+                console.warn('Não foi possível acessar o Alpine.js:', e);
+            }
             
             try {
                 const response = await fetch(`<?php echo home_url('/wp-json/trinitykitcms-api/v1/orders/'); ?>${orderId}/deliver`, {
@@ -1205,14 +1217,22 @@ $status_colors = array(
                     }
                     
                     alert(errorMessage);
-                    component.isDelivering = false;
-                    component.showDeliverModal = false;
+                    
+                    // Resetar estado se o Alpine estiver disponível
+                    if (alpineComponent) {
+                        alpineComponent.isDelivering = false;
+                        alpineComponent.showDeliverModal = false;
+                    }
                 }
             } catch (error) {
                 console.error('Erro na requisição:', error);
                 alert('❌ Erro ao conectar com o servidor:\n\n' + error.message);
-                component.isDelivering = false;
-                component.showDeliverModal = false;
+                
+                // Resetar estado se o Alpine estiver disponível
+                if (alpineComponent) {
+                    alpineComponent.isDelivering = false;
+                    alpineComponent.showDeliverModal = false;
+                }
             }
         }
     </script>
