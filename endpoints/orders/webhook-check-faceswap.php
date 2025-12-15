@@ -374,7 +374,7 @@ function trinitykit_handle_check_faceswap_webhook($request) {
                         
                         // Send notification for ACF update error
                         $child_name = get_field('child_name', $order_id);
-                        $order_url = home_url("/wp-admin/post.php?post={$order_id}&action=edit");
+                        $order_url = get_permalink($order_id);
                         
                         $telegram_msg = "🚨 <b>ERRO DE ATUALIZAÇÃO</b> 🚨\n\n";
                         $telegram_msg .= "🔄 <b>Falha ao salvar no ACF</b>\n";
@@ -402,7 +402,7 @@ function trinitykit_handle_check_faceswap_webhook($request) {
                     
                     // Send notification for save error
                     $child_name = get_field('child_name', $order_id);
-                    $order_url = home_url("/wp-admin/post.php?post={$order_id}&action=edit");
+                    $order_url = get_permalink($order_id);
                     
                     $telegram_msg = "🚨 <b>ERRO NO PROCESSAMENTO</b> 🚨\n\n";
                     $telegram_msg .= "💾 <b>Falha ao salvar imagem</b>\n";
@@ -430,7 +430,7 @@ function trinitykit_handle_check_faceswap_webhook($request) {
                 
                 // Send detailed Telegram notification with manual intervention request
                 $child_name = get_field('child_name', $order_id);
-                $order_url = home_url("/wp-admin/post.php?post={$order_id}&action=edit");
+                $order_url = get_permalink($order_id);
                 
                 $telegram_msg = "🚨 <b>ATENÇÃO: FALHA NO FACE SWAP</b> 🚨\n\n";
                 $telegram_msg .= "❌ <b>Erro na geração de ativo</b>\n";

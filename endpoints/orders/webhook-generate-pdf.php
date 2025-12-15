@@ -103,12 +103,13 @@ function trinitykit_handle_generate_pdf_webhook($request) {
                     $error_msg = "Pedido #$order_id: Nenhuma página gerada encontrada";
                     error_log("[TrinityKit] $error_msg");
                     $errors[] = $error_msg;
+                    $order_url = get_permalink($order_id);
                     send_telegram_error_notification(
                         "❌ *Erro na geração de PDF*\n\n" .
                         "📋 Pedido: #$order_id\n" .
                         "👶 Criança: $child_name\n" .
                         "🔍 Problema: Nenhuma página gerada encontrada\n\n" .
-                        "🔗 [Ver pedido](https://cms.protagonizei.com/wp-admin/post.php?post=$order_id&action=edit)",
+                        "🔗 [Ver pedido]($order_url)",
                         "Erro na Geração de PDF"
                     );
                     continue;
@@ -138,12 +139,13 @@ function trinitykit_handle_generate_pdf_webhook($request) {
                     $error_msg = "Pedido #$order_id: Páginas finais ausentes: $missing_list";
                     error_log("[TrinityKit] $error_msg");
                     $errors[] = $error_msg;
+                    $order_url = get_permalink($order_id);
                     send_telegram_error_notification(
                         "⚠️ *Páginas finais ausentes*\n\n" .
                         "📋 Pedido: #$order_id\n" .
                         "👶 Criança: $child_name\n" .
                         "📄 Páginas ausentes: $missing_list\n\n" .
-                        "🔗 [Ver pedido](https://cms.protagonizei.com/wp-admin/post.php?post=$order_id&action=edit)",
+                        "🔗 [Ver pedido]($order_url)",
                         "Páginas Finais Ausentes"
                     );
                     continue;
@@ -164,12 +166,13 @@ function trinitykit_handle_generate_pdf_webhook($request) {
                     $error_msg = "Pedido #$order_id: " . $pdf_result['error'];
                     error_log("[TrinityKit] $error_msg");
                     $errors[] = $error_msg;
+                    $order_url = get_permalink($order_id);
                     send_telegram_error_notification(
                         "❌ *Erro na geração de PDF*\n\n" .
                         "📋 Pedido: #$order_id\n" .
                         "👶 Criança: $child_name\n" .
                         "🔍 Erro: " . $pdf_result['error'] . "\n\n" .
-                        "🔗 [Ver pedido](https://cms.protagonizei.com/wp-admin/post.php?post=$order_id&action=edit)",
+                        "🔗 [Ver pedido]($order_url)",
                         "Erro na Geração de PDF"
                     );
                     continue;
@@ -219,7 +222,7 @@ function trinitykit_handle_generate_pdf_webhook($request) {
                 try {
                     $telegram = new TelegramService();
                     if ($telegram->isConfigured()) {
-                        $order_url = home_url("/wp-admin/post.php?post={$order_id}&action=edit");
+                        $order_url = get_permalink($order_id);
                         $buyer_name = get_field('buyer_name', $order_id);
                         $buyer_email = get_field('buyer_email', $order_id);
                         $order_total = get_field('payment_amount', $order_id);
@@ -235,7 +238,7 @@ function trinitykit_handle_generate_pdf_webhook($request) {
                         $date = new DateTime('now', new DateTimeZone('America/Sao_Paulo'));
                         $message .= "📅 <b>Data:</b> " . $date->format('d/m/Y H:i:s') . "\n";
                         $message .= "📎 <b>PDF:</b> <a href='" . esc_url($pdf_url) . "'>Baixar PDF</a>\n\n";
-                        $message .= "🔗 <a href='" . esc_url($order_url) . "'>Ver Pedido no Admin</a>\n\n";
+                        $message .= "🔗 <a href='" . esc_url($order_url) . "'>Ver Pedido</a>\n\n";
                         $message .= "✅ <b>Status:</b> Pronto para revisão e envio";
                         
                         $telegram_result = $telegram->sendTextMessage($message);
@@ -259,12 +262,13 @@ function trinitykit_handle_generate_pdf_webhook($request) {
                 $error_msg = "Pedido #$order_id: Erro inesperado - " . $e->getMessage();
                 error_log("[TrinityKit] $error_msg");
                 $errors[] = $error_msg;
+                $order_url = get_permalink($order_id);
                 send_telegram_error_notification(
                     "💥 *Erro inesperado na geração de PDF*\n\n" .
                     "📋 Pedido: #$order_id\n" .
                     "👶 Criança: $child_name\n" .
                     "🔍 Erro: " . $e->getMessage() . "\n\n" .
-                    "🔗 [Ver pedido](https://cms.protagonizei.com/wp-admin/post.php?post=$order_id&action=edit)",
+                    "🔗 [Ver pedido]($order_url)",
                     "Erro Inesperado"
                 );
             }

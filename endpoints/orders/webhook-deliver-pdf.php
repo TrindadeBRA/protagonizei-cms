@@ -156,7 +156,7 @@ function trinitykit_handle_deliver_pdf_webhook($request) {
                         try {
                             $telegram = new TelegramService();
                             if ($telegram->isConfigured()) {
-                                $order_url = home_url("/wp-admin/post.php?post={$order_id}&action=edit");
+                                $order_url = get_permalink($order_id);
                                 
                                 $telegram_msg = "🎉 <b>ENTREGA REALIZADA COM SUCESSO!</b>\n\n";
                                 $telegram_msg .= "📚 <b>Livro Personalizado Entregue</b>\n";
@@ -168,7 +168,7 @@ function trinitykit_handle_deliver_pdf_webhook($request) {
                                 $date = new DateTime('now', new DateTimeZone('America/Sao_Paulo'));
                                 $telegram_msg .= "📅 <b>Data da Entrega:</b> " . $date->format('d/m/Y H:i:s') . "\n";
                                 $telegram_msg .= "📎 <b>PDF:</b> <a href='" . esc_url($pdf_url) . "'>Ver PDF</a>\n\n";
-                                $telegram_msg .= "🔗 <a href='" . esc_url($order_url) . "'>Ver Pedido no Admin</a>\n\n";
+                                $telegram_msg .= "🔗 <a href='" . esc_url($order_url) . "'>Ver Pedido</a>\n\n";
                                 $telegram_msg .= "✅ <b>Status:</b> Entregue com sucesso!";
                                 
                                 $telegram_result = $telegram->sendTextMessage($telegram_msg);
@@ -205,7 +205,7 @@ function trinitykit_handle_deliver_pdf_webhook($request) {
                     try {
                         $telegram = new TelegramService();
                         if ($telegram->isConfigured()) {
-                            $order_url = home_url("/wp-admin/post.php?post={$order_id}&action=edit");
+                            $order_url = get_permalink($order_id);
                             
                             $error_telegram_msg = "🚨 <b>ERRO NO ENVIO DE EMAIL DE ENTREGA</b>\n\n";
                             $error_telegram_msg .= "❌ <b>Falha ao enviar email</b>\n";
@@ -236,7 +236,7 @@ function trinitykit_handle_deliver_pdf_webhook($request) {
                 try {
                     $telegram = new TelegramService();
                     if ($telegram->isConfigured()) {
-                        $order_url = home_url("/wp-admin/post.php?post={$order_id}&action=edit");
+                        $order_url = get_permalink($order_id);
                         
                         $error_telegram_msg = "💥 <b>ERRO INESPERADO NA ENTREGA</b>\n\n";
                         $error_telegram_msg .= "❌ <b>Erro inesperado</b>\n";

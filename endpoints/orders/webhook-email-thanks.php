@@ -112,7 +112,7 @@ function trinitykit_handle_thank_webhook($request) {
                 try {
                     $telegram = new TelegramService();
                     if ($telegram->isConfigured()) {
-                        $order_url = home_url("/wp-admin/post.php?post={$order_id}&action=edit");
+                        $order_url = get_permalink($order_id);
                         
                         $message = "✅ <b>Pedido confirmado!</b>\n\n";
                         $message .= "📧 <b>Cliente:</b> " . htmlspecialchars($name) . "\n";
