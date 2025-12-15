@@ -177,16 +177,31 @@ $status_colors = array(
             <div class="lg:col-span-2 space-y-6">
                 
                 <!-- Gerenciamento de Status -->
-                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6" x-data="{ showStatusModal: false }">
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6" x-data="{ showStatusModal: false, showDeliverModal: false, isDelivering: false }">
                     <div class="flex items-center justify-between mb-4">
                         <h2 class="text-xl font-semibold text-gray-900">
                             <i class="fas fa-tasks mr-2 text-blue-600"></i>
                             Gerenciamento de Status
                         </h2>
-                        <button @click="showStatusModal = true" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
-                            <i class="fas fa-edit mr-2"></i>
-                            Alterar Status
-                        </button>
+                        <div class="flex items-center space-x-3">
+                            <button 
+                                @click="showDeliverModal = true" 
+                                <?php if ($order_status !== 'ready_for_delivery'): ?>
+                                    disabled
+                                    class="inline-flex items-center px-4 py-2 bg-green-300 text-gray-500 rounded-md cursor-not-allowed opacity-60"
+                                    title="Pedido precisa estar no status 'Pronto para Entrega'"
+                                <?php else: ?>
+                                    class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+                                <?php endif; ?>
+                            >
+                                <i class="fas fa-paper-plane mr-2"></i>
+                                Entregar Pedido
+                            </button>
+                            <button @click="showStatusModal = true" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                                <i class="fas fa-edit mr-2"></i>
+                                Alterar Status
+                            </button>
+                        </div>
                     </div>
                     
                     <!-- Timeline de Status -->
@@ -273,6 +288,62 @@ $status_colors = array(
                                         </button>
                                     </div>
                                 </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Modal para Entregar Pedido -->
+                    <div x-show="showDeliverModal" x-cloak class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" style="display: none;">
+                        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                            <div class="mt-3">
+                                <div class="text-center mb-4">
+                                    <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-3">
+                                        <i class="fas fa-paper-plane text-green-600 text-xl"></i>
+                                    </div>
+                                    <h3 class="text-lg font-medium text-gray-900 mb-2">Confirmar Entrega do Pedido</h3>
+                                    <p class="text-sm text-gray-500">
+                                        Tem certeza que deseja entregar este pedido?
+                                    </p>
+                                </div>
+                                
+                                <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                                    <p class="text-xs text-blue-800">
+                                        <i class="fas fa-info-circle mr-1"></i>
+                                        <strong>O que vai acontecer:</strong>
+                                    </p>
+                                    <ul class="text-xs text-blue-700 mt-2 space-y-1 ml-4">
+                                        <li>• Email de entrega será enviado para: <strong><?php echo esc_html($buyer_email); ?></strong></li>
+                                        <li>• Status será atualizado para "Entregue"</li>
+                                        <li>• Notificação será enviada no Telegram</li>
+                                    </ul>
+                                </div>
+                                
+                                <div class="flex justify-end space-x-3">
+                                    <button 
+                                        type="button" 
+                                        @click="showDeliverModal = false" 
+                                        :disabled="isDelivering"
+                                        class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                        Cancelar
+                                    </button>
+                                    <button 
+                                        type="button"
+                                        @click="deliverOrder()"
+                                        :disabled="isDelivering"
+                                        class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                        <span x-show="!isDelivering">
+                                            <i class="fas fa-paper-plane mr-2"></i>
+                                            Confirmar Entrega
+                                        </span>
+                                        <span x-show="isDelivering" class="flex items-center">
+                                            <svg class="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                            Entregando...
+                                        </span>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1079,6 +1150,70 @@ $status_colors = array(
         function reloadPDF() {
             const iframe = document.getElementById('pdf-viewer');
             iframe.src = iframe.src; // Recarrega o conteúdo do iframe
+        }
+
+        // Função para entregar pedido individual
+        async function deliverOrder() {
+            const orderId = <?php echo $order_id; ?>;
+            const apiKey = '<?php echo esc_js(get_option('trinitykitcms_api_key')); ?>';
+            
+            // Atualizar estado do Alpine.js
+            const component = document.querySelector('[x-data]').__x.$data;
+            component.isDelivering = true;
+            
+            try {
+                const response = await fetch(`<?php echo home_url('/wp-json/trinitykitcms-api/v1/orders/'); ?>${orderId}/deliver`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-API-Key': apiKey
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Sucesso - mostrar mensagem e recarregar página
+                    alert('✅ Pedido entregue com sucesso!\n\n' + 
+                          'Email enviado para: ' + data.buyer_email + '\n' +
+                          'Cliente: ' + data.buyer_name + '\n' +
+                          'Criança: ' + data.child_name);
+                    location.reload();
+                } else {
+                    // Erro - mostrar mensagem de erro
+                    let errorMessage = '❌ Erro ao entregar pedido:\n\n';
+                    
+                    if (data.code === 'invalid_status') {
+                        errorMessage += 'Status inválido. O pedido precisa estar no status "Pronto para Entrega".\n';
+                        errorMessage += 'Status atual: ' + data.current_status;
+                    } else if (data.code === 'already_delivered') {
+                        errorMessage += 'Este pedido já foi entregue anteriormente.';
+                    } else if (data.code === 'missing_data') {
+                        errorMessage += 'Dados obrigatórios ausentes:\n';
+                        if (data.missing.buyer_name) errorMessage += '• Nome do comprador\n';
+                        if (data.missing.buyer_email) errorMessage += '• Email do comprador\n';
+                        if (data.missing.pdf_url) errorMessage += '• Link do PDF\n';
+                    } else if (data.code === 'invalid_email') {
+                        errorMessage += 'Email inválido: ' + data.message;
+                    } else if (data.code === 'email_send_failed') {
+                        errorMessage += 'Falha ao enviar email de entrega.\n';
+                        if (data.error_details) {
+                            errorMessage += 'Detalhes: ' + data.error_details;
+                        }
+                    } else {
+                        errorMessage += data.message || 'Erro desconhecido';
+                    }
+                    
+                    alert(errorMessage);
+                    component.isDelivering = false;
+                    component.showDeliverModal = false;
+                }
+            } catch (error) {
+                console.error('Erro na requisição:', error);
+                alert('❌ Erro ao conectar com o servidor:\n\n' + error.message);
+                component.isDelivering = false;
+                component.showDeliverModal = false;
+            }
         }
     </script>
 </body>

@@ -1738,9 +1738,267 @@
         "security": [{"ApiKeyAuth": []}]
       }
     },
+    "/orders/{order_id}/deliver": {
+      "post": {
+        "summary": "Entregar pedido individual",
+        "description": "Processa um pedido específico no status 'ready_for_delivery' para enviar email de entrega ao cliente com link para download do PDF final. Após o envio bem-sucedido do email, atualiza o status do pedido para 'delivered' e notifica a equipe via Telegram sobre a entrega realizada. Este endpoint é usado para entrega manual e revisão individual de pedidos.",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "description": "ID do pedido para entregar",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pedido entregue com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Pedido entregue com sucesso"
+                    },
+                    "order_id": {
+                      "type": "integer",
+                      "example": 123
+                    },
+                    "child_name": {
+                      "type": "string",
+                      "example": "Luna Trindade"
+                    },
+                    "buyer_name": {
+                      "type": "string",
+                      "example": "Lucas Trindade"
+                    },
+                    "buyer_email": {
+                      "type": "string",
+                      "example": "lucas@email.com"
+                    },
+                    "pdf_url": {
+                      "type": "string",
+                      "example": "https://example.com/pdfs/livro-123.pdf"
+                    },
+                    "status": {
+                      "type": "string",
+                      "example": "delivered"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro de validação ou status inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "example": "invalid_status"
+                        },
+                        "message": {
+                          "type": "string",
+                          "example": "Pedido não está pronto para entrega. Status atual: thanked"
+                        },
+                        "order_id": {
+                          "type": "integer",
+                          "example": 123
+                        },
+                        "current_status": {
+                          "type": "string",
+                          "example": "thanked"
+                        },
+                        "required_status": {
+                          "type": "string",
+                          "example": "ready_for_delivery"
+                        }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "example": "already_delivered"
+                        },
+                        "message": {
+                          "type": "string",
+                          "example": "Pedido já foi entregue anteriormente"
+                        },
+                        "order_id": {
+                          "type": "integer",
+                          "example": 123
+                        },
+                        "current_status": {
+                          "type": "string",
+                          "example": "delivered"
+                        }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "example": "missing_data"
+                        },
+                        "message": {
+                          "type": "string",
+                          "example": "Dados obrigatórios ausentes para entrega"
+                        },
+                        "order_id": {
+                          "type": "integer",
+                          "example": 123
+                        },
+                        "missing": {
+                          "type": "object",
+                          "properties": {
+                            "buyer_name": {
+                              "type": "boolean",
+                              "example": false
+                            },
+                            "buyer_email": {
+                              "type": "boolean",
+                              "example": false
+                            },
+                            "pdf_url": {
+                              "type": "boolean",
+                              "example": true
+                            }
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "example": "invalid_email"
+                        },
+                        "message": {
+                          "type": "string",
+                          "example": "Email inválido: invalid@"
+                        },
+                        "order_id": {
+                          "type": "integer",
+                          "example": 123
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Pedido não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "order_not_found"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Pedido não encontrado"
+                    },
+                    "order_id": {
+                      "type": "integer",
+                      "example": 123
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno do servidor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "example": "email_send_failed"
+                        },
+                        "message": {
+                          "type": "string",
+                          "example": "Falha ao enviar email de entrega"
+                        },
+                        "order_id": {
+                          "type": "integer",
+                          "example": 123
+                        },
+                        "error_details": {
+                          "type": "string",
+                          "example": "SMTP Error: Could not connect to SMTP host"
+                        }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "example": "status_update_failed"
+                        },
+                        "message": {
+                          "type": "string",
+                          "example": "Email enviado, mas falha ao atualizar status para delivered"
+                        },
+                        "order_id": {
+                          "type": "integer",
+                          "example": 123
+                        }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "example": "unexpected_error"
+                        },
+                        "message": {
+                          "type": "string",
+                          "example": "Erro inesperado na entrega do pedido #123: Exception message"
+                        },
+                        "order_id": {
+                          "type": "integer",
+                          "example": 123
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [{"ApiKeyAuth": []}]
+      }
+    },
     "/webhook/deliver-pdf": {
       "get": {
-        "summary": "Entregar PDFs dos livros personalizados aos clientes",
+        "summary": "Entregar PDFs dos livros personalizados aos clientes (em lote)",
         "description": "Processa todos os pedidos no status 'ready_for_delivery' para enviar emails de entrega aos clientes com links para download dos PDFs finais. Após o envio bem-sucedido do email, atualiza o status do pedido para 'delivered' e notifica a equipe via Telegram sobre a entrega realizada.",
         "responses": {
           "200": {
