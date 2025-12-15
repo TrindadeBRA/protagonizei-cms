@@ -79,7 +79,9 @@ function trinitykitcms_render_admin_page()
                         <th scope="row">Frontend URL</th>
                         <td>
                             <input type="url" name="trinitykitcms_frontend_app_url" value="<?php echo esc_attr(get_option('trinitykitcms_frontend_app_url')); ?>" class="regular-text">
-                            <p class="description">URL da aplicação frontend. Esta URL vai ser usada para permitir as requisições (CORS) apenas deste dominio. (Caso haja necessidade de inserir mais de uma URL, separe-as por vírgula)</p>
+                            <p class="description">URL da aplicação frontend. Esta URL vai ser usada para permitir as requisições (CORS) apenas deste domínio.<br>
+                            <strong>Importante:</strong> Para evitar problemas de CORS no Safari, adicione AMBAS as variações do domínio (com e sem www) separadas por vírgula.<br>
+                            <strong>Exemplo:</strong> https://www.seudominio.com,https://seudominio.com</p>
                         </td>
                     </tr>
                     

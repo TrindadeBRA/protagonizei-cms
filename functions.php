@@ -123,12 +123,21 @@ add_action('rest_api_init', function () {
     add_filter('rest_pre_serve_request', function ($served, $result, $request, $server) {
         $frontend_url = get_option('trinitykitcms_frontend_app_url');
         
+        // Origens base permitidas (apenas desenvolvimento e CMS)
         $allowed_origins = [
             'http://localhost:3000',
             'http://localhost:8080',
             'https://cms.protagonizei.com',
-            $frontend_url
         ];
+
+        // Adicionar URLs do frontend (suporta múltiplas URLs separadas por vírgula)
+        if (!empty($frontend_url)) {
+            $frontend_urls = array_map('trim', explode(',', $frontend_url));
+            $allowed_origins = array_merge($allowed_origins, $frontend_urls);
+        }
+
+        // Remover valores vazios e duplicados
+        $allowed_origins = array_values(array_filter(array_unique($allowed_origins)));
 
         if (isset($_SERVER['HTTP_ORIGIN'])) {
             $origin = $_SERVER['HTTP_ORIGIN'];
@@ -140,6 +149,10 @@ add_action('rest_api_init', function () {
                 header('Access-Control-Allow-Credentials: true');
                 header('Access-Control-Max-Age: 86400');    // cache for 1 day
             } else {
+                // Log para debug (remover em produção)
+                error_log('CORS bloqueado para origem: ' . $origin);
+                error_log('Origens permitidas: ' . implode(', ', $allowed_origins));
+                
                 header('HTTP/1.1 403 Forbidden');
                 echo json_encode(['message' => 'CORS bloqueado']);
                 exit;
