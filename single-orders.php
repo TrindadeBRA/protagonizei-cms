@@ -137,35 +137,48 @@ $status_colors = array(
             transform: scale(1.02);
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
+        
+        @media (min-width: 640px) {
+            #pdf-viewer-container {
+                height: 500px;
+            }
+        }
+        
+        @media (min-width: 1024px) {
+            #pdf-viewer-container {
+                height: 600px;
+            }
+        }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
     
     <?php if (isset($_GET['status_updated'])): ?>
-        <div class="fixed top-4 right-4 z-50 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg" x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 3000)">
+        <div class="fixed top-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-auto z-50 bg-green-500 text-white px-4 sm:px-6 py-3 rounded-lg shadow-lg" x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 3000)">
             <i class="fas fa-check mr-2"></i>
-            Status atualizado com sucesso!
+            <span class="text-sm sm:text-base">Status atualizado com sucesso!</span>
         </div>
     <?php endif; ?>
     
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-4 sm:py-6 lg:py-8">
         
         <!-- Header -->
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-            <div class="flex items-center justify-between flex-wrap gap-4">
-                <div>
-                    <h1 class="text-3xl font-bold text-gray-900">Pedido #<?php echo esc_html($order_id); ?></h1>
-                    <p class="text-gray-600 mt-1">
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 mb-4 sm:mb-6">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+                <div class="flex-1 min-w-0">
+                    <h1 class="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 break-words">Pedido #<?php echo esc_html($order_id); ?></h1>
+                    <p class="text-sm sm:text-base text-gray-600 mt-1 break-words">
                         <?php echo esc_html($buyer_name ?: 'Comprador não informado'); ?> - <?php echo esc_html($child_name ?: 'Criança não informada'); ?>
                     </p>
                 </div>
-                <div class="flex items-center space-x-4">
-                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium <?php echo esc_attr($status_colors[$order_status] ?? 'bg-gray-100 text-gray-800'); ?>">
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 sm:space-x-0">
+                    <span class="inline-flex items-center justify-center px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium <?php echo esc_attr($status_colors[$order_status] ?? 'bg-gray-100 text-gray-800'); ?>">
                         <?php echo esc_html($status_labels[$order_status] ?? $order_status); ?>
                     </span>
-                    <a href="<?php echo esc_url(admin_url('edit.php?post_type=orders')); ?>" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+                    <a href="<?php echo esc_url(admin_url('edit.php?post_type=orders')); ?>" class="inline-flex items-center justify-center px-3 sm:px-4 py-2 border border-gray-300 rounded-md shadow-sm text-xs sm:text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
                         <i class="fas fa-arrow-left mr-2"></i>
-                        Voltar para Lista
+                        <span class="hidden sm:inline">Voltar para Lista</span>
+                        <span class="sm:hidden">Voltar</span>
                     </a>
                 </div>
             </div>
@@ -177,35 +190,37 @@ $status_colors = array(
             <div class="lg:col-span-2 space-y-6">
                 
                 <!-- Gerenciamento de Status -->
-                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6" x-data="{ showStatusModal: false, showDeliverModal: false, isDelivering: false }">
-                    <div class="flex items-center justify-between mb-4">
-                        <h2 class="text-xl font-semibold text-gray-900">
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6" x-data="{ showStatusModal: false, showDeliverModal: false, isDelivering: false }">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-4">
+                        <h2 class="text-lg sm:text-xl font-semibold text-gray-900">
                             <i class="fas fa-tasks mr-2 text-blue-600"></i>
                             Gerenciamento de Status
                         </h2>
-                        <div class="flex items-center space-x-3">
+                        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 sm:space-x-0">
                             <button 
                                 @click="showDeliverModal = true" 
                                 <?php if ($order_status !== 'ready_for_delivery'): ?>
                                     disabled
-                                    class="inline-flex items-center px-4 py-2 bg-green-300 text-gray-500 rounded-md cursor-not-allowed opacity-60"
+                                    class="inline-flex items-center justify-center px-3 sm:px-4 py-2 bg-green-300 text-gray-500 rounded-md cursor-not-allowed opacity-60 text-sm"
                                     title="Pedido precisa estar no status 'Pronto para Entrega'"
                                 <?php else: ?>
-                                    class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+                                    class="inline-flex items-center justify-center px-3 sm:px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors text-sm"
                                 <?php endif; ?>
                             >
                                 <i class="fas fa-paper-plane mr-2"></i>
-                                Entregar Pedido
+                                <span class="hidden sm:inline">Entregar Pedido</span>
+                                <span class="sm:hidden">Entregar</span>
                             </button>
-                            <button @click="showStatusModal = true" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                            <button @click="showStatusModal = true" class="inline-flex items-center justify-center px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm">
                                 <i class="fas fa-edit mr-2"></i>
-                                Alterar Status
+                                <span class="hidden sm:inline">Alterar Status</span>
+                                <span class="sm:hidden">Alterar</span>
                             </button>
                         </div>
                     </div>
                     
                     <!-- Timeline de Status -->
-                    <div class="space-y-4">
+                    <div class="space-y-3 sm:space-y-4">
                         <?php
                         $status_flow = array(
                             'created' => 'Pedido Criado',
@@ -227,26 +242,26 @@ $status_colors = array(
                             $is_completed = $i <= $current_index;
                             $is_current = $status_key === $order_status;
                             ?>
-                            <div class="flex items-center">
+                            <div class="flex items-start sm:items-center">
                                 <div class="flex-shrink-0">
                                     <?php if ($is_completed): ?>
-                                        <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                                            <i class="fas fa-check text-white text-sm"></i>
+                                        <div class="w-6 h-6 sm:w-8 sm:h-8 bg-green-500 rounded-full flex items-center justify-center">
+                                            <i class="fas fa-check text-white text-xs sm:text-sm"></i>
                                         </div>
                                     <?php elseif ($is_current): ?>
-                                        <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                                            <i class="fas fa-clock text-white text-sm"></i>
+                                        <div class="w-6 h-6 sm:w-8 sm:h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                                            <i class="fas fa-clock text-white text-xs sm:text-sm"></i>
                                         </div>
                                     <?php else: ?>
-                                        <div class="w-8 h-8 bg-gray-300 rounded-full"></div>
+                                        <div class="w-6 h-6 sm:w-8 sm:h-8 bg-gray-300 rounded-full"></div>
                                     <?php endif; ?>
                                 </div>
-                                <div class="ml-4 flex-1">
-                                    <p class="text-sm font-medium <?php echo $is_completed || $is_current ? 'text-gray-900' : 'text-gray-500'; ?>">
+                                <div class="ml-3 sm:ml-4 flex-1 min-w-0">
+                                    <p class="text-xs sm:text-sm font-medium <?php echo $is_completed || $is_current ? 'text-gray-900' : 'text-gray-500'; ?> break-words">
                                         <?php echo $status_label; ?>
                                     </p>
                                     <?php if ($is_current): ?>
-                                        <p class="text-xs text-blue-600 font-medium">Status Atual</p>
+                                        <p class="text-xs text-blue-600 font-medium mt-0.5">Status Atual</p>
                                     <?php endif; ?>
                                 </div>
                             </div>
@@ -255,10 +270,10 @@ $status_colors = array(
                     </div>
 
                     <!-- Modal para Alterar Status -->
-                    <div x-show="showStatusModal" x-cloak class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" style="display: none;">
-                        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-                            <div class="mt-3">
-                                <h3 class="text-lg font-medium text-gray-900 mb-4">Alterar Status do Pedido</h3>
+                    <div x-show="showStatusModal" x-cloak class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 p-4" style="display: none;" @click.away="showStatusModal = false">
+                        <div class="relative top-4 sm:top-20 mx-auto p-4 sm:p-5 border w-full max-w-md sm:w-96 shadow-lg rounded-md bg-white">
+                            <div class="mt-0 sm:mt-3">
+                                <h3 class="text-base sm:text-lg font-medium text-gray-900 mb-4">Alterar Status do Pedido</h3>
                                 <form method="post" action="" onsubmit="return confirmStatusChange(document.getElementById('new_status').value)">
                                     <?php wp_nonce_field('update_order_status', 'order_status_nonce'); ?>
                                     <input type="hidden" name="action" value="update_order_status">
@@ -266,7 +281,7 @@ $status_colors = array(
                                     
                                     <div class="mb-4">
                                         <label for="new_status" class="block text-sm font-medium text-gray-700 mb-2">Novo Status:</label>
-                                        <select name="new_status" id="new_status" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
+                                        <select name="new_status" id="new_status" class="w-full px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
                                             <?php foreach ($status_labels as $status_key => $status_label): ?>
                                                 <option value="<?php echo esc_attr($status_key); ?>" <?php selected($order_status, $status_key); ?>>
                                                     <?php echo esc_html($status_label); ?>
@@ -278,11 +293,11 @@ $status_colors = array(
                                         </p>
                                     </div>
                                     
-                                    <div class="flex justify-end space-x-3">
-                                        <button type="button" @click="showStatusModal = false" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors">
+                                    <div class="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 sm:space-x-0">
+                                        <button type="button" @click="showStatusModal = false" class="w-full sm:w-auto px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors text-sm sm:text-base">
                                             Cancelar
                                         </button>
-                                        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                                        <button type="submit" class="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm sm:text-base">
                                             <i class="fas fa-save mr-2"></i>
                                             Atualizar Status
                                         </button>
@@ -293,15 +308,15 @@ $status_colors = array(
                     </div>
 
                     <!-- Modal para Entregar Pedido -->
-                    <div x-show="showDeliverModal" x-cloak class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" style="display: none;">
-                        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-                            <div class="mt-3">
+                    <div x-show="showDeliverModal" x-cloak class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 p-4" style="display: none;" @click.away="showDeliverModal = false">
+                        <div class="relative top-4 sm:top-20 mx-auto p-4 sm:p-5 border w-full max-w-md sm:w-96 shadow-lg rounded-md bg-white">
+                            <div class="mt-0 sm:mt-3">
                                 <div class="text-center mb-4">
-                                    <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-3">
-                                        <i class="fas fa-paper-plane text-green-600 text-xl"></i>
+                                    <div class="mx-auto flex items-center justify-center h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-green-100 mb-3">
+                                        <i class="fas fa-paper-plane text-green-600 text-lg sm:text-xl"></i>
                                     </div>
-                                    <h3 class="text-lg font-medium text-gray-900 mb-2">Confirmar Entrega do Pedido</h3>
-                                    <p class="text-sm text-gray-500">
+                                    <h3 class="text-base sm:text-lg font-medium text-gray-900 mb-2">Confirmar Entrega do Pedido</h3>
+                                    <p class="text-xs sm:text-sm text-gray-500">
                                         Tem certeza que deseja entregar este pedido?
                                     </p>
                                 </div>
@@ -311,31 +326,31 @@ $status_colors = array(
                                         <i class="fas fa-info-circle mr-1"></i>
                                         <strong>O que vai acontecer:</strong>
                                     </p>
-                                    <ul class="text-xs text-blue-700 mt-2 space-y-1 ml-4">
-                                        <li>• Email de entrega será enviado para: <strong><?php echo esc_html($buyer_email); ?></strong></li>
+                                    <ul class="text-xs text-blue-700 mt-2 space-y-1 ml-4 break-words">
+                                        <li>• Email de entrega será enviado para: <strong class="break-all"><?php echo esc_html($buyer_email); ?></strong></li>
                                         <li>• Status será atualizado para "Entregue"</li>
                                         <li>• Notificação será enviada no Telegram</li>
                                     </ul>
                                 </div>
                                 
-                                <div class="flex justify-end space-x-3">
+                                <div class="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3 sm:space-x-0">
                                     <button 
                                         type="button" 
                                         @click="showDeliverModal = false" 
                                         :disabled="isDelivering"
-                                        class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                        class="w-full sm:w-auto px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base">
                                         Cancelar
                                     </button>
                                     <button 
                                         type="button"
                                         @click="isDelivering = true; deliverOrder($el)"
                                         :disabled="isDelivering"
-                                        class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                                        <span x-show="!isDelivering">
+                                        class="w-full sm:w-auto px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base">
+                                        <span x-show="!isDelivering" class="flex items-center justify-center">
                                             <i class="fas fa-paper-plane mr-2"></i>
                                             Confirmar Entrega
                                         </span>
-                                        <span x-show="isDelivering" class="flex items-center">
+                                        <span x-show="isDelivering" class="flex items-center justify-center">
                                             <svg class="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -350,16 +365,16 @@ $status_colors = array(
                 </div>
 
                 <!-- Assets Gerados -->
-                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                    <h2 class="text-xl font-semibold text-gray-900 mb-4">
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+                    <h2 class="text-lg sm:text-xl font-semibold text-gray-900 mb-4">
                         <i class="fas fa-images mr-2 text-purple-600"></i>
                         Assets Gerados
                     </h2>
                     
                     <!-- PDF Final -->
                     <?php if ($generated_pdf_link || $generated_pdf_attachment): ?>
-                        <div class="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-                            <h3 class="text-lg font-medium text-green-900 mb-2">PDF Final</h3>
+                        <div class="mb-4 sm:mb-6 p-3 sm:p-4 bg-green-50 border border-green-200 rounded-lg">
+                            <h3 class="text-base sm:text-lg font-medium text-green-900 mb-2">PDF Final</h3>
                             
                             <!-- Visualização em iframe -->
                             <?php 
@@ -378,23 +393,25 @@ $status_colors = array(
                             <?php if ($pdf_url_for_iframe): ?>
                                 <div class="mb-4">
                                     <div class="bg-white border border-gray-200 rounded-lg overflow-hidden">
-                                        <div class="bg-gray-100 px-4 py-2 border-b border-gray-200 flex items-center justify-between">
-                                            <span class="text-sm font-medium text-gray-700">
+                                        <div class="bg-gray-100 px-2 sm:px-4 py-2 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                                            <span class="text-xs sm:text-sm font-medium text-gray-700">
                                                 <i class="fas fa-eye mr-2"></i>
                                                 Visualização do PDF
                                             </span>
-                                            <div class="flex items-center space-x-2">
+                                            <div class="flex items-center gap-2 sm:space-x-2 sm:gap-0">
                                                 <button onclick="toggleFullscreen()" class="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors">
                                                     <i class="fas fa-expand mr-1"></i>
-                                                    Tela Cheia
+                                                    <span class="hidden sm:inline">Tela Cheia</span>
+                                                    <span class="sm:hidden">Cheia</span>
                                                 </button>
                                                 <button onclick="reloadPDF()" class="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors">
                                                     <i class="fas fa-redo mr-1"></i>
-                                                    Recarregar
+                                                    <span class="hidden sm:inline">Recarregar</span>
+                                                    <span class="sm:hidden">Reload</span>
                                                 </button>
                                             </div>
                                         </div>
-                                        <div class="relative" style="height: 600px;">
+                                        <div id="pdf-viewer-container" class="relative" style="height: 300px;">
                                             <iframe 
                                                 id="pdf-viewer"
                                                 src="<?php echo esc_url($pdf_url_for_iframe); ?>#toolbar=1&navpanes=1&scrollbar=1" 
@@ -410,11 +427,12 @@ $status_colors = array(
                             <?php endif; ?>
                             
                             <!-- Botões de ação -->
-                            <div class="flex items-center space-x-4 flex-wrap gap-2">
+                            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 sm:space-x-4">
                                 <?php if ($generated_pdf_link): ?>
-                                    <a href="<?php echo esc_url($generated_pdf_link); ?>" target="_blank" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                                    <a href="<?php echo esc_url($generated_pdf_link); ?>" target="_blank" class="inline-flex items-center justify-center px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm">
                                         <i class="fas fa-external-link-alt mr-2"></i>
-                                        Abrir PDF (Link Externo)
+                                        <span class="hidden sm:inline">Abrir PDF (Link Externo)</span>
+                                        <span class="sm:hidden">Abrir PDF</span>
                                     </a>
                                 <?php endif; ?>
                                 <?php if ($generated_pdf_attachment): ?>
@@ -427,11 +445,11 @@ $status_colors = array(
                                     }
                                     ?>
                                     <?php if ($pdf_url): ?>
-                                        <a href="<?php echo esc_url($pdf_url); ?>" target="_blank" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors">
+                                        <a href="<?php echo esc_url($pdf_url); ?>" target="_blank" class="inline-flex items-center justify-center px-3 sm:px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors text-sm">
                                             <i class="fas fa-file-pdf mr-2"></i>
                                             Visualizar PDF
                                         </a>
-                                        <a href="<?php echo esc_url($pdf_url); ?>" download class="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors">
+                                        <a href="<?php echo esc_url($pdf_url); ?>" download class="inline-flex items-center justify-center px-3 sm:px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors text-sm">
                                             <i class="fas fa-download mr-2"></i>
                                             Download PDF
                                         </a>
@@ -444,8 +462,8 @@ $status_colors = array(
                     <!-- Páginas Geradas -->
                     <?php if ($generated_book_pages): ?>
                         <div class="space-y-4">
-                            <h3 class="text-lg font-medium text-gray-900">Páginas do Livro</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <h3 class="text-base sm:text-lg font-medium text-gray-900">Páginas do Livro</h3>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                                 <?php foreach ($generated_book_pages as $index => $page): ?>
                                     <div class="border border-gray-200 rounded-lg p-4">
                                         <div class="flex items-center justify-between mb-2">
@@ -583,8 +601,8 @@ $status_colors = array(
                 </div>
 
                                 <!-- Logs do Pedido -->
-                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                    <h2 class="text-xl font-semibold text-gray-900 mb-4">
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+                    <h2 class="text-lg sm:text-xl font-semibold text-gray-900 mb-4">
                         <i class="fas fa-history mr-2 text-gray-600"></i>
                         Histórico do Pedido
                     </h2>
@@ -705,11 +723,11 @@ $status_colors = array(
             </div>
 
             <!-- Sidebar -->
-            <div class="space-y-6">
+            <div class="space-y-4 sm:space-y-6">
                 
                 <!-- Informações da Criança -->
-                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                    <h2 class="text-xl font-semibold text-gray-900 mb-4">
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+                    <h2 class="text-lg sm:text-xl font-semibold text-gray-900 mb-4">
                         <i class="fas fa-child mr-2 text-pink-600"></i>
                         Dados da Criança
                     </h2>
@@ -802,8 +820,8 @@ $status_colors = array(
                 </div>
 
                 <!-- Informações do Comprador -->
-                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                    <h2 class="text-xl font-semibold text-gray-900 mb-4">
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+                    <h2 class="text-lg sm:text-xl font-semibold text-gray-900 mb-4">
                         <i class="fas fa-user mr-2 text-blue-600"></i>
                         Dados do Comprador
                     </h2>
@@ -827,9 +845,9 @@ $status_colors = array(
                         </div>
                         <div>
                             <label class="text-sm font-medium text-gray-600">Telefone:</label>
-                            <p class="text-gray-900 flex items-center gap-2">
+                            <p class="text-gray-900 flex items-center gap-2 flex-wrap">
                                 <?php if ($buyer_phone): ?>
-                                    <a href="tel:<?php echo esc_attr($buyer_phone); ?>" class="text-blue-600 hover:text-blue-800 transition-colors">
+                                    <a href="tel:<?php echo esc_attr($buyer_phone); ?>" class="text-blue-600 hover:text-blue-800 transition-colors break-all">
                                         <?php echo esc_html($buyer_phone); ?>
                                     </a>
                                     <?php 
@@ -863,8 +881,8 @@ $status_colors = array(
 
                 <!-- Informações de Pagamento -->
                 <?php if ($payment_transaction_id || $payment_date || $payment_amount): ?>
-                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                        <h2 class="text-xl font-semibold text-gray-900 mb-4">
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+                        <h2 class="text-lg sm:text-xl font-semibold text-gray-900 mb-4">
                             <i class="fas fa-credit-card mr-2 text-green-600"></i>
                             Pagamento
                         </h2>
@@ -909,16 +927,16 @@ $status_colors = array(
 
                 <!-- Modelo de Livro -->
                 <?php if ($book_template): ?>
-                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                        <h2 class="text-xl font-semibold text-gray-900 mb-4">
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+                        <h2 class="text-lg sm:text-xl font-semibold text-gray-900 mb-4">
                             <i class="fas fa-book mr-2 text-indigo-600"></i>
                             Modelo de Livro
                         </h2>
                         
                         <div class="mb-4">
-                            <p class="text-gray-900 font-medium"><?php echo $book_template->post_title; ?></p>
-                            <p class="text-sm text-gray-600 mt-1">ID: <?php echo $book_template->ID; ?></p>
-                            <a href="<?php echo get_edit_post_link($book_template->ID); ?>" class="inline-flex items-center mt-2 text-sm text-blue-600 hover:text-blue-800">
+                            <p class="text-gray-900 font-medium break-words"><?php echo $book_template->post_title; ?></p>
+                            <p class="text-xs sm:text-sm text-gray-600 mt-1">ID: <?php echo $book_template->ID; ?></p>
+                            <a href="<?php echo get_edit_post_link($book_template->ID); ?>" class="inline-flex items-center mt-2 text-xs sm:text-sm text-blue-600 hover:text-blue-800">
                                 <i class="fas fa-external-link-alt mr-1"></i>
                                 Ver Modelo
                             </a>
@@ -930,17 +948,17 @@ $status_colors = array(
                         
                         if ($template_pages): ?>
                             <div class="border-t border-gray-200 pt-4">
-                                <h3 class="text-lg font-medium text-gray-900 mb-3">
+                                <h3 class="text-base sm:text-lg font-medium text-gray-900 mb-3">
                                     <i class="fas fa-file-alt mr-2 text-purple-600"></i>
                                     Páginas do Template Original
                                 </h3>
                                 
-                                <div class="space-y-4">
+                                <div class="space-y-3 sm:space-y-4">
                                     <?php foreach ($template_pages as $index => $page): ?>
-                                        <div class="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                                            <div class="flex items-center justify-between mb-3">
-                                                <h4 class="font-medium text-gray-900 flex items-center">
-                                                    <span class="inline-flex items-center justify-center w-6 h-6 bg-indigo-100 text-indigo-800 text-xs font-medium rounded-full mr-2">
+                                        <div class="border border-gray-200 rounded-lg p-3 sm:p-4 bg-gray-50">
+                                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
+                                                <h4 class="font-medium text-gray-900 flex items-center text-sm sm:text-base">
+                                                    <span class="inline-flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 bg-indigo-100 text-indigo-800 text-xs font-medium rounded-full mr-2">
                                                         <?php echo $index + 1; ?>
                                                     </span>
                                                     Página <?php echo $index + 1; ?>
@@ -953,7 +971,7 @@ $status_colors = array(
                                                 <?php 
                                                 $template_skip_faceswap = !empty($page['skip_faceswap']) && $page['skip_faceswap'] === true;
                                                 if ($template_skip_faceswap): ?>
-                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800" title="Esta página do template não precisa de face swap">
+                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 self-start sm:self-auto" title="Esta página do template não precisa de face swap">
                                                         <i class="fas fa-ban mr-1"></i>
                                                         Sem Face Swap
                                                     </span>
