@@ -217,6 +217,28 @@ $status_colors = array(
                                     <span>Entregando...</span>
                                 </span>
                             </button>
+                            <?php
+                            // Verificar se há páginas finais disponíveis
+                            $has_final_pages = false;
+                            if ($generated_book_pages) {
+                                foreach ($generated_book_pages as $page) {
+                                    if (!empty($page['final_page_with_text'])) {
+                                        $has_final_pages = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            ?>
+                            <button 
+                                onclick="openAllImages()" 
+                                <?php if (!$has_final_pages): ?>disabled<?php endif; ?>
+                                class="inline-flex items-center justify-center px-3 sm:px-4 py-2 rounded-md transition-colors text-sm <?php echo $has_final_pages ? 'bg-purple-600 text-white hover:bg-purple-700' : 'bg-purple-300 text-gray-500 cursor-not-allowed opacity-60'; ?>"
+                                title="<?php echo $has_final_pages ? 'Abrir todas as páginas finais (com texto) em abas novas' : 'Nenhuma página final disponível ainda'; ?>"
+                            >
+                                <i class="fas fa-images mr-2"></i>
+                                <span class="hidden sm:inline">Abrir Páginas Finais</span>
+                                <span class="sm:hidden">Páginas</span>
+                            </button>
                             <button @click="showStatusModal = true" class="inline-flex items-center justify-center px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm">
                                 <i class="fas fa-edit mr-2"></i>
                                 <span class="hidden sm:inline">Alterar Status</span>
@@ -1071,6 +1093,68 @@ $status_colors = array(
     </div>
 
     <script>
+        // Função para abrir todas as páginas finais (com texto) em abas novas
+        function openAllImages() {
+            const imageUrls = [];
+            
+            // Coletar apenas as páginas finais com texto
+            <?php if ($generated_book_pages): ?>
+                <?php foreach ($generated_book_pages as $index => $page): ?>
+                    <?php if (isset($page['final_page_with_text']) && $page['final_page_with_text']): ?>
+                        <?php 
+                        $final_page_url_full = '';
+                        if (is_array($page['final_page_with_text'])) {
+                            $final_page_url_full = $page['final_page_with_text']['url'] ?? '';
+                        } elseif (is_numeric($page['final_page_with_text'])) {
+                            $final_page_url_full = wp_get_attachment_image_url($page['final_page_with_text'], 'full');
+                        }
+                        ?>
+                        <?php if ($final_page_url_full): ?>
+                            imageUrls.push({
+                                url: '<?php echo esc_js($final_page_url_full); ?>',
+                                title: 'Página <?php echo $index + 1; ?> - Final com Texto'
+                            });
+                        <?php endif; ?>
+                    <?php endif; ?>
+                <?php endforeach; ?>
+            <?php endif; ?>
+            
+            // Verificar se há páginas finais para abrir
+            if (imageUrls.length === 0) {
+                alert('❌ Nenhuma página final disponível ainda para este pedido.');
+                return;
+            }
+            
+            // Confirmar ação
+            const confirmed = confirm(`📄 Serão abertas ${imageUrls.length} página(s) final(is) em novas abas.\n\nCertifique-se de permitir pop-ups para este site.\n\nDeseja continuar?`);
+            
+            if (!confirmed) {
+                return;
+            }
+            
+            // Abrir cada página final em uma nova aba
+            let openedCount = 0;
+            imageUrls.forEach((image, index) => {
+                // Pequeno delay entre aberturas para evitar bloqueio do navegador
+                setTimeout(() => {
+                    const newWindow = window.open(image.url, '_blank');
+                    if (newWindow) {
+                        newWindow.document.title = image.title;
+                        openedCount++;
+                    }
+                    
+                    // Mostrar mensagem final após abrir todas
+                    if (index === imageUrls.length - 1) {
+                        setTimeout(() => {
+                            if (openedCount < imageUrls.length) {
+                                alert(`⚠️ ${openedCount} de ${imageUrls.length} página(s) foram abertas.\n\nAlgumas podem ter sido bloqueadas pelo navegador.\nPermita pop-ups para este site e tente novamente.`);
+                            }
+                        }, 500);
+                    }
+                }, index * 100);
+            });
+        }
+        
         // Função para confirmar mudanças de status críticas
         function confirmStatusChange(newStatus) {
             const criticalStatuses = ['error', 'delivered', 'completed'];
