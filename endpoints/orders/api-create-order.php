@@ -276,6 +276,22 @@ function trinitykit_create_order($request) {
         );
     }
 
+    // Criar ou atualizar contato como Lead
+    $contact_id = trinitykit_create_or_update_contact($email, $name, $phone, 'Lead', $order_id);
+    
+    if ($contact_id && !is_wp_error($contact_id)) {
+        // Associa o contato ao pedido
+        update_field('contact_id', $contact_id, $order_id);
+        
+        trinitykit_add_post_log(
+            $order_id,
+            'api-create-order',
+            "Contato #$contact_id criado/atualizado como Lead",
+            '',
+            'info'
+        );
+    }
+
     // Return success response
     return new WP_REST_Response(array(
         'message' => 'Pedido criado com sucesso',
@@ -283,4 +299,75 @@ function trinitykit_create_order($request) {
         'status' => 'created',
         'applied_coupon' => !empty($coupon) ? $coupon : null
     ), 201);
+}
+
+/**
+ * Cria ou atualiza um contato no sistema
+ * 
+ * @param string $email Email do contato
+ * @param string $name Nome do contato
+ * @param string $phone Telefone do contato
+ * @param string $tag Tag a ser aplicada (Lead ou Cliente)
+ * @param int $order_id ID do pedido relacionado
+ * @return int|WP_Error ID do contato ou erro
+ */
+function trinitykit_create_or_update_contact($email, $name, $phone, $tag = 'Lead', $order_id = null) {
+    // Buscar se já existe um contato com este email
+    $existing_contacts = get_posts(array(
+        'post_type' => 'contact_form',
+        'post_status' => 'publish',
+        'posts_per_page' => 1,
+        'meta_query' => array(
+            array(
+                'key' => 'email',
+                'value' => $email,
+                'compare' => '='
+            )
+        )
+    ));
+
+    if (!empty($existing_contacts)) {
+        // Atualizar contato existente
+        $contact_id = $existing_contacts[0]->ID;
+        
+        // Atualizar campos
+        update_field('name', $name, $contact_id);
+        update_field('phone', $phone, $contact_id);
+        
+        // Atualizar título do post
+        wp_update_post(array(
+            'ID' => $contact_id,
+            'post_title' => $name . ' - ' . $email
+        ));
+        
+        // Adicionar a tag (não remove tags existentes)
+        wp_set_object_terms($contact_id, $tag, 'contact_tags', true);
+        
+        return $contact_id;
+    } else {
+        // Criar novo contato
+        $post_title = $name . ' - ' . $email;
+        $post_content = $order_id ? "Contato criado automaticamente através do pedido #$order_id" : '';
+        
+        $contact_id = wp_insert_post(array(
+            'post_title'   => $post_title,
+            'post_content' => $post_content,
+            'post_status'  => 'publish',
+            'post_type'    => 'contact_form',
+        ));
+        
+        if (is_wp_error($contact_id)) {
+            return $contact_id;
+        }
+        
+        // Atualizar campos ACF
+        update_field('email', $email, $contact_id);
+        update_field('name', $name, $contact_id);
+        update_field('phone', $phone, $contact_id);
+        
+        // Adicionar a tag
+        wp_set_object_terms($contact_id, $tag, 'contact_tags', false);
+        
+        return $contact_id;
+    }
 }
