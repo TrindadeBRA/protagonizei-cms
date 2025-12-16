@@ -190,111 +190,159 @@ $status_colors = array(
             <div class="lg:col-span-2 space-y-6">
                 
                 <!-- Gerenciamento de Status -->
-                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6" x-data="{ showStatusModal: false, isDelivering: false }">
-                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-4">
-                        <h2 class="text-lg sm:text-xl font-semibold text-gray-900">
-                            <i class="fas fa-tasks mr-2 text-blue-600"></i>
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 lg:p-8" x-data="{ showStatusModal: false, isDelivering: false }">
+                    <!-- Cabeçalho -->
+                    <div class="mb-6">
+                        <h2 class="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 flex items-center">
+                            <span class="w-10 h-10 lg:w-12 lg:h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center mr-3 shadow-md hidden sm:flex">
+                                <i class="fas fa-tasks text-white text-lg lg:text-xl"></i>
+                            </span>
+                            <span class="sm:hidden">
+                                <i class="fas fa-tasks mr-2 text-blue-600"></i>
+                            </span>
                             Gerenciamento de Status
                         </h2>
-                        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 sm:space-x-0">
-                            <button 
-                                @click="isDelivering = true; deliverOrder($el)" 
-                                :disabled="isDelivering || <?php echo $order_status !== 'ready_for_delivery' ? 'true' : 'false'; ?>"
-                                :class="isDelivering || <?php echo $order_status !== 'ready_for_delivery' ? 'true' : 'false'; ?> ? 'bg-green-300 text-gray-500 cursor-not-allowed opacity-60' : 'bg-green-600 text-white hover:bg-green-700'"
-                                class="inline-flex items-center justify-center px-3 sm:px-4 py-2 rounded-md transition-colors text-sm"
-                                title="<?php echo $order_status !== 'ready_for_delivery' ? 'Pedido precisa estar no status \'Pronto para Entrega\'' : 'Clique para entregar o pedido'; ?>"
-                            >
-                                <span x-show="!isDelivering" class="flex items-center">
-                                    <i class="fas fa-paper-plane mr-2"></i>
-                                    <span class="hidden sm:inline">Entregar Pedido</span>
-                                    <span class="sm:hidden">Entregar</span>
+                        <p class="text-sm text-gray-600 mt-2 hidden lg:block ml-0 lg:ml-15">
+                            Gerencie o status e ações do pedido
+                        </p>
+                    </div>
+                    
+                    <!-- Botões de Ação - Grid no Desktop -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 lg:gap-4 mb-6 lg:mb-8">
+                        <!-- Botão Entregar Pedido -->
+                        <button 
+                            @click="isDelivering = true; deliverOrder($el)" 
+                            :disabled="isDelivering || <?php echo $order_status !== 'ready_for_delivery' ? 'true' : 'false'; ?>"
+                            :class="isDelivering || <?php echo $order_status !== 'ready_for_delivery' ? 'true' : 'false'; ?> ? 'bg-green-200 text-gray-600 cursor-not-allowed' : 'bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5'"
+                            class="group relative flex flex-col items-center justify-center px-4 py-4 lg:py-6 rounded-xl transition-all duration-200 text-center"
+                            title="<?php echo $order_status !== 'ready_for_delivery' ? 'Pedido precisa estar no status \'Pronto para Entrega\'' : 'Clique para entregar o pedido'; ?>"
+                        >
+                            <span x-show="!isDelivering" class="flex flex-col items-center">
+                                <span class="w-12 h-12 lg:w-14 lg:h-14 bg-white bg-opacity-20 rounded-full flex items-center justify-center mb-2 lg:mb-3 group-hover:scale-110 transition-transform hidden lg:flex">
+                                    <i class="fas fa-paper-plane text-xl lg:text-2xl"></i>
                                 </span>
-                                <span x-show="isDelivering" class="flex items-center">
-                                    <svg class="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
-                                    <span>Entregando...</span>
-                                </span>
-                            </button>
-                            <?php
-                            // Verificar se há páginas finais disponíveis
-                            $has_final_pages = false;
-                            if ($generated_book_pages) {
-                                foreach ($generated_book_pages as $page) {
-                                    if (!empty($page['final_page_with_text'])) {
-                                        $has_final_pages = true;
-                                        break;
-                                    }
+                                <span class="font-semibold text-sm lg:text-base">Entregar Pedido</span>
+                                <span class="text-xs opacity-90 mt-1 hidden lg:block">Enviar para cliente</span>
+                            </span>
+                            <span x-show="isDelivering" class="flex flex-col items-center">
+                                <svg class="animate-spin h-8 w-8 lg:h-10 lg:w-10 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <span class="font-medium">Entregando...</span>
+                            </span>
+                        </button>
+                        
+                        <!-- Botão Abrir Páginas Finais -->
+                        <?php
+                        // Verificar se há páginas finais disponíveis
+                        $has_final_pages = false;
+                        if ($generated_book_pages) {
+                            foreach ($generated_book_pages as $page) {
+                                if (!empty($page['final_page_with_text'])) {
+                                    $has_final_pages = true;
+                                    break;
                                 }
                             }
-                            ?>
-                            <button 
-                                onclick="openAllImages()" 
-                                <?php if (!$has_final_pages): ?>disabled<?php endif; ?>
-                                class="inline-flex items-center justify-center px-3 sm:px-4 py-2 rounded-md transition-colors text-sm <?php echo $has_final_pages ? 'bg-purple-600 text-white hover:bg-purple-700' : 'bg-purple-300 text-gray-500 cursor-not-allowed opacity-60'; ?>"
-                                title="<?php echo $has_final_pages ? 'Abrir todas as páginas finais (com texto) em abas novas' : 'Nenhuma página final disponível ainda'; ?>"
-                            >
-                                <i class="fas fa-images mr-2"></i>
-                                <span class="hidden sm:inline">Abrir Páginas Finais</span>
-                                <span class="sm:hidden">Páginas</span>
-                            </button>
-                            <button @click="showStatusModal = true" class="inline-flex items-center justify-center px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm">
-                                <i class="fas fa-edit mr-2"></i>
-                                <span class="hidden sm:inline">Alterar Status</span>
-                                <span class="sm:hidden">Alterar</span>
-                            </button>
-                        </div>
+                        }
+                        ?>
+                        <button 
+                            onclick="openAllImages()" 
+                            <?php if (!$has_final_pages): ?>disabled<?php endif; ?>
+                            class="group relative flex flex-col items-center justify-center px-4 py-4 lg:py-6 rounded-xl transition-all duration-200 text-center <?php echo $has_final_pages ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5' : 'bg-purple-200 text-gray-600 cursor-not-allowed'; ?>"
+                            title="<?php echo $has_final_pages ? 'Abrir todas as páginas finais (com texto) em abas novas' : 'Nenhuma página final disponível ainda'; ?>"
+                        >
+                            <span class="w-12 h-12 lg:w-14 lg:h-14 bg-white bg-opacity-20 rounded-full flex items-center justify-center mb-2 lg:mb-3 group-hover:scale-110 transition-transform hidden lg:flex">
+                                <i class="fas fa-images text-xl lg:text-2xl"></i>
+                            </span>
+                            <span class="font-semibold text-sm lg:text-base">Abrir Páginas Finais</span>
+                            <span class="text-xs opacity-90 mt-1 hidden lg:block">
+                                <?php echo $has_final_pages ? 'Visualizar em abas' : 'Ainda não disponível'; ?>
+                            </span>
+                        </button>
+                        
+                        <!-- Botão Alterar Status -->
+                        <button 
+                            @click="showStatusModal = true" 
+                            class="group relative flex flex-col items-center justify-center px-4 py-4 lg:py-6 rounded-xl transition-all duration-200 text-center bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                        >
+                            <span class="w-12 h-12 lg:w-14 lg:h-14 bg-white bg-opacity-20 rounded-full flex items-center justify-center mb-2 lg:mb-3 group-hover:scale-110 transition-transform hidden lg:flex">
+                                <i class="fas fa-edit text-xl lg:text-2xl"></i>
+                            </span>
+                            <span class="font-semibold text-sm lg:text-base">Alterar Status</span>
+                            <span class="text-xs opacity-90 mt-1 hidden lg:block">Gerenciar progresso</span>
+                        </button>
                     </div>
                     
                     <!-- Timeline de Status -->
-                    <div class="space-y-3 sm:space-y-4">
-                        <?php
-                        $status_flow = array(
-                            'created' => 'Pedido Criado',
-                            'awaiting_payment' => 'Aguardando Pagamento',
-                            'paid' => 'Pagamento Confirmado',
-                            'thanked' => 'Email de Agradecimento Enviado',
-                            'created_assets_text' => 'Textos Personalizados Criados',
-                            'created_assets_illustration' => 'Ilustrações Processadas',
-                            'created_assets_merge' => 'Assets Finalizados',
-                            'ready_for_delivery' => 'Pronto para Entrega',
-                            'delivered' => 'Entregue ao Cliente',
-                            'completed' => 'Processo Concluído'
-                        );
-                        
-                        $current_index = array_search($order_status, array_keys($status_flow));
-                        $i = 0;
-                        
-                        foreach ($status_flow as $status_key => $status_label) {
-                            $is_completed = $i <= $current_index;
-                            $is_current = $status_key === $order_status;
-                            ?>
-                            <div class="flex items-start sm:items-center">
-                                <div class="flex-shrink-0">
-                                    <?php if ($is_completed): ?>
-                                        <div class="w-6 h-6 sm:w-8 sm:h-8 bg-green-500 rounded-full flex items-center justify-center">
-                                            <i class="fas fa-check text-white text-xs sm:text-sm"></i>
-                                        </div>
-                                    <?php elseif ($is_current): ?>
-                                        <div class="w-6 h-6 sm:w-8 sm:h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                                            <i class="fas fa-clock text-white text-xs sm:text-sm"></i>
-                                        </div>
-                                    <?php else: ?>
-                                        <div class="w-6 h-6 sm:w-8 sm:h-8 bg-gray-300 rounded-full"></div>
-                                    <?php endif; ?>
+                    <div class="border-t border-gray-200 pt-6 lg:pt-8">
+                        <h3 class="text-base lg:text-lg font-semibold text-gray-900 mb-4 lg:mb-6 flex items-center">
+                            <i class="fas fa-stream mr-2 text-gray-600"></i>
+                            Progresso do Pedido
+                        </h3>
+                        <div class="space-y-3 lg:space-y-4">
+                            <?php
+                            $status_flow = array(
+                                'created' => 'Pedido Criado',
+                                'awaiting_payment' => 'Aguardando Pagamento',
+                                'paid' => 'Pagamento Confirmado',
+                                'thanked' => 'Email de Agradecimento Enviado',
+                                'created_assets_text' => 'Textos Personalizados Criados',
+                                'created_assets_illustration' => 'Ilustrações Processadas',
+                                'created_assets_merge' => 'Assets Finalizados',
+                                'ready_for_delivery' => 'Pronto para Entrega',
+                                'delivered' => 'Entregue ao Cliente',
+                                'completed' => 'Processo Concluído'
+                            );
+                            
+                            $current_index = array_search($order_status, array_keys($status_flow));
+                            $i = 0;
+                            
+                            foreach ($status_flow as $status_key => $status_label) {
+                                $is_completed = $i <= $current_index;
+                                $is_current = $status_key === $order_status;
+                                ?>
+                                <div class="flex items-start sm:items-center group">
+                                    <div class="flex-shrink-0 relative">
+                                        <?php if ($is_completed): ?>
+                                            <div class="w-6 h-6 sm:w-8 sm:h-8 lg:w-10 lg:h-10 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center shadow-md lg:shadow-lg ring-4 ring-green-100">
+                                                <i class="fas fa-check text-white text-xs sm:text-sm lg:text-base"></i>
+                                            </div>
+                                        <?php elseif ($is_current): ?>
+                                            <div class="w-6 h-6 sm:w-8 sm:h-8 lg:w-10 lg:h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center shadow-md lg:shadow-lg ring-4 ring-blue-100 animate-pulse">
+                                                <i class="fas fa-clock text-white text-xs sm:text-sm lg:text-base"></i>
+                                            </div>
+                                        <?php else: ?>
+                                            <div class="w-6 h-6 sm:w-8 sm:h-8 lg:w-10 lg:h-10 bg-gray-200 rounded-full ring-4 ring-gray-50"></div>
+                                        <?php endif; ?>
+                                        
+                                        <!-- Linha conectora -->
+                                        <?php if ($i < count($status_flow) - 1): ?>
+                                            <div class="absolute top-full left-1/2 transform -translate-x-1/2 w-0.5 h-3 lg:h-4 <?php echo $is_completed ? 'bg-green-400' : 'bg-gray-200'; ?>"></div>
+                                        <?php endif; ?>
+                                    </div>
+                                    <div class="ml-3 sm:ml-4 lg:ml-6 flex-1 min-w-0 <?php echo $is_current ? 'bg-blue-50 border border-blue-200' : ($is_completed ? 'bg-white' : 'bg-gray-50'); ?> rounded-lg p-2 lg:p-3 transition-all duration-200 hover:shadow-sm">
+                                        <p class="text-xs sm:text-sm lg:text-base font-medium <?php echo $is_completed || $is_current ? 'text-gray-900' : 'text-gray-500'; ?> break-words">
+                                            <?php echo $status_label; ?>
+                                        </p>
+                                        <?php if ($is_current): ?>
+                                            <div class="flex items-center mt-1 lg:mt-2">
+                                                <span class="inline-flex items-center px-2 py-0.5 lg:px-2.5 lg:py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                    <span class="w-1.5 h-1.5 bg-blue-600 rounded-full mr-1.5 animate-pulse"></span>
+                                                    Status Atual
+                                                </span>
+                                            </div>
+                                        <?php elseif ($is_completed): ?>
+                                            <p class="text-xs text-green-600 font-medium mt-1 hidden lg:block">
+                                                <i class="fas fa-check-circle mr-1"></i>
+                                                Concluído
+                                            </p>
+                                        <?php endif; ?>
+                                    </div>
                                 </div>
-                                <div class="ml-3 sm:ml-4 flex-1 min-w-0">
-                                    <p class="text-xs sm:text-sm font-medium <?php echo $is_completed || $is_current ? 'text-gray-900' : 'text-gray-500'; ?> break-words">
-                                        <?php echo $status_label; ?>
-                                    </p>
-                                    <?php if ($is_current): ?>
-                                        <p class="text-xs text-blue-600 font-medium mt-0.5">Status Atual</p>
-                                    <?php endif; ?>
-                                </div>
-                            </div>
-                            <?php $i++; ?>
-                        <?php } ?>
+                                <?php $i++; ?>
+                            <?php } ?>
+                        </div>
                     </div>
 
                     <!-- Modal para Alterar Status -->
