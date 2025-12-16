@@ -21,6 +21,7 @@ function trinitykitcms_get_page_configs($request) {
         'github_token' => get_option('trinitykitcms_github_token', ''),
         'google_analytics_id' => get_option('trinitykitcms_google_analytics_id', 'G-XXXXXXX'),
         'google_tag_manager_id' => get_option('trinitykitcms_google_tag_manager_id', ''),
+        'meta_pixel_id' => get_option('trinitykitcms_meta_pixel_id', ''),
     );
 
     // Obtém informações do site
@@ -30,6 +31,7 @@ function trinitykitcms_get_page_configs($request) {
         'whatsapp_url' => $settings['whatsapp_url'],
         'google_analytics_id' => $settings['google_analytics_id'],
         'google_tag_manager_id' => $settings['google_tag_manager_id'],
+        'meta_pixel_id' => $settings['meta_pixel_id'],
         'github_user' => $settings['github_user'],
         'github_repo' => $settings['github_repo'],
         'github_token' => $settings['github_token'],
