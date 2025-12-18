@@ -331,7 +331,7 @@ function trinitykit_handle_initiate_falai_webhook($request) {
     $errors = array();
 
     // Prompt padrão para o FAL.AI
-    $default_prompt = "Do not alter the illustration, style, or character position. Apply the child's head in the same artistic style, proportions, lighting, and texture, preserving the child's gender, hair color, eye color, and matching the illustrated skin tone exactly to the child's real skin tone.";
+    $default_prompt = "CRITICAL: Only replace the protagonist's face. Do NOT alter, move, or change: character positions, background elements, composition, layout, other characters, objects, or any part of the illustration except the protagonist's face. Preserve the exact artistic style, proportions, lighting, texture, and color palette. Apply the child's face maintaining the same position, angle, and expression as the original illustration. Preserve the child's gender, hair color, eye color, and match the illustrated skin tone exactly to the child's real skin tone. The background and all other elements must remain completely unchanged.";
 
     foreach ($orders as $order) {
         $order_id = $order->ID;
