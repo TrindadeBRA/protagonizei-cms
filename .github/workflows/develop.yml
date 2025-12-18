@@ -3,7 +3,7 @@ on:
     branches:
       - develop
 
-name: 🚀 Deploy - Protagonizei CMS!
+name: 🚧 Deploy Develop - Protagonizei CMS!
 
 jobs:
   tests:

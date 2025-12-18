@@ -54,25 +54,51 @@ function send_telegram_error_notification_check_falai($message, $title = "Erro n
  * @return string|false URL da imagem salva ou false em caso de erro
  */
 function save_falai_image_from_url_to_wordpress($image_url, $order_id = null, $child_name = '', $page_index = 0) {
-    // Download the image
-    $response = wp_remote_get($image_url);
-    
-    if (is_wp_error($response)) {
-        error_log("[TrinityKit FAL.AI] Erro ao baixar imagem: " . $response->get_error_message());
-        return false;
-    }
-    
-    $http_code = wp_remote_retrieve_response_code($response);
-    if ($http_code !== 200) {
-        error_log("[TrinityKit FAL.AI] Erro HTTP ao baixar imagem: $http_code");
-        return false;
-    }
-    
-    $image_data = wp_remote_retrieve_body($response);
-    
-    if (empty($image_data)) {
-        error_log("[TrinityKit FAL.AI] Dados da imagem vazios");
-        return false;
+    // Check if it's a Base64 data URI (FAL.AI modo síncrono retorna Base64)
+    if (strpos($image_url, 'data:image/') === 0) {
+        // Extract Base64 data from data URI
+        // Format: data:image/png;base64,iVBORw0KGgo...
+        $parts = explode(',', $image_url, 2);
+        
+        if (count($parts) !== 2) {
+            error_log("[TrinityKit FAL.AI] Formato de data URI inválido");
+            return false;
+        }
+        
+        $image_data = base64_decode($parts[1]);
+        
+        if ($image_data === false) {
+            error_log("[TrinityKit FAL.AI] Erro ao decodificar Base64");
+            return false;
+        }
+        
+        if (empty($image_data)) {
+            error_log("[TrinityKit FAL.AI] Dados da imagem Base64 vazios");
+            return false;
+        }
+        
+        error_log("[TrinityKit FAL.AI] Imagem Base64 decodificada com sucesso (" . strlen($image_data) . " bytes)");
+    } else {
+        // Download the image from HTTP URL
+        $response = wp_remote_get($image_url);
+        
+        if (is_wp_error($response)) {
+            error_log("[TrinityKit FAL.AI] Erro ao baixar imagem: " . $response->get_error_message());
+            return false;
+        }
+        
+        $http_code = wp_remote_retrieve_response_code($response);
+        if ($http_code !== 200) {
+            error_log("[TrinityKit FAL.AI] Erro HTTP ao baixar imagem: $http_code");
+            return false;
+        }
+        
+        $image_data = wp_remote_retrieve_body($response);
+        
+        if (empty($image_data)) {
+            error_log("[TrinityKit FAL.AI] Dados da imagem vazios");
+            return false;
+        }
     }
     
     // Generate professional filename
