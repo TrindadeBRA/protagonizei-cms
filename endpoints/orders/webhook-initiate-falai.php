@@ -64,6 +64,7 @@ function initiate_face_edit_with_falai($face_image_url, $target_image_url, $prom
     // Segunda imagem: rosto da criança (face)
     // sync_mode: true para retornar a imagem diretamente na resposta
     // aspect_ratio: proporção definida no template da página
+    // resolution: resolução 2K para alta qualidade
     $body = [
         'prompt' => $prompt,
         'image_urls' => [
@@ -71,7 +72,8 @@ function initiate_face_edit_with_falai($face_image_url, $target_image_url, $prom
             $face_image_url      // Rosto da criança
         ],
         'sync_mode' => true,       // Modo síncrono - retorna imagem diretamente
-        'aspect_ratio' => $aspect_ratio  // Proporção da imagem do template
+        'aspect_ratio' => $aspect_ratio,  // Proporção da imagem do template
+        'resolution' => '2K'  // Resolução 2K para alta qualidade
     ];
 
     // Requisição para iniciar o face edit
