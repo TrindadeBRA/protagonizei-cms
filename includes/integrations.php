@@ -30,9 +30,6 @@ function trinitykitcms_register_integration_settings() {
     register_setting('trinitykitcms_smtp_settings', 'trinitykitcms_smtp_username', 'sanitize_text_field');
     register_setting('trinitykitcms_smtp_settings', 'trinitykitcms_smtp_password', 'sanitize_text_field');
 
-    // Registrar configurações do Meta Pixel
-    register_setting('trinitykitcms_meta_pixel_settings', 'trinitykitcms_meta_pixel_id', 'sanitize_text_field');
-
     // Registrar configurações do FAL.AI
     register_setting('trinitykitcms_falai_settings', 'trinitykitcms_falai_api_key', 'sanitize_text_field');
     register_setting('trinitykitcms_falai_settings', 'trinitykitcms_falai_base_url', 'sanitize_url');
@@ -224,28 +221,6 @@ function trinitykitcms_render_integrations_page() {
                 </table>
                 
                 <?php submit_button('Salvar Configurações do SMTP'); ?>
-            </form>
-        </div>
-
-        <!-- Bloco de configurações do Meta Pixel -->
-        <div class="card" style="max-width: 800px; padding: 20px; margin-bottom: 20px;">
-            <h2>Configurações do Meta Pixel (Facebook Pixel)</h2>
-            <form method="post" action="options.php">
-                <?php
-                settings_fields('trinitykitcms_meta_pixel_settings');
-                ?>
-                
-                <table class="form-table">
-                    <tr>
-                        <th scope="row">Meta Pixel ID</th>
-                        <td>
-                            <input type="text" name="trinitykitcms_meta_pixel_id" value="<?php echo esc_attr(get_option('trinitykitcms_meta_pixel_id')); ?>" class="regular-text">
-                            <p class="description">ID do Meta Pixel (ex: 1927782824442723). Encontre em: Facebook Business Manager > Eventos > Pixels.</p>
-                        </td>
-                    </tr>
-                </table>
-                
-                <?php submit_button('Salvar Configurações do Meta Pixel'); ?>
             </form>
         </div>
 

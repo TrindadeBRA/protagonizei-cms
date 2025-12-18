@@ -99,6 +99,13 @@ function trinitykitcms_render_admin_page()
                             <p class="description">Entre com o seu Google Tag Manager ID. Ex. GTM-XXXXXXX.</p>
                         </td>
                     </tr>
+                    <tr>
+                        <th scope="row">Meta Pixel ID</th>
+                        <td>
+                            <input type="text" name="trinitykitcms_meta_pixel_id" value="<?php echo esc_attr(get_option('trinitykitcms_meta_pixel_id', '')); ?>" class="regular-text">
+                            <p class="description">ID do Meta Pixel (Facebook Pixel). Ex: 1927782824442723. Encontre em: Facebook Business Manager > Eventos > Pixels.</p>
+                        </td>
+                    </tr>
                 </table>
                 
                 <?php submit_button('Salvar Configurações'); ?>
@@ -133,6 +140,7 @@ function trinitykitcms_register_settings() {
     register_setting('trinitykitcms_settings', 'trinitykitcms_frontend_app_url', 'sanitize_url');
     register_setting('trinitykitcms_settings', 'trinitykitcms_google_analytics_id', 'sanitize_text_field');
     register_setting('trinitykitcms_settings', 'trinitykitcms_google_tag_manager_id', 'sanitize_text_field');
+    register_setting('trinitykitcms_settings', 'trinitykitcms_meta_pixel_id', 'sanitize_text_field');
 }
 add_action('admin_init', 'trinitykitcms_register_settings');
 
