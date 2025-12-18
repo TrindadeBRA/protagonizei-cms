@@ -32,6 +32,10 @@ function trinitykitcms_register_integration_settings() {
 
     // Registrar configurações do Meta Pixel
     register_setting('trinitykitcms_meta_pixel_settings', 'trinitykitcms_meta_pixel_id', 'sanitize_text_field');
+
+    // Registrar configurações do FAL.AI
+    register_setting('trinitykitcms_falai_settings', 'trinitykitcms_falai_api_key', 'sanitize_text_field');
+    register_setting('trinitykitcms_falai_settings', 'trinitykitcms_falai_base_url', 'sanitize_url');
 }
 add_action('admin_init', 'trinitykitcms_register_integration_settings');
 
@@ -242,6 +246,36 @@ function trinitykitcms_render_integrations_page() {
                 </table>
                 
                 <?php submit_button('Salvar Configurações do Meta Pixel'); ?>
+            </form>
+        </div>
+
+        <!-- Bloco de configurações do FAL.AI -->
+        <div class="card" style="max-width: 800px; padding: 20px; margin-bottom: 20px;">
+            <h2 style="display: flex; align-items: center; gap: 10px;">Configurações do FAL.AI - <a href="https://fal.ai" target="_blank">FAL.AI</a></h2>
+            <form method="post" action="options.php">
+                <?php
+                settings_fields('trinitykitcms_falai_settings');
+                ?>
+                
+                <table class="form-table">
+                    <tr>
+                        <th scope="row">FAL.AI API Key</th>
+                        <td>
+                            <input type="password" name="trinitykitcms_falai_api_key" value="<?php echo esc_attr(get_option('trinitykitcms_falai_api_key')); ?>" class="regular-text">
+                            <p class="description">Chave de API do FAL.AI.</p>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <th scope="row">FAL.AI Base URL</th>
+                        <td>
+                            <input type="url" name="trinitykitcms_falai_base_url" value="<?php echo esc_attr(get_option('trinitykitcms_falai_base_url')); ?>" class="regular-text">
+                            <p class="description">URL base da API do FAL.AI (ex: https://fal.run).</p>
+                        </td>
+                    </tr>
+                </table>
+                
+                <?php submit_button('Salvar Configurações do FAL.AI'); ?>
             </form>
         </div>
     </div>
