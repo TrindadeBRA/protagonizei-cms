@@ -105,7 +105,7 @@ function save_falai_image_from_url_to_wordpress($image_url, $order_id = null, $c
         "Ilustração FAL.AI - Página {$page_number}";
     
     $professional_content = $order_id ? 
-        "Ilustração personalizada gerada via FAL.AI Nano Banana Pro para o pedido #{$order_id}. Criança: {$child_name}. Página {$page_number} do livro personalizado." :
+        "Ilustração personalizada gerada via FAL.AI Nano Banana Pro para o pedido #{$order_id}. Criança: {$child_name}. Página {$page_number} do livro personalizado. Campo unificado: generated_illustration." :
         "Ilustração personalizada gerada via FAL.AI.";
     
     $attachment = array(
@@ -202,10 +202,10 @@ function trinitykit_handle_check_falai_webhook($request) {
         $completed_pages = 0;
         $pending_pages = 0;
         
-        // Verificar se todas as páginas têm ilustração (modo síncrono)
+        // Verificar se todas as páginas têm ilustração (modo síncrono - campo unificado)
         foreach ($generated_pages as $index => $page) {
             // Check if this page already has a generated illustration
-            if (!empty($page['generated_illustration_falai'])) {
+            if (!empty($page['generated_illustration'])) {
                 $completed_pages++;
             } else {
                 // Check if this page should skip FAL.AI processing
@@ -242,8 +242,8 @@ function trinitykit_handle_check_falai_webhook($request) {
                     }
                     
                     if (!empty($base_image) && !empty($base_image['ID'])) {
-                        // Copy the base illustration to generated_illustration_falai
-                        $field_key = "generated_book_pages_{$index}_generated_illustration_falai";
+                        // Copy the base illustration to generated_illustration (campo unificado)
+                        $field_key = "generated_book_pages_{$index}_generated_illustration";
                         $update_result = update_field($field_key, $base_image['ID'], $order_id);
                         
                         if ($update_result) {

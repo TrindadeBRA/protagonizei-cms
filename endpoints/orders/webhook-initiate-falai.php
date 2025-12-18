@@ -260,7 +260,7 @@ function trinitykit_handle_initiate_falai_webhook($request) {
                 
                 // Try to copy the base illustration if found
                 if (!empty($base_image) && !empty($base_image['ID'])) {
-                    $field_key = "generated_book_pages_{$index}_generated_illustration_falai";
+                    $field_key = "generated_book_pages_{$index}_generated_illustration";
                     $update_result = update_field($field_key, $base_image['ID'], $order_id);
                     
                     if ($update_result) {
@@ -327,7 +327,7 @@ function trinitykit_handle_initiate_falai_webhook($request) {
                 continue;
             }
             
-            // Salvar a ilustração processada no ACF
+            // Salvar a ilustração processada no ACF (campo unificado)
             $attachment_id = attachment_url_to_postid($saved_image_url);
             if (!$attachment_id) {
                 $error_msg = "Não foi possível obter ID do attachment da página $index do pedido #$order_id";
@@ -338,7 +338,7 @@ function trinitykit_handle_initiate_falai_webhook($request) {
                 continue;
             }
             
-            $field_key = "generated_book_pages_{$index}_generated_illustration_falai";
+            $field_key = "generated_book_pages_{$index}_generated_illustration";
             $update_result = update_field($field_key, $attachment_id, $order_id);
             
             if ($update_result) {
