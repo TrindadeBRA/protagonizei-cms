@@ -31,9 +31,10 @@ add_action('rest_api_init', function () {
  * @param string $face_image_url URL da imagem do rosto da criança
  * @param string $target_image_url URL da imagem base para aplicar o face edit
  * @param string $prompt Prompt para guiar o processamento
+ * @param string $aspect_ratio Proporção da imagem (ex: "16:9", "1:1", "9:16")
  * @return string|false URL da imagem gerada ou false em caso de erro
  */
-function initiate_face_edit_with_falai($face_image_url, $target_image_url, $prompt) {
+function initiate_face_edit_with_falai($face_image_url, $target_image_url, $prompt, $aspect_ratio = '16:9') {
     $api_key = get_option('trinitykitcms_falai_api_key');
     $base_url = get_option('trinitykitcms_falai_base_url');
 
@@ -55,21 +56,22 @@ function initiate_face_edit_with_falai($face_image_url, $target_image_url, $prom
     // Log para debug
     error_log("[TrinityKit FAL.AI] URL: " . $run_url);
     error_log("[TrinityKit FAL.AI] API Key Length: " . strlen(trim($api_key)));
+    error_log("[TrinityKit FAL.AI] Aspect Ratio: " . $aspect_ratio);
 
     // Body CORRETO baseado na documentação
     // A API espera: prompt + image_urls (array de 2 imagens)
     // Primeira imagem: ilustração base (target)
     // Segunda imagem: rosto da criança (face)
     // sync_mode: true para retornar a imagem diretamente na resposta
-    // aspect_ratio: "16:9" para formato widescreen
+    // aspect_ratio: proporção definida no template da página
     $body = [
         'prompt' => $prompt,
         'image_urls' => [
             $target_image_url,  // Ilustração base
             $face_image_url      // Rosto da criança
         ],
-        'sync_mode' => true,      // Modo síncrono - retorna imagem diretamente
-        'aspect_ratio' => '16:9'  // Formato 16:9 (widescreen)
+        'sync_mode' => true,       // Modo síncrono - retorna imagem diretamente
+        'aspect_ratio' => $aspect_ratio  // Proporção da imagem do template
     ];
 
     // Requisição para iniciar o face edit
@@ -434,8 +436,14 @@ function trinitykit_handle_initiate_falai_webhook($request) {
             $face_image_url = $child_face_photo['url'];
             $target_image_url = $base_image['url'];
 
+            // Get aspect_ratio from template page (default to 16:9 if not set)
+            $aspect_ratio = '16:9'; // Default
+            if (isset($page['aspect_ratio']) && !empty($page['aspect_ratio'])) {
+                $aspect_ratio = $page['aspect_ratio'];
+            }
+
             // Initiate face edit with FAL.AI (modo síncrono)
-            $image_url = initiate_face_edit_with_falai($face_image_url, $target_image_url, $default_prompt);
+            $image_url = initiate_face_edit_with_falai($face_image_url, $target_image_url, $default_prompt, $aspect_ratio);
             
             if ($image_url === false) {
                 $error_msg = "Erro ao processar FAL.AI face edit da página $index do pedido #$order_id";

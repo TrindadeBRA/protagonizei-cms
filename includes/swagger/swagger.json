@@ -1587,7 +1587,7 @@
     "/webhook/initiate-falai": {
       "get": {
         "summary": "Processar ilustrações com FAL.AI Nano Banana Pro em lote (Modo Síncrono)",
-        "description": "Processa todos os pedidos no status 'created_assets_text' que ainda não tiveram o FAL.AI iniciado. Para cada página do livro, processa a edição facial na API do FAL.AI Nano Banana Pro em modo síncrono, gerando e salvando as ilustrações imediatamente. Após processar todas as páginas, atualiza o status do pedido para 'created_assets_illustration'.",
+        "description": "Processa todos os pedidos no status 'created_assets_text' que ainda não tiveram o FAL.AI iniciado. Para cada página do livro, processa a edição facial na API do FAL.AI Nano Banana Pro em modo síncrono, gerando e salvando as ilustrações imediatamente. Usa o aspect_ratio personalizado definido em cada página do template (padrão: 16:9). Após processar todas as páginas, atualiza o status do pedido para 'created_assets_illustration'.",
         "responses": {
           "200": {
             "description": "Processo de FAL.AI iniciado com sucesso",
