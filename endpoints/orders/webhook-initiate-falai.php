@@ -155,6 +155,138 @@ function send_telegram_error_notification_falai($message, $title = "Erro no FAL.
 }
 
 /**
+ * Download and save image from URL or Base64 to WordPress with professional metadata
+ * 
+ * @param string $image_url URL da imagem ou data URI Base64
+ * @param int $order_id ID do pedido
+ * @param string $child_name Nome da criança
+ * @param int $page_index Índice da página (0-based)
+ * @return string|false URL da imagem salva ou false em caso de erro
+ */
+function save_falai_image_from_url_to_wordpress($image_url, $order_id = null, $child_name = '', $page_index = 0) {
+    // Check if it's a Base64 data URI (FAL.AI modo síncrono retorna Base64)
+    if (strpos($image_url, 'data:image/') === 0) {
+        // Extract Base64 data from data URI
+        // Format: data:image/png;base64,iVBORw0KGgo...
+        $parts = explode(',', $image_url, 2);
+        
+        if (count($parts) !== 2) {
+            error_log("[TrinityKit FAL.AI] Formato de data URI inválido");
+            return false;
+        }
+        
+        $image_data = base64_decode($parts[1]);
+        
+        if ($image_data === false) {
+            error_log("[TrinityKit FAL.AI] Erro ao decodificar Base64");
+            return false;
+        }
+        
+        if (empty($image_data)) {
+            error_log("[TrinityKit FAL.AI] Dados da imagem Base64 vazios");
+            return false;
+        }
+        
+        error_log("[TrinityKit FAL.AI] Imagem Base64 decodificada com sucesso (" . strlen($image_data) . " bytes)");
+    } else {
+        // Download the image from HTTP URL
+        $response = wp_remote_get($image_url);
+        
+        if (is_wp_error($response)) {
+            error_log("[TrinityKit FAL.AI] Erro ao baixar imagem: " . $response->get_error_message());
+            return false;
+        }
+        
+        $http_code = wp_remote_retrieve_response_code($response);
+        if ($http_code !== 200) {
+            error_log("[TrinityKit FAL.AI] Erro HTTP ao baixar imagem: $http_code");
+            return false;
+        }
+        
+        $image_data = wp_remote_retrieve_body($response);
+        
+        if (empty($image_data)) {
+            error_log("[TrinityKit FAL.AI] Dados da imagem vazios");
+            return false;
+        }
+    }
+    
+    // Generate professional filename
+    $page_number = $page_index + 1;
+    $sanitized_child_name = sanitize_file_name($child_name);
+    $timestamp = date('Y-m-d_H-i-s');
+    
+    if ($order_id && $sanitized_child_name) {
+        $filename = "falai-pedido-{$order_id}-{$sanitized_child_name}-pagina-{$page_number}-{$timestamp}.jpg";
+    } else {
+        $filename = "falai-{$timestamp}-" . uniqid() . ".jpg";
+    }
+    
+    $upload_dir = wp_upload_dir();
+    $file_path = $upload_dir['path'] . '/' . $filename;
+    
+    // Save file
+    $file_saved = file_put_contents($file_path, $image_data);
+    
+    if ($file_saved === false) {
+        error_log("[TrinityKit FAL.AI] Erro ao salvar arquivo de imagem");
+        return false;
+    }
+    
+    // Prepare professional data for WordPress insertion
+    $file_type = wp_check_filetype($filename, null);
+    
+    $professional_title = $child_name ? 
+        "Ilustração FAL.AI - {$child_name} - Página {$page_number}" : 
+        "Ilustração FAL.AI - Página {$page_number}";
+    
+    $professional_content = $order_id ? 
+        "Ilustração personalizada gerada via FAL.AI Nano Banana Pro para o pedido #{$order_id}. Criança: {$child_name}. Página {$page_number} do livro personalizado. Campo unificado: generated_illustration." :
+        "Ilustração personalizada gerada via FAL.AI.";
+    
+    $attachment = array(
+        'post_mime_type' => $file_type['type'],
+        'post_title' => $professional_title,
+        'post_content' => $professional_content,
+        'post_excerpt' => "FAL.AI - Pedido #{$order_id} - {$child_name} - Página {$page_number}",
+        'post_status' => 'inherit'
+    );
+    
+    // Insert into WordPress
+    $attach_id = wp_insert_attachment($attachment, $file_path);
+    
+    if (is_wp_error($attach_id)) {
+        error_log("[TrinityKit FAL.AI] Erro ao inserir anexo: " . $attach_id->get_error_message());
+        return false;
+    }
+    
+    // Add professional metadata
+    if ($order_id) {
+        update_post_meta($attach_id, '_trinitykitcms_order_id', $order_id);
+        update_post_meta($attach_id, '_trinitykitcms_child_name', $child_name);
+        update_post_meta($attach_id, '_trinitykitcms_page_number', $page_number);
+        update_post_meta($attach_id, '_trinitykitcms_page_index', $page_index);
+        update_post_meta($attach_id, '_trinitykitcms_generation_method', 'falai_nano_banana_pro');
+        update_post_meta($attach_id, '_trinitykitcms_generation_date', current_time('mysql'));
+        update_post_meta($attach_id, '_trinitykitcms_file_source', 'webhook_initiate_falai');
+        update_post_meta($attach_id, '_trinitykitcms_original_url', $image_url);
+    }
+    
+    // Add ALT text for accessibility
+    $alt_text = $child_name ? 
+        "Ilustração personalizada de {$child_name} na página {$page_number}" :
+        "Ilustração personalizada página {$page_number}";
+    update_post_meta($attach_id, '_wp_attachment_image_alt', $alt_text);
+    
+    // Generate image sizes
+    require_once(ABSPATH . 'wp-admin/includes/image.php');
+    $attach_data = wp_generate_attachment_metadata($attach_id, $file_path);
+    wp_update_attachment_metadata($attach_id, $attach_data);
+    
+    return wp_get_attachment_url($attach_id);
+}
+
+/**
  * Handles the initiate FAL.AI webhook
  * 
  * @param WP_REST_Request $request The request object
@@ -315,7 +447,6 @@ function trinitykit_handle_initiate_falai_webhook($request) {
             }
 
             // Salvar a imagem no WordPress (modo síncrono - imagem já está pronta)
-            require_once get_template_directory() . '/endpoints/orders/webhook-check-falai.php';
             $saved_image_url = save_falai_image_from_url_to_wordpress($image_url, $order_id, $child_name, $index);
             
             if ($saved_image_url === false) {
