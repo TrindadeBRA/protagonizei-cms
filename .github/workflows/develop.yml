@@ -1,0 +1,56 @@
+on:
+  push:
+    branches:
+      - develop
+
+name: 🚀 Deploy - Protagonizei CMS!
+
+jobs:
+  tests:
+    name: 🧪 Run Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 🚚 Get latest code
+        uses: actions/checkout@v3
+      
+      - name: 🐘 Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, xml, ctype, iconv, intl, pdo_sqlite
+          coverage: none
+      
+      - name: 📦 Install dependencies
+        run: composer install --prefer-dist --no-progress --optimize-autoloader
+      
+      - name: 🧪 Run tests
+        run: vendor/bin/phpunit
+
+  web-deploy:
+    name: 🎉 Deploy
+    runs-on: ubuntu-latest
+    needs: tests  # 👈 Só faz deploy se os testes passarem!
+    
+    steps:
+      - name: 🚚 Get latest code
+        uses: actions/checkout@v3
+      
+      - name: 🐘 Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, xml, ctype, iconv, intl
+          coverage: none
+      
+      - name: 📦 Install production dependencies
+        run: composer install --prefer-dist --no-progress --no-dev --optimize-autoloader
+      
+      - name: 📂 Sync files
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: ${{ secrets.FTP_DEV_HOST }}
+          username: ${{ secrets.FTP_DEV_LOGIN }}
+          password: ${{ secrets.FTP_DEV_PASSWORD }}
+          server-dir: /public_html/wp-content/themes/protagonizei-wp-theme/
+          state-name: .ftp-deploy-sync-state.json
