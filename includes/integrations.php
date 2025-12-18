@@ -245,7 +245,7 @@ function trinitykitcms_render_integrations_page() {
                         <th scope="row">FAL.AI Base URL</th>
                         <td>
                             <input type="url" name="trinitykitcms_falai_base_url" value="<?php echo esc_attr(get_option('trinitykitcms_falai_base_url')); ?>" class="regular-text">
-                            <p class="description">URL base da API do FAL.AI (ex: https://fal.run).</p>
+                            <p class="description">URL base da API do FAL.AI. Use <strong>https://fal.run</strong> (recomendado).</p>
                         </td>
                     </tr>
                 </table>

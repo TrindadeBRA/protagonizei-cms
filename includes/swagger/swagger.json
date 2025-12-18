@@ -1584,6 +1584,160 @@
         "security": [{"ApiKeyAuth": []}]
       }
     },
+    "/webhook/initiate-falai": {
+      "get": {
+        "summary": "Processar ilustrações com FAL.AI Nano Banana Pro em lote (Modo Síncrono)",
+        "description": "Processa todos os pedidos no status 'created_assets_text' que ainda não tiveram o FAL.AI iniciado. Para cada página do livro, processa a edição facial na API do FAL.AI Nano Banana Pro em modo síncrono, gerando e salvando as ilustrações imediatamente. Após processar todas as páginas, atualiza o status do pedido para 'created_assets_illustration'.",
+        "responses": {
+          "200": {
+            "description": "Processo de FAL.AI iniciado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Processamento síncrono do FAL.AI concluído. 3 pedidos finalizados com ilustrações geradas."
+                    },
+                    "processed": {
+                      "type": "integer",
+                      "description": "Número de pedidos processados com sucesso",
+                      "example": 3
+                    },
+                    "total": {
+                      "type": "integer",
+                      "description": "Número total de pedidos encontrados",
+                      "example": 3
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Lista de erros encontrados (vazia em caso de sucesso)",
+                      "example": []
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro no processamento",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Processamento de iniciação do FAL.AI concluído. 2 pedidos processados."
+                    },
+                    "processed": {
+                      "type": "integer",
+                      "description": "Número de pedidos processados com sucesso",
+                      "example": 2
+                    },
+                    "total": {
+                      "type": "integer",
+                      "description": "Número total de pedidos encontrados",
+                      "example": 3
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "example": "Pedido #123: Imagem base não encontrada para página 1"
+                      },
+                      "description": "Lista detalhada de erros encontrados"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [{"ApiKeyAuth": []}]
+      }
+    },
+    "/webhook/check-falai": {
+      "get": {
+        "summary": "Validar conclusão do FAL.AI Nano Banana Pro (Modo Síncrono)",
+        "description": "Verifica pedidos no status 'created_assets_text' que já tiveram o FAL.AI iniciado (falai_initiated = true). Como o processamento é síncrono, este endpoint serve principalmente como validação de segurança, verificando se todas as páginas possuem ilustrações e atualizando o status do pedido para 'created_assets_illustration' caso necessário.",
+        "responses": {
+          "200": {
+            "description": "Verificação de FAL.AI concluída com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Validação de ilustrações FAL.AI concluída. 2 pedidos validados e finalizados."
+                    },
+                    "processed": {
+                      "type": "integer",
+                      "description": "Número de pedidos validados e finalizados (status atualizado para created_assets_illustration)",
+                      "example": 2
+                    },
+                    "total": {
+                      "type": "integer",
+                      "description": "Número total de pedidos verificados",
+                      "example": 5
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Lista de erros encontrados (vazia em caso de sucesso)",
+                      "example": []
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro no processamento",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Verificação de FAL.AI concluída. 1 pedidos finalizados."
+                    },
+                    "processed": {
+                      "type": "integer",
+                      "description": "Número de pedidos finalizados",
+                      "example": 1
+                    },
+                    "total": {
+                      "type": "integer",
+                      "description": "Número total de pedidos verificados",
+                      "example": 5
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "example": "Pedido #456: FAL.AI falhou para página 2 (Request ID: req_abc123)"
+                      },
+                      "description": "Lista detalhada de erros encontrados"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [{"ApiKeyAuth": []}]
+      }
+    },
     "/webhook/merge-assets": {
       "get": {
         "summary": "Combinar textos e ilustrações em lote",
