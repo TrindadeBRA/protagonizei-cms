@@ -385,13 +385,13 @@ function check_falai_status($request_id, $order_id = null, $page_index = null) {
         return false;
     }
 
-    // URL para verificar status: https://queue.fal.run/status/{request_id}
+    // URL para verificar status: https://queue.fal.run/fal-ai/nano-banana-pro/requests/{request_id}/status
     $status_url = rtrim($base_url, '/');
     // Se base_url não contém queue.fal.run, substituir fal.run por queue.fal.run
     if (strpos($status_url, 'queue.fal.run') === false) {
         $status_url = str_replace('fal.run', 'queue.fal.run', $status_url);
     }
-    $status_url .= '/status/' . $request_id;
+    $status_url .= '/fal-ai/nano-banana-pro/requests/' . $request_id . '/status';
     
     $headers = [
         'accept: application/json',
