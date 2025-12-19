@@ -1510,7 +1510,7 @@
     "/webhook/check-falai": {
       "get": {
         "summary": "Verificar status FAL.AI e processar imagens (Polling Fallback)",
-        "description": "**FALLBACK POLLING** - Usado como backup caso o webhook callback falhe. Verifica manualmente o status de tarefas FAL.AI pendentes. Processa pedidos com 'created_assets_text' e 'falai_initiated = true', verificando páginas com 'falai_task_id' mas sem 'generated_illustration'. Consulta a API FAL.AI (/status/{request_id}), baixa imagens prontas e atualiza ACF. Atualiza status para 'created_assets_illustration' quando completo. **Cron:** Executa de 5 em 5 minutos automaticamente.",
+        "description": "**ARQUIVO:** `webhook-check-falai.php` - **FALLBACK POLLING** - Usado como backup caso o webhook callback (`/webhook/falai-callback`) falhe ou não seja recebido. Verifica manualmente o status de tarefas FAL.AI pendentes. **QUANDO USAR:** Apenas como fallback; o callback automático é prioritário e mais rápido. **FUNCIONAMENTO:** Processa pedidos com 'created_assets_text' e 'falai_initiated = true', verificando páginas com 'falai_task_id' mas sem 'generated_illustration'. Consulta a API FAL.AI (`/fal-ai/nano-banana-pro/requests/{request_id}/status`), depois busca `response_url` para obter imagem final, baixa e atualiza ACF. Atualiza status para 'created_assets_illustration' quando completo. **RATE LIMIT:** 1.5s entre requisições. **SKIP_FACESWAP:** Copia ilustração base para páginas marcadas como skip. **Cron:** Executa de 5 em 5 minutos automaticamente.",
         "responses": {
           "200": {
             "description": "Verificação concluída com sucesso",
@@ -1674,7 +1674,7 @@
     "/webhook/initiate-falai": {
       "get": {
         "summary": "Iniciar geração de ilustrações com FAL.AI (Modo Assíncrono com Queue + Webhook)",
-        "description": "Inicia o processamento assíncrono de ilustrações para pedidos com status 'created_assets_text'. Utiliza queue.fal.run para processar em background e recebe notificação automática via webhook quando as imagens estão prontas. **Arquitetura:** (1) Inicia tarefas no FAL.AI e salva request_id, (2) FAL.AI processa e chama /webhook/falai-callback automaticamente, (3) Como fallback, /webhook/check-falai faz polling manual. Usa aspect_ratio personalizado de cada página (padrão: 16:9). **Cron:** Executa de 5 em 5 minutos. Se faltar task_id em alguma página, o cron vai processar novamente. Campo 'falai_initiated' só é marcado como true quando TODAS as páginas (exceto skip_faceswap) tiverem task_id.",
+        "description": "**ARQUIVO:** `webhook-initiate-falai.php` - Inicia o processamento assíncrono de ilustrações para pedidos com status 'created_assets_text' e 'falai_initiated != true'. Utiliza `queue.fal.run/fal-ai/nano-banana-pro/edit` para processar em background e configura webhook automático para notificação quando imagens estão prontas. **Arquitetura:** (1) Inicia tarefas no FAL.AI e salva `request_id` no campo `falai_task_id`, (2) FAL.AI processa e chama `/webhook/falai-callback` automaticamente (PRIORITÁRIO), (3) Como fallback, `/webhook/check-falai` faz polling manual de 5 em 5 min. **PROMPT:** Prompt profissional para preservar estilo, composição e elementos da ilustração original, aplicando apenas o rosto da criança. **ASPECT_RATIO:** Usa aspect_ratio personalizado de cada página do template (padrão: 16:9). **SKIP_FACESWAP:** Páginas marcadas como `skip_faceswap` copiam ilustração base diretamente. **FALAI_INITIATED:** Campo só é marcado como `true` quando TODAS as páginas (exceto skip_faceswap) tiverem `falai_task_id`. **Cron:** Executa de 5 em 5 minutos. Se faltar task_id, processa novamente (resume de onde parou).",
         "responses": {
           "200": {
             "description": "Tarefas FAL.AI iniciadas com sucesso",
@@ -1770,8 +1770,8 @@
     },
     "/webhook/falai-callback": {
       "post": {
-        "summary": "Callback automático do FAL.AI (Webhook)",
-        "description": "Endpoint chamado automaticamente pelo FAL.AI quando uma imagem é processada e está pronta. Este é o método PRIORITÁRIO de recebimento de imagens. Recebe o payload com request_id, status e URL da imagem, faz o download, salva no WordPress e atualiza o ACF. Quando todas as páginas de um pedido estão completas, atualiza o status para 'created_assets_illustration'. **Não requer autenticação** pois é chamado pelo FAL.AI.",
+        "summary": "Callback automático do FAL.AI (Webhook) - PRIORITÁRIO",
+        "description": "**ARQUIVO DEDICADO:** `webhook-falai-callback.php` - Endpoint chamado automaticamente pelo FAL.AI quando uma imagem é processada e está pronta. Este é o método **PRIORITÁRIO** de recebimento de imagens. **LOGS DETALHADOS:** Registra cada etapa do processamento (recebimento, decodificação JSON, busca do pedido, extração da URL, download, salvamento, ACF, verificação de completude) com prefixo `[TrinityKit FAL.AI CALLBACK]` para debug facilitado. **FLUXO:** (1) Recebe payload com request_id, status e dados da imagem, (2) Busca qual pedido/página corresponde, (3) Faz download e salva no WordPress com metadados profissionais, (4) Atualiza campo ACF `generated_illustration`, (5) Quando todas as páginas estão completas, atualiza status para 'created_assets_illustration'. **Não requer autenticação** pois é chamado pelo FAL.AI. **MÚLTIPLOS FORMATOS:** Suporta diferentes estruturas de payload (output.images[0].url, output.image.url, output.image_url, response_url).",
         "security": [],
         "requestBody": {
           "required": true,
@@ -1783,7 +1783,7 @@
                 "properties": {
                   "request_id": {
                     "type": "string",
-                    "description": "ID da tarefa FAL.AI",
+                    "description": "ID da tarefa FAL.AI (usado para identificar pedido/página)",
                     "example": "abc123def456"
                   },
                   "status": {
@@ -1792,22 +1792,61 @@
                     "enum": ["COMPLETED", "SUCCESS", "FAILED", "ERROR", "IN_QUEUE", "PROCESSING"],
                     "example": "COMPLETED"
                   },
+                  "response_url": {
+                    "type": "string",
+                    "description": "URL para buscar resposta completa (quando aplicável)",
+                    "example": "https://queue.fal.run/fal-ai/nano-banana-pro/requests/abc123/response"
+                  },
                   "output": {
                     "type": "object",
-                    "description": "Dados de saída da API",
+                    "description": "Dados de saída da API (múltiplos formatos suportados)",
                     "properties": {
                       "images": {
                         "type": "array",
+                        "description": "Array de imagens (formato 1: object com url, formato 2: string direta)",
                         "items": {
-                          "type": "object",
-                          "properties": {
-                            "url": {
+                          "oneOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "url": {
+                                  "type": "string",
+                                  "description": "URL da imagem gerada",
+                                  "example": "https://fal.media/files/abc123.jpg"
+                                }
+                              }
+                            },
+                            {
                               "type": "string",
-                              "description": "URL da imagem gerada",
+                              "description": "URL direta da imagem",
                               "example": "https://fal.media/files/abc123.jpg"
                             }
-                          }
+                          ]
                         }
+                      },
+                      "image": {
+                        "oneOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "url": {
+                                "type": "string",
+                                "description": "URL da imagem (formato alternativo)",
+                                "example": "https://fal.media/files/abc123.jpg"
+                              }
+                            }
+                          },
+                          {
+                            "type": "string",
+                            "description": "URL direta da imagem (formato alternativo)",
+                            "example": "https://fal.media/files/abc123.jpg"
+                          }
+                        ]
+                      },
+                      "image_url": {
+                        "type": "string",
+                        "description": "URL da imagem (formato alternativo 3)",
+                        "example": "https://fal.media/files/abc123.jpg"
                       }
                     }
                   }
@@ -1818,38 +1857,83 @@
         },
         "responses": {
           "200": {
-            "description": "Callback processado com sucesso",
+            "description": "Callback processado com sucesso ou status não final",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "example": true
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "description": "Imagem processada com sucesso",
+                      "properties": {
+                        "success": {
+                          "type": "boolean",
+                          "example": true
+                        },
+                        "message": {
+                          "type": "string",
+                          "example": "Image processed successfully"
+                        },
+                        "order_id": {
+                          "type": "integer",
+                          "example": 123
+                        },
+                        "page_index": {
+                          "type": "integer",
+                          "example": 2
+                        },
+                        "request_id": {
+                          "type": "string",
+                          "example": "abc123def456"
+                        },
+                        "all_complete": {
+                          "type": "boolean",
+                          "description": "Se todas as páginas do pedido foram completadas",
+                          "example": false
+                        }
+                      }
                     },
-                    "message": {
-                      "type": "string",
-                      "example": "Image processed successfully"
+                    {
+                      "type": "object",
+                      "description": "Página já tinha ilustração (ignorado)",
+                      "properties": {
+                        "message": {
+                          "type": "string",
+                          "example": "Page already has illustration"
+                        },
+                        "order_id": {
+                          "type": "integer",
+                          "example": 123
+                        },
+                        "page_index": {
+                          "type": "integer",
+                          "example": 2
+                        }
+                      }
                     },
-                    "order_id": {
-                      "type": "integer",
-                      "example": 123
-                    },
-                    "page_index": {
-                      "type": "integer",
-                      "example": 2
-                    },
-                    "request_id": {
-                      "type": "string",
-                      "example": "abc123def456"
-                    },
-                    "all_complete": {
-                      "type": "boolean",
-                      "description": "Se todas as páginas do pedido foram completadas",
-                      "example": false
+                    {
+                      "type": "object",
+                      "description": "Status não é COMPLETED/SUCCESS (ainda processando ou falhou)",
+                      "properties": {
+                        "message": {
+                          "type": "string",
+                          "example": "Status not completed"
+                        },
+                        "status": {
+                          "type": "string",
+                          "example": "IN_QUEUE"
+                        },
+                        "order_id": {
+                          "type": "integer",
+                          "example": 123
+                        },
+                        "page_index": {
+                          "type": "integer",
+                          "example": 2
+                        }
+                      }
                     }
-                  }
+                  ]
                 }
               }
             }
