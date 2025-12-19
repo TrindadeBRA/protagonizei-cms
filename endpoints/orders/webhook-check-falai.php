@@ -779,21 +779,67 @@ function trinitykit_handle_check_falai_webhook($request) {
             $task_status = $status_data['status'] ?? null;
             
             if ($task_status === 'COMPLETED' || $task_status === 'SUCCESS') {
-                // Log da resposta completa para debug
-                error_log("[TrinityKit FAL.AI] Resposta completa da API: " . json_encode($status_data));
-                
-                // Process the image URL from the API response
-                // Formato pode variar: { "images": [{ "url": "..." }] } ou { "image_url": "..." } ou { "image": { "url": "..." } }
+                // Para queue requests, a resposta tem um response_url que precisa ser consultado
                 $image_url_to_download = null;
                 
-                if (isset($status_data['images']) && is_array($status_data['images']) && !empty($status_data['images'][0])) {
-                    $image_url_to_download = $status_data['images'][0]['url'] ?? $status_data['images'][0];
-                } elseif (isset($status_data['image']['url'])) {
-                    $image_url_to_download = $status_data['image']['url'];
-                } elseif (isset($status_data['image_url'])) {
-                    $image_url_to_download = $status_data['image_url'];
-                } elseif (isset($status_data['image']) && is_string($status_data['image'])) {
-                    $image_url_to_download = $status_data['image'];
+                if (isset($status_data['response_url'])) {
+                    // Fazer requisição para pegar a resposta completa
+                    $response_url = $status_data['response_url'];
+                    error_log("[TrinityKit FAL.AI] Consultando response_url: " . $response_url);
+                    
+                    // Buscar API key para fazer a requisição
+                    $falai_api_key = get_option('trinitykitcms_falai_api_key');
+                    
+                    $response_fetch_start = microtime(true);
+                    $response = wp_remote_get($response_url, array(
+                        'headers' => array(
+                            'Authorization' => 'Key ' . trim($falai_api_key),
+                            'Accept' => 'application/json'
+                        )
+                    ));
+                    $response_fetch_time = microtime(true) - $response_fetch_start;
+                    
+                    if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 200) {
+                        $response_body = wp_remote_retrieve_body($response);
+                        $response_data = json_decode($response_body, true);
+                        
+                        error_log("[TrinityKit FAL.AI] Resposta do response_url: " . substr($response_body, 0, 500));
+                        
+                        // Agora sim, extrair a URL da imagem
+                        if (isset($response_data['images']) && is_array($response_data['images']) && !empty($response_data['images'][0])) {
+                            $image_url_to_download = $response_data['images'][0]['url'] ?? $response_data['images'][0];
+                        } elseif (isset($response_data['image']['url'])) {
+                            $image_url_to_download = $response_data['image']['url'];
+                        } elseif (isset($response_data['image_url'])) {
+                            $image_url_to_download = $response_data['image_url'];
+                        } elseif (isset($response_data['image']) && is_string($response_data['image'])) {
+                            $image_url_to_download = $response_data['image'];
+                        }
+                        
+                        log_falai_performance('response_url_fetched', [
+                            'order_id' => $order_id,
+                            'page_index' => $index,
+                            'request_id' => $request_id,
+                            'response_fetch_time' => round($response_fetch_time, 3),
+                            'image_url_found' => !empty($image_url_to_download)
+                        ]);
+                    } else {
+                        $error_msg = "Erro ao buscar response_url para página $index do pedido #$order_id";
+                        error_log("[TrinityKit FAL.AI] $error_msg");
+                        $failed_pages++;
+                        continue;
+                    }
+                } else {
+                    // Fallback: tentar extrair diretamente da resposta de status (caso antigo)
+                    if (isset($status_data['images']) && is_array($status_data['images']) && !empty($status_data['images'][0])) {
+                        $image_url_to_download = $status_data['images'][0]['url'] ?? $status_data['images'][0];
+                    } elseif (isset($status_data['image']['url'])) {
+                        $image_url_to_download = $status_data['image']['url'];
+                    } elseif (isset($status_data['image_url'])) {
+                        $image_url_to_download = $status_data['image_url'];
+                    } elseif (isset($status_data['image']) && is_string($status_data['image'])) {
+                        $image_url_to_download = $status_data['image'];
+                    }
                 }
                 
                 if (empty($image_url_to_download)) {
