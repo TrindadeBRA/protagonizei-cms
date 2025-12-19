@@ -74,9 +74,6 @@ function trinitykit_handle_falai_callback($request) {
     $body = $request->get_body();
     $payload = json_decode($body, true);
     
-    error_log("[TrinityKit FAL.AI CALLBACK] Recebido callback do FAL.AI");
-    error_log("[TrinityKit FAL.AI CALLBACK] Payload: " . substr($body, 0, 1000));
-    
     log_falai_performance('callback_received', [
         'payload_size' => strlen($body)
     ]);
@@ -106,8 +103,6 @@ function trinitykit_handle_falai_callback($request) {
             'error' => 'No request_id in payload'
         ), 400);
     }
-    
-    error_log("[TrinityKit FAL.AI CALLBACK] Request ID: $request_id, Status: $status");
     
     // Buscar qual pedido e página tem esse request_id
     $args = array(
@@ -151,14 +146,11 @@ function trinitykit_handle_falai_callback($request) {
         ), 404);
     }
     
-    error_log("[TrinityKit FAL.AI CALLBACK] Encontrado: Pedido #$found_order, Página $found_page_index");
-    
     // Verificar se já tem ilustração (evitar duplicação)
     $generated_pages = get_field('generated_book_pages', $found_order);
     $page = $generated_pages[$found_page_index] ?? null;
     
     if (!empty($page['generated_illustration'])) {
-        error_log("[TrinityKit FAL.AI CALLBACK] Página já tem ilustração. Ignorando callback.");
         log_falai_performance('callback_ignored', [
             'order_id' => $found_order,
             'page_index' => $found_page_index,
@@ -173,7 +165,6 @@ function trinitykit_handle_falai_callback($request) {
     
     // Processar apenas se status for COMPLETED ou SUCCESS
     if ($status !== 'COMPLETED' && $status !== 'SUCCESS') {
-        error_log("[TrinityKit FAL.AI CALLBACK] Status não é COMPLETED/SUCCESS: $status");
         log_falai_performance('callback_status_not_ready', [
             'order_id' => $found_order,
             'page_index' => $found_page_index,
@@ -228,8 +219,6 @@ function trinitykit_handle_falai_callback($request) {
             'error' => 'No image URL in payload'
         ), 400);
     }
-    
-    error_log("[TrinityKit FAL.AI CALLBACK] URL da imagem: $image_url_to_download");
     
     // Baixar e salvar a imagem
     $child_name = get_field('child_name', $found_order);
@@ -298,7 +287,6 @@ function trinitykit_handle_falai_callback($request) {
     
     $callback_time = microtime(true) - $callback_start;
     
-    error_log("[TrinityKit FAL.AI CALLBACK] Sucesso! Pedido #$found_order, Página $found_page_index atualizada");
     log_falai_performance('callback_success', [
         'order_id' => $found_order,
         'page_index' => $found_page_index,
@@ -341,7 +329,6 @@ function trinitykit_handle_falai_callback($request) {
                 'created_assets_illustration'
             );
             
-            error_log("[TrinityKit FAL.AI CALLBACK] Pedido #$found_order COMPLETO! Status atualizado.");
             log_falai_performance('callback_order_completed', [
                 'order_id' => $found_order,
                 'child_name' => $child_name,
@@ -785,7 +772,6 @@ function trinitykit_handle_check_falai_webhook($request) {
                 if (isset($status_data['response_url'])) {
                     // Fazer requisição para pegar a resposta completa
                     $response_url = $status_data['response_url'];
-                    error_log("[TrinityKit FAL.AI] Consultando response_url: " . $response_url);
                     
                     // Buscar API key para fazer a requisição
                     $falai_api_key = get_option('trinitykitcms_falai_api_key');
@@ -802,8 +788,6 @@ function trinitykit_handle_check_falai_webhook($request) {
                     if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) === 200) {
                         $response_body = wp_remote_retrieve_body($response);
                         $response_data = json_decode($response_body, true);
-                        
-                        error_log("[TrinityKit FAL.AI] Resposta do response_url: " . substr($response_body, 0, 500));
                         
                         // Agora sim, extrair a URL da imagem
                         if (isset($response_data['images']) && is_array($response_data['images']) && !empty($response_data['images'][0])) {
@@ -869,7 +853,6 @@ function trinitykit_handle_check_falai_webhook($request) {
                     if ($update_result) {
                         $completed_pages++;
                         $total_page_time = microtime(true) - $page_check_start;
-                        error_log("[TrinityKit FAL.AI] Página $index do pedido #$order_id processada com sucesso");
                         log_falai_performance('page_completed', [
                             'order_id' => $order_id,
                             'page_index' => $index,

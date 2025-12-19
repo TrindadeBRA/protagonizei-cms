@@ -85,17 +85,10 @@ function initiate_face_edit_with_falai($face_image_url, $target_image_url, $prom
         'Content-Type: application/json',
         'Authorization: Key ' . trim($api_key)
     ];
-    
-    // Log para debug
-    error_log("[TrinityKit FAL.AI] URL: " . $run_url);
-    error_log("[TrinityKit FAL.AI] API Key Length: " . strlen(trim($api_key)));
-    error_log("[TrinityKit FAL.AI] Aspect Ratio: " . $aspect_ratio);
 
     // Webhook URL para receber callback do FAL.AI quando a imagem estiver pronta
     $site_url = get_site_url();
     $webhook_url = $site_url . '/wp-json/trinitykitcms-api/v1/webhook/falai-callback';
-    
-    error_log("[TrinityKit FAL.AI] Webhook URL: " . $webhook_url);
     
     // Body para modo ASSÍNCRONO com WEBHOOK
     // A API espera: prompt + image_urls (array de 2 imagens)
@@ -144,10 +137,6 @@ function initiate_face_edit_with_falai($face_image_url, $target_image_url, $prom
     $request_info = curl_getinfo($ch);
     curl_close($ch);
     
-    // Log detalhado para debug
-    error_log("[TrinityKit FAL.AI] HTTP Code: " . $http_code);
-    error_log("[TrinityKit FAL.AI] Response: " . substr($response, 0, 1000));
-    
     if ($http_code !== 200 && $http_code !== 201 && $http_code !== 202) {
         error_log("[TrinityKit FAL.AI] Erro API ($http_code): " . $response);
         error_log("[TrinityKit FAL.AI] Request URL: " . $request_info['url']);
@@ -190,7 +179,6 @@ function initiate_face_edit_with_falai($face_image_url, $target_image_url, $prom
     }
     
     if ($request_id) {
-        error_log("[TrinityKit FAL.AI] Tarefa criada com sucesso (modo assíncrono). Request ID: " . $request_id);
         log_falai_performance('initiate_api_success', [
             'order_id' => $order_id,
             'page_index' => $page_index,
@@ -433,7 +421,6 @@ function trinitykit_handle_initiate_falai_webhook($request) {
                 $initiated_pages++;
                 $initiated_pages_total++;
                 $total_page_time = microtime(true) - $page_start_time;
-                error_log("[TrinityKit FAL.AI] Tarefa FAL.AI iniciada para página $index do pedido #$order_id. Request ID: $request_id");
                 log_falai_performance('page_initiate_success', [
                     'order_id' => $order_id,
                     'page_index' => $index,
