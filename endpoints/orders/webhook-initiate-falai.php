@@ -90,13 +90,16 @@ function initiate_face_edit_with_falai($face_image_url, $target_image_url, $prom
     $site_url = get_site_url();
     $webhook_url = $site_url . '/wp-json/trinitykitcms-api/v1/webhook/falai-callback';
     
+    // Log da URL do webhook para debug
+    error_log("[TrinityKit FAL.AI] Webhook URL configurada: $webhook_url");
+    
     // Body para modo ASSÍNCRONO com WEBHOOK
     // A API espera: prompt + image_urls (array de 2 imagens)
     // Primeira imagem: ilustração base (target)
     // Segunda imagem: rosto da criança (face)
     // aspect_ratio: proporção definida no template da página
     // resolution: resolução 2K para alta qualidade
-    // fal_webhook: URL para o FAL.AI chamar quando a imagem estiver pronta
+    // webhook_url: URL para o FAL.AI chamar quando a imagem estiver pronta
     $body = [
         'prompt' => $prompt,
         'image_urls' => [
@@ -105,9 +108,12 @@ function initiate_face_edit_with_falai($face_image_url, $target_image_url, $prom
         ],
         'aspect_ratio' => $aspect_ratio,  // Proporção da imagem do template
         'resolution' => '2K',  // Resolução 2K para alta qualidade
-        'fal_webhook' => $webhook_url  // Webhook para callback automático
+        'webhook_url' => $webhook_url  // Webhook para callback automático (campo correto da API FAL.AI)
     ];
 
+    // Log do body da requisição para debug
+    error_log("[TrinityKit FAL.AI] Body da requisição (Pedido #$order_id, Página $page_index): " . json_encode($body, JSON_UNESCAPED_SLASHES));
+    
     // Requisição para iniciar o face edit (modo assíncrono)
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $run_url);
