@@ -50,13 +50,15 @@ add_action('rest_api_init', function () {
 /**
  * Log estruturado para análise de performance
  */
-function log_falai_performance($action, $data = array()) {
-    $timestamp = date('Y-m-d H:i:s');
-    $log_data = array_merge([
-        'timestamp' => $timestamp,
-        'action' => $action
-    ], $data);
-    error_log("[TrinityKit FAL.AI PERFORMANCE] " . json_encode($log_data, JSON_UNESCAPED_SLASHES));
+if (!function_exists('log_falai_performance')) {
+    function log_falai_performance($action, $data = array()) {
+        $timestamp = date('Y-m-d H:i:s');
+        $log_data = array_merge([
+            'timestamp' => $timestamp,
+            'action' => $action
+        ], $data);
+        error_log("[TrinityKit FAL.AI PERFORMANCE] " . json_encode($log_data, JSON_UNESCAPED_SLASHES));
+    }
 }
 
 /**
@@ -482,7 +484,8 @@ function check_falai_status($request_id, $order_id = null, $page_index = null) {
  * @param int $page_index Índice da página (0-based)
  * @return string|false URL da imagem salva ou false em caso de erro
  */
-function save_falai_image_from_url_to_wordpress($image_url, $order_id = null, $child_name = '', $page_index = 0) {
+if (!function_exists('save_falai_image_from_url_to_wordpress')) {
+    function save_falai_image_from_url_to_wordpress($image_url, $order_id = null, $child_name = '', $page_index = 0) {
     // Download the image from HTTP URL
     $response = wp_remote_get($image_url);
     
@@ -577,24 +580,27 @@ function save_falai_image_from_url_to_wordpress($image_url, $order_id = null, $c
     wp_update_attachment_metadata($attach_id, $attach_data);
     
     return wp_get_attachment_url($attach_id);
+    }
 }
 
 /**
  * Send Telegram notification for errors
  */
-function send_telegram_error_notification_falai($message, $title = "Erro no FAL.AI") {
-    try {
-        $telegram = new TelegramService();
-        if ($telegram->isConfigured()) {
-            $error_message = "🚨 <b>$title</b>\n\n";
-            $error_message .= $message;
-            $date = new DateTime('now', new DateTimeZone('America/Sao_Paulo'));
-            $error_message .= "\n\n📅 " . $date->format('d/m/Y H:i:s');
-            
-            $telegram->sendTextMessage($error_message);
+if (!function_exists('send_telegram_error_notification_falai')) {
+    function send_telegram_error_notification_falai($message, $title = "Erro no FAL.AI") {
+        try {
+            $telegram = new TelegramService();
+            if ($telegram->isConfigured()) {
+                $error_message = "🚨 <b>$title</b>\n\n";
+                $error_message .= $message;
+                $date = new DateTime('now', new DateTimeZone('America/Sao_Paulo'));
+                $error_message .= "\n\n📅 " . $date->format('d/m/Y H:i:s');
+                
+                $telegram->sendTextMessage($error_message);
+            }
+        } catch (Exception $e) {
+            error_log("[TrinityKit FAL.AI] Erro ao enviar notificação Telegram: " . $e->getMessage());
         }
-    } catch (Exception $e) {
-        error_log("[TrinityKit FAL.AI] Erro ao enviar notificação Telegram: " . $e->getMessage());
     }
 }
 
