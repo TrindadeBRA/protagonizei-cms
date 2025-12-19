@@ -16,9 +16,40 @@
       "ApiKeyAuth": []
     }
   ],
+  "tags": [
+    {
+      "name": "Configurações",
+      "description": "Endpoints para obter configurações do site"
+    },
+    {
+      "name": "Posts",
+      "description": "Endpoints para gerenciar posts do blog"
+    },
+    {
+      "name": "Contato",
+      "description": "Endpoints para formulários de contato"
+    },
+    {
+      "name": "Pedidos - Gestão",
+      "description": "Endpoints para criar e gerenciar pedidos, consultar livros e validar cupons"
+    },
+    {
+      "name": "Pedidos - Pagamento",
+      "description": "Endpoints relacionados a pagamentos (PIX, status, webhooks)"
+    },
+    {
+      "name": "Pedidos - Processamento",
+      "description": "Endpoints para processar pedidos (textos, ilustrações, FAL.AI, face swap, merge, PDF)"
+    },
+    {
+      "name": "Pedidos - Entrega",
+      "description": "Endpoints para entregar PDFs aos clientes"
+    }
+  ],
   "paths": {
     "/configs": {
       "get": {
+        "tags": ["Configurações"],
         "summary": "Obter configurações do site",
         "description": "Retorna as configurações básicas do site WordPress",
         "security": [
@@ -112,8 +143,304 @@
         }
       }
     },
+    "/post-slugs": {
+      "get": {
+        "tags": ["Posts"],
+        "summary": "Listar posts",
+        "description": "Retorna uma lista de posts publicados com seus detalhes. Pode ser limitado por quantidade ou paginado.",
+        "parameters": [
+          {
+            "name": "quantity",
+            "in": "query",
+            "required": false,
+            "description": "Quantidade total de posts a retornar. Se não especificado, retorna todos os posts.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "description": "Quantidade de posts por página para paginação. Se especificado, ignora o parâmetro quantity.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "description": "Número da página desejada (começa em 1). Só tem efeito se per_page for especificado.",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          }
+        ],
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de posts obtida com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "slug": {
+                            "type": "string",
+                            "description": "Slug do post"
+                          },
+                          "title": {
+                            "type": "string",
+                            "description": "Título do post"
+                          },
+                          "content": {
+                            "type": "string",
+                            "description": "Conteúdo completo do post"
+                          },
+                          "excerpt": {
+                            "type": "string",
+                            "description": "Resumo do post"
+                          },
+                          "created_at": {
+                            "type": "string",
+                            "format": "date-time",
+                            "description": "Data de criação do post"
+                          },
+                          "featured_image_url": {
+                            "type": "string",
+                            "description": "URL da imagem destacada do post"
+                          }
+                        }
+                      }
+                    },
+                    "total": {
+                      "type": "integer",
+                      "description": "Número total de posts existentes",
+                      "example": 50
+                    },
+                    "total_pages": {
+                      "type": "integer",
+                      "description": "Número total de páginas disponíveis (quando usando paginação)",
+                      "example": 5
+                    },
+                    "current_page": {
+                      "type": "integer",
+                      "description": "Número da página atual (quando usando paginação)",
+                      "example": 1
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Erro de autenticação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "invalid_api_key"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "API Key inválida ou não fornecida"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "integer",
+                          "example": 401
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/post/{slug}": {
+      "get": {
+        "tags": ["Posts"],
+        "summary": "Obter post por slug",
+        "description": "Retorna os detalhes de um post específico usando seu slug",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "description": "Slug do post que deseja buscar",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Post encontrado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "slug": {
+                          "type": "string",
+                          "description": "Slug do post"
+                        },
+                        "title": {
+                          "type": "string",
+                          "description": "Título do post"
+                        },
+                        "content": {
+                          "type": "string",
+                          "description": "Conteúdo completo do post"
+                        },
+                        "excerpt": {
+                          "type": "string",
+                          "description": "Resumo do post"
+                        },
+                        "created_at": {
+                          "type": "string",
+                          "format": "date-time",
+                          "description": "Data de criação do post"
+                        },
+                        "featured_image_url": {
+                          "type": "string",
+                          "description": "URL da imagem destacada do post"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Parâmetro slug não fornecido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "slug_required"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "O parâmetro slug é obrigatório"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "integer",
+                          "example": 400
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Post não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "post_not_found"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Post não encontrado"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "integer",
+                          "example": 404
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Erro de autenticação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "invalid_api_key"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "API Key inválida ou não fornecida"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "integer",
+                          "example": 401
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/contact-form/submit": {
       "post": {
+        "tags": ["Contato"],
         "summary": "Enviar formulário de contato",
         "description": "Cria um novo registro de contato no WordPress com suporte para upload de arquivos. Todos os campos são obrigatórios exceto o arquivo anexo.",
         "security": [],
@@ -332,301 +659,9 @@
         }
       }
     },
-    "/post-slugs": {
-      "get": {
-        "summary": "Listar posts",
-        "description": "Retorna uma lista de posts publicados com seus detalhes. Pode ser limitado por quantidade ou paginado.",
-        "parameters": [
-          {
-            "name": "quantity",
-            "in": "query",
-            "required": false,
-            "description": "Quantidade total de posts a retornar. Se não especificado, retorna todos os posts.",
-            "schema": {
-              "type": "integer"
-            }
-          },
-          {
-            "name": "per_page",
-            "in": "query",
-            "required": false,
-            "description": "Quantidade de posts por página para paginação. Se especificado, ignora o parâmetro quantity.",
-            "schema": {
-              "type": "integer"
-            }
-          },
-          {
-            "name": "page",
-            "in": "query",
-            "required": false,
-            "description": "Número da página desejada (começa em 1). Só tem efeito se per_page for especificado.",
-            "schema": {
-              "type": "integer",
-              "default": 1
-            }
-          }
-        ],
-        "security": [
-          {
-            "ApiKeyAuth": []
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Lista de posts obtida com sucesso",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "example": true
-                    },
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "slug": {
-                            "type": "string",
-                            "description": "Slug do post"
-                          },
-                          "title": {
-                            "type": "string",
-                            "description": "Título do post"
-                          },
-                          "content": {
-                            "type": "string",
-                            "description": "Conteúdo completo do post"
-                          },
-                          "excerpt": {
-                            "type": "string",
-                            "description": "Resumo do post"
-                          },
-                          "created_at": {
-                            "type": "string",
-                            "format": "date-time",
-                            "description": "Data de criação do post"
-                          },
-                          "featured_image_url": {
-                            "type": "string",
-                            "description": "URL da imagem destacada do post"
-                          }
-                        }
-                      }
-                    },
-                    "total": {
-                      "type": "integer",
-                      "description": "Número total de posts existentes",
-                      "example": 50
-                    },
-                    "total_pages": {
-                      "type": "integer",
-                      "description": "Número total de páginas disponíveis (quando usando paginação)",
-                      "example": 5
-                    },
-                    "current_page": {
-                      "type": "integer",
-                      "description": "Número da página atual (quando usando paginação)",
-                      "example": 1
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Erro de autenticação",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "code": {
-                      "type": "string",
-                      "example": "invalid_api_key"
-                    },
-                    "message": {
-                      "type": "string",
-                      "example": "API Key inválida ou não fornecida"
-                    },
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "status": {
-                          "type": "integer",
-                          "example": 401
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/post/{slug}": {
-      "get": {
-        "summary": "Obter post por slug",
-        "description": "Retorna os detalhes de um post específico usando seu slug",
-        "parameters": [
-          {
-            "name": "slug",
-            "in": "path",
-            "required": true,
-            "description": "Slug do post que deseja buscar",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "security": [
-          {
-            "ApiKeyAuth": []
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Post encontrado com sucesso",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "example": true
-                    },
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "slug": {
-                          "type": "string",
-                          "description": "Slug do post"
-                        },
-                        "title": {
-                          "type": "string", 
-                          "description": "Título do post"
-                        },
-                        "content": {
-                          "type": "string",
-                          "description": "Conteúdo completo do post"
-                        },
-                        "excerpt": {
-                          "type": "string",
-                          "description": "Resumo do post"
-                        },
-                        "created_at": {
-                          "type": "string",
-                          "format": "date-time",
-                          "description": "Data de criação do post"
-                        },
-                        "featured_image_url": {
-                          "type": "string",
-                          "description": "URL da imagem destacada do post"
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Parâmetro slug não fornecido",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "code": {
-                      "type": "string",
-                      "example": "slug_required"
-                    },
-                    "message": {
-                      "type": "string",
-                      "example": "O parâmetro slug é obrigatório"
-                    },
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "status": {
-                          "type": "integer",
-                          "example": 400
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Post não encontrado",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "code": {
-                      "type": "string",
-                      "example": "post_not_found"
-                    },
-                    "message": {
-                      "type": "string",
-                      "example": "Post não encontrado"
-                    },
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "status": {
-                          "type": "integer",
-                          "example": 404
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Erro de autenticação",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "code": {
-                      "type": "string",
-                      "example": "invalid_api_key"
-                    },
-                    "message": {
-                      "type": "string",
-                      "example": "API Key inválida ou não fornecida"
-                    },
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "status": {
-                          "type": "integer",
-                          "example": 401
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/orders": {
       "post": {
+        "tags": ["Pedidos - Gestão"],
         "summary": "Criar novo pedido",
         "description": "Cria um novo pedido personalizado para uma criança",
         "security": [
@@ -643,7 +678,7 @@
                 "required": [
                   "childName",
                   "childAge",
-                  "childGender", 
+                  "childGender",
                   "skinTone",
                   "parentName",
                   "email",
@@ -877,6 +912,7 @@
     },
     "/orders/book-details": {
       "get": {
+        "tags": ["Pedidos - Gestão"],
         "summary": "Obter detalhes do livro mais recente",
         "description": "Retorna informações básicas do livro mais recente publicado no sistema, incluindo ID, nome e preço. Este endpoint não requer autenticação e busca automaticamente o livro mais recente baseado na data de publicação.",
         "security": [],
@@ -971,8 +1007,79 @@
         }
       }
     },
+    "/orders/check-coupon": {
+      "get": {
+        "tags": ["Pedidos - Gestão"],
+        "summary": "Validar cupom e retornar preço atualizado",
+        "description": "Valida um cupom para um pedido e retorna o preço atualizado",
+        "parameters": [
+          {
+            "name": "coupon",
+            "in": "query",
+            "required": true,
+            "description": "Código do cupom (case-insensitive)",
+            "schema": { "type": "string" },
+            "example": "TRINITY10"
+          },
+          {
+            "name": "book_id",
+            "in": "query",
+            "required": true,
+            "description": "ID do livro (post type book_templates)",
+            "schema": { "type": "integer" },
+            "example": 123
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cupom válido, preço calculado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "price": { "type": "number", "format": "float", "example": 39.90 }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro de validação ou cupom inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": { "type": "string", "example": "coupon_invalid" },
+                    "message": { "type": "string", "example": "Cupom inválido: percentual de desconto não configurado corretamente." },
+                    "data": { "type": "object", "properties": { "status": { "type": "integer", "example": 400 } } }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Pedido ou cupom não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": { "type": "string", "example": "coupon_not_found" },
+                    "message": { "type": "string", "example": "Cupom inválido ou não encontrado." },
+                    "data": { "type": "object", "properties": { "status": { "type": "integer", "example": 404 } } }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/orders/{order_id}/pix": {
       "post": {
+        "tags": ["Pedidos - Pagamento"],
         "summary": "Criar pagamento PIX para um pedido",
         "description": "Cria um pagamento PIX para um pedido existente usando a API do Asaas",
         "parameters": [
@@ -1056,67 +1163,70 @@
         }
       }
     },
-    "/orders/check-coupon": {
+    "/orders/{order_id}/payment-status": {
       "get": {
-        "summary": "Validar cupom e retornar preço atualizado",
-        "description": "Valida um cupom para um pedido e retorna o preço atualizado",
+        "tags": ["Pedidos - Pagamento"],
+        "summary": "Verificar status do pagamento",
+        "description": "Verifica se um pedido específico já foi pago",
         "parameters": [
           {
-            "name": "coupon",
-            "in": "query",
+            "name": "order_id",
+            "in": "path",
             "required": true,
-            "description": "Código do cupom (case-insensitive)",
-            "schema": { "type": "string" },
-            "example": "TRINITY10"
-          },
-          {
-            "name": "book_id",
-            "in": "query",
-            "required": true,
-            "description": "ID do livro (post type book_templates)",
-            "schema": { "type": "integer" },
-            "example": 123
+            "description": "ID do pedido para verificar o status do pagamento",
+            "schema": {
+              "type": "integer"
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": "Cupom válido, preço calculado",
+            "description": "Status do pagamento obtido com sucesso",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "price": { "type": "number", "format": "float", "example": 39.90 }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Erro de validação ou cupom inválido",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "code": { "type": "string", "example": "coupon_invalid" },
-                    "message": { "type": "string", "example": "Cupom inválido: percentual de desconto não configurado corretamente." },
-                    "data": { "type": "object", "properties": { "status": { "type": "integer", "example": 400 } } }
+                    "message": {
+                      "type": "string",
+                      "description": "Mensagem descritiva do status",
+                      "example": "Pedido já foi pago"
+                    },
+                    "status": {
+                      "type": "string",
+                      "description": "Status do pagamento",
+                      "enum": ["paid", "pending"],
+                      "example": "paid"
+                    }
                   }
                 }
               }
             }
           },
           "404": {
-            "description": "Pedido ou cupom não encontrado",
+            "description": "Pedido não encontrado",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "code": { "type": "string", "example": "coupon_not_found" },
-                    "message": { "type": "string", "example": "Cupom inválido ou não encontrado." },
-                    "data": { "type": "object", "properties": { "status": { "type": "integer", "example": 404 } } }
+                    "code": {
+                      "type": "string",
+                      "example": "order_not_found"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Pedido não encontrado"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "integer",
+                          "example": 404
+                        }
+                      }
+                    }
                   }
                 }
               }
@@ -1127,6 +1237,7 @@
     },
     "/webhook/payment-confirm": {
       "post": {
+        "tags": ["Pedidos - Pagamento"],
         "summary": "Webhook de confirmação de pagamento",
         "description": "Endpoint para receber notificações de confirmação de pagamento do Asaas. Atualiza o status do pedido para pago e registra os dados da transação.",
         "security": [],
@@ -1233,79 +1344,9 @@
         }
       }
     },
-    "/orders/{order_id}/payment-status": {
-      "get": {
-        "summary": "Verificar status do pagamento",
-        "description": "Verifica se um pedido específico já foi pago",
-        "parameters": [
-          {
-            "name": "order_id",
-            "in": "path",
-            "required": true,
-            "description": "ID do pedido para verificar o status do pagamento",
-            "schema": {
-              "type": "integer"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Status do pagamento obtido com sucesso",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "message": {
-                      "type": "string",
-                      "description": "Mensagem descritiva do status",
-                      "example": "Pedido já foi pago"
-                    },
-                    "status": {
-                      "type": "string",
-                      "description": "Status do pagamento",
-                      "enum": ["paid", "pending"],
-                      "example": "paid"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Pedido não encontrado",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "code": {
-                      "type": "string",
-                      "example": "order_not_found"
-                    },
-                    "message": {
-                      "type": "string",
-                      "example": "Pedido não encontrado"
-                    },
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "status": {
-                          "type": "integer",
-                          "example": 404
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/webhook/send-thanks": {
       "get": {
+        "tags": ["Pedidos - Processamento"],
         "summary": "Webhook para envio de emails de agradecimento",
         "description": "Endpoint que verifica pedidos com status 'paid', envia emails de agradecimento e atualiza o status para 'thanked'",
         "responses": {
@@ -1360,8 +1401,10 @@
     },
     "/webhook/generate-text-assets": {
       "get": {
+        "tags": ["Pedidos - Processamento"],
         "summary": "Gerar textos personalizados em lote",
         "description": "Processa todos os pedidos no status 'thanked' para gerar textos personalizados usando Deepseek API",
+        "security": [{"ApiKeyAuth": []}],
         "responses": {
           "200": {
             "description": "Textos gerados com sucesso",
@@ -1426,14 +1469,15 @@
               }
             }
           }
-        },
-        "security": [{"ApiKeyAuth": []}]
+        }
       }
     },
     "/webhook/initiate-faceswap": {
       "get": {
+        "tags": ["Pedidos - Processamento"],
         "summary": "Iniciar processo de face swap em lote",
         "description": "Processa todos os pedidos no status 'created_assets_text' que ainda não tiveram o face swap iniciado. Para cada página do livro, inicia o processo de face swap na API externa e salva os IDs das tarefas retornadas.",
+        "security": [{"ApiKeyAuth": []}],
         "responses": {
           "200": {
             "description": "Processo de face swap iniciado com sucesso",
@@ -1503,101 +1547,15 @@
               }
             }
           }
-        },
-        "security": [{"ApiKeyAuth": []}]
-      }
-    },
-    "/webhook/check-falai": {
-      "get": {
-        "summary": "Verificar status FAL.AI e processar imagens (Polling Fallback)",
-        "description": "**ARQUIVO:** `webhook-check-falai.php` - **FALLBACK POLLING** - Usado como backup caso o webhook callback (`/webhook/falai-callback`) falhe ou não seja recebido. Verifica manualmente o status de tarefas FAL.AI pendentes. **QUANDO USAR:** Apenas como fallback; o callback automático é prioritário e mais rápido. **FUNCIONAMENTO:** Processa pedidos com 'created_assets_text' e 'falai_initiated = true', verificando páginas com 'falai_task_id' mas sem 'generated_illustration'. Consulta a API FAL.AI (`/fal-ai/nano-banana-pro/requests/{request_id}/status`), depois busca `response_url` para obter imagem final, baixa e atualiza ACF. Atualiza status para 'created_assets_illustration' quando completo. **RATE LIMIT:** 1.5s entre requisições. **SKIP_FACESWAP:** Copia ilustração base para páginas marcadas como skip. **Cron:** Executa de 5 em 5 minutos automaticamente.",
-        "responses": {
-          "200": {
-            "description": "Verificação concluída com sucesso",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "message": {
-                      "type": "string",
-                      "example": "Verificação de FAL.AI concluída. 2 pedidos finalizados."
-                    },
-                    "processed": {
-                      "type": "integer",
-                      "description": "Número de pedidos finalizados (status atualizado)",
-                      "example": 2
-                    },
-                    "total": {
-                      "type": "integer",
-                      "description": "Número total de pedidos verificados",
-                      "example": 5
-                    },
-                    "elapsed_time": {
-                      "type": "number",
-                      "description": "Tempo de execução em segundos",
-                      "example": 89.123
-                    },
-                    "errors": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "description": "Lista de erros encontrados",
-                      "example": []
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Erro no processamento",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "message": {
-                      "type": "string",
-                      "example": "Verificação de FAL.AI concluída. 1 pedidos finalizados."
-                    },
-                    "processed": {
-                      "type": "integer",
-                      "description": "Número de pedidos finalizados",
-                      "example": 1
-                    },
-                    "total": {
-                      "type": "integer",
-                      "description": "Número total de pedidos verificados",
-                      "example": 5
-                    },
-                    "elapsed_time": {
-                      "type": "number",
-                      "description": "Tempo de execução em segundos",
-                      "example": 152.789
-                    },
-                    "errors": {
-                      "type": "array",
-                      "items": {
-                        "type": "string",
-                        "example": "Pedido #456: FAL.AI falhou para página 2 (Request ID: abc123)"
-                      },
-                      "description": "Lista detalhada de erros"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [{"ApiKeyAuth": []}]
+        }
       }
     },
     "/webhook/check-faceswap": {
       "get": {
+        "tags": ["Pedidos - Processamento"],
         "summary": "Verificar status do face swap e processar imagens prontas",
         "description": "Processa todos os pedidos no status 'created_assets_text' que já tiveram o face swap iniciado (face_swap_initiated = true). Verifica o status das tarefas na API externa e processa as imagens que estão prontas, salvando-as no WordPress e atualizando o status do pedido quando todas as páginas estiverem concluídas.",
+        "security": [{"ApiKeyAuth": []}],
         "responses": {
           "200": {
             "description": "Verificação de face swap concluída com sucesso",
@@ -1667,14 +1625,15 @@
               }
             }
           }
-        },
-        "security": [{"ApiKeyAuth": []}]
+        }
       }
     },
     "/webhook/initiate-falai": {
       "get": {
+        "tags": ["Pedidos - Processamento"],
         "summary": "Iniciar geração de ilustrações com FAL.AI (Modo Assíncrono com Queue + Webhook)",
         "description": "**ARQUIVO:** `webhook-initiate-falai.php` - Inicia o processamento assíncrono de ilustrações para pedidos com status 'created_assets_text' e 'falai_initiated != true'. Utiliza `queue.fal.run/fal-ai/nano-banana-pro/edit` para processar em background e configura webhook automático (campo `webhook_url` no body da requisição) para notificação quando imagens estão prontas. **Arquitetura:** (1) Inicia tarefas no FAL.AI e salva `request_id` no campo `falai_task_id`, (2) FAL.AI processa e chama `/webhook/falai-callback` automaticamente via webhook_url configurado (PRIORITÁRIO e mais rápido), (3) Como fallback, `/webhook-check-falai` faz polling manual de 5 em 5 min. **WEBHOOK_URL:** Campo correto enviado ao FAL.AI para callback automático: `{site_url}/wp-json/trinitykitcms-api/v1/webhook/falai-callback`. **PROMPT:** Prompt profissional para preservar estilo, composição e elementos da ilustração original, aplicando apenas o rosto da criança. **ASPECT_RATIO:** Usa aspect_ratio personalizado de cada página do template (padrão: 16:9). **SKIP_FACESWAP:** Páginas marcadas como `skip_faceswap` copiam ilustração base diretamente. **FALAI_INITIATED:** Campo só é marcado como `true` quando TODAS as páginas (exceto skip_faceswap) tiverem `falai_task_id`. **Cron:** Executa de 5 em 5 minutos. Se faltar task_id, processa novamente (resume de onde parou).",
+        "security": [{"ApiKeyAuth": []}],
         "responses": {
           "200": {
             "description": "Tarefas FAL.AI iniciadas com sucesso",
@@ -1764,12 +1723,12 @@
               }
             }
           }
-        },
-        "security": [{"ApiKeyAuth": []}]
+        }
       }
     },
     "/webhook/falai-callback": {
       "post": {
+        "tags": ["Pedidos - Processamento"],
         "summary": "Callback automático do FAL.AI (Webhook) - PRIORITÁRIO",
         "description": "**ARQUIVO DEDICADO:** `webhook-falai-callback.php` - Endpoint chamado automaticamente pelo FAL.AI quando uma imagem é processada e está pronta. Este é o método **PRIORITÁRIO** de recebimento de imagens. **LOGS DETALHADOS:** Registra cada etapa do processamento (recebimento, decodificação JSON, busca do pedido, extração da URL, download, salvamento, ACF, verificação de completude) com prefixo `[TrinityKit FAL.AI CALLBACK]` para debug facilitado. **FLUXO:** (1) Recebe payload com request_id, status e dados da imagem, (2) Busca qual pedido/página corresponde, (3) Faz download e salva no WordPress com metadados profissionais, (4) Atualiza campo ACF `generated_illustration`, (5) Quando todas as páginas estão completas, atualiza status para 'created_assets_illustration'. **Não requer autenticação** pois é chamado pelo FAL.AI. **MÚLTIPLOS FORMATOS:** Suporta diferentes estruturas de payload (output.images[0].url, output.image.url, output.image_url, response_url).",
         "security": [],
@@ -1993,10 +1952,100 @@
         }
       }
     },
+    "/webhook/check-falai": {
+      "get": {
+        "tags": ["Pedidos - Processamento"],
+        "summary": "Verificar status FAL.AI e processar imagens (Polling Fallback)",
+        "description": "**ARQUIVO:** `webhook-check-falai.php` - **FALLBACK POLLING** - Usado como backup caso o webhook callback (`/webhook/falai-callback`) falhe ou não seja recebido. Verifica manualmente o status de tarefas FAL.AI pendentes. **QUANDO USAR:** Apenas como fallback; o callback automático é prioritário e mais rápido. **FUNCIONAMENTO:** Processa pedidos com 'created_assets_text' e 'falai_initiated = true', verificando páginas com 'falai_task_id' mas sem 'generated_illustration'. Consulta a API FAL.AI (`/fal-ai/nano-banana-pro/requests/{request_id}/status`), depois busca `response_url` para obter imagem final, baixa e atualiza ACF. Atualiza status para 'created_assets_illustration' quando completo. **RATE LIMIT:** 1.5s entre requisições. **SKIP_FACESWAP:** Copia ilustração base para páginas marcadas como skip. **Cron:** Executa de 5 em 5 minutos automaticamente.",
+        "security": [{"ApiKeyAuth": []}],
+        "responses": {
+          "200": {
+            "description": "Verificação concluída com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Verificação de FAL.AI concluída. 2 pedidos finalizados."
+                    },
+                    "processed": {
+                      "type": "integer",
+                      "description": "Número de pedidos finalizados (status atualizado)",
+                      "example": 2
+                    },
+                    "total": {
+                      "type": "integer",
+                      "description": "Número total de pedidos verificados",
+                      "example": 5
+                    },
+                    "elapsed_time": {
+                      "type": "number",
+                      "description": "Tempo de execução em segundos",
+                      "example": 89.123
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Lista de erros encontrados",
+                      "example": []
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro no processamento",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Verificação de FAL.AI concluída. 1 pedidos finalizados."
+                    },
+                    "processed": {
+                      "type": "integer",
+                      "description": "Número de pedidos finalizados",
+                      "example": 1
+                    },
+                    "total": {
+                      "type": "integer",
+                      "description": "Número total de pedidos verificados",
+                      "example": 5
+                    },
+                    "elapsed_time": {
+                      "type": "number",
+                      "description": "Tempo de execução em segundos",
+                      "example": 152.789
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "example": "Pedido #456: FAL.AI falhou para página 2 (Request ID: abc123)"
+                      },
+                      "description": "Lista detalhada de erros"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/webhook/merge-assets": {
       "get": {
+        "tags": ["Pedidos - Processamento"],
         "summary": "Combinar textos e ilustrações em lote",
         "description": "Processa todos os pedidos no status 'created_assets_illustration' para combinar os textos personalizados com as ilustrações processadas. Gera as páginas finais do livro com texto sobreposto nas imagens na metade direita, usando fonte branca com sombra para boa legibilidade.",
+        "security": [{"ApiKeyAuth": []}],
         "responses": {
           "200": {
             "description": "Assets combinados com sucesso",
@@ -2066,14 +2115,15 @@
               }
             }
           }
-        },
-        "security": [{"ApiKeyAuth": []}]
+        }
       }
     },
     "/webhook/generate-pdf": {
       "get": {
+        "tags": ["Pedidos - Processamento"],
         "summary": "Gerar PDFs dos livros personalizados em lote",
         "description": "Processa todos os pedidos no status 'created_assets_merge' para gerar PDFs completos dos livros personalizados. Coleta todas as imagens finais das páginas (final_page_with_text) e cria um PDF profissional com todas as páginas do livro na ordem correta. Após a geração bem-sucedida, atualiza o status do pedido para 'ready_for_delivery'.",
+        "security": [{"ApiKeyAuth": []}],
         "responses": {
           "200": {
             "description": "Geração de PDFs concluída com sucesso",
@@ -2143,14 +2193,15 @@
               }
             }
           }
-        },
-        "security": [{"ApiKeyAuth": []}]
+        }
       }
     },
     "/orders/{order_id}/deliver": {
       "post": {
+        "tags": ["Pedidos - Entrega"],
         "summary": "Entregar pedido individual",
         "description": "Processa um pedido específico no status 'ready_for_delivery' para enviar email de entrega ao cliente com link para download do PDF final. Após o envio bem-sucedido do email, atualiza o status do pedido para 'delivered' e notifica a equipe via Telegram sobre a entrega realizada. Este endpoint é usado para entrega manual e revisão individual de pedidos.",
+        "security": [{"ApiKeyAuth": []}],
         "parameters": [
           {
             "name": "order_id",
@@ -2401,14 +2452,15 @@
               }
             }
           }
-        },
-        "security": [{"ApiKeyAuth": []}]
+        }
       }
     },
     "/webhook/deliver-pdf": {
       "get": {
+        "tags": ["Pedidos - Entrega"],
         "summary": "Entregar PDFs dos livros personalizados aos clientes (em lote)",
         "description": "Processa todos os pedidos no status 'ready_for_delivery' para enviar emails de entrega aos clientes com links para download dos PDFs finais. Após o envio bem-sucedido do email, atualiza o status do pedido para 'delivered' e notifica a equipe via Telegram sobre a entrega realizada.",
+        "security": [{"ApiKeyAuth": []}],
         "responses": {
           "200": {
             "description": "Entrega de PDFs concluída com sucesso",
@@ -2478,8 +2530,7 @@
               }
             }
           }
-        },
-        "security": [{"ApiKeyAuth": []}]
+        }
       }
     }
   },
