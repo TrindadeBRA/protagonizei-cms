@@ -1507,6 +1507,103 @@
         "security": [{"ApiKeyAuth": []}]
       }
     },
+    "/webhook/check-falai": {
+      "get": {
+        "summary": "Verificar status FAL.AI e processar imagens (Polling Fallback)",
+        "description": "**FALLBACK POLLING** - Usado como backup caso o webhook callback falhe. Verifica manualmente o status de tarefas FAL.AI pendentes. Processa pedidos com 'created_assets_text' e 'falai_initiated = true', verificando páginas com 'falai_task_id' mas sem 'generated_illustration'. Consulta a API FAL.AI (/status/{request_id}), baixa imagens prontas e atualiza ACF. Atualiza status para 'created_assets_illustration' quando completo. **Controle de timeout:** Processa máximo 5 páginas por execução.",
+        "responses": {
+          "200": {
+            "description": "Verificação concluída com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Verificação de FAL.AI concluída. 2 pedidos finalizados."
+                    },
+                    "processed": {
+                      "type": "integer",
+                      "description": "Número de pedidos finalizados (status atualizado)",
+                      "example": 2
+                    },
+                    "total": {
+                      "type": "integer",
+                      "description": "Número total de pedidos verificados",
+                      "example": 5
+                    },
+                    "elapsed_time": {
+                      "type": "number",
+                      "description": "Tempo de execução em segundos",
+                      "example": 89.123
+                    },
+                    "timeout_reached": {
+                      "type": "boolean",
+                      "description": "Se o timeout foi atingido",
+                      "example": false
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Lista de erros encontrados",
+                      "example": []
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro no processamento",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Verificação de FAL.AI concluída. 1 pedidos finalizados."
+                    },
+                    "processed": {
+                      "type": "integer",
+                      "description": "Número de pedidos finalizados",
+                      "example": 1
+                    },
+                    "total": {
+                      "type": "integer",
+                      "description": "Número total de pedidos verificados",
+                      "example": 5
+                    },
+                    "elapsed_time": {
+                      "type": "number",
+                      "description": "Tempo de execução em segundos",
+                      "example": 152.789
+                    },
+                    "timeout_reached": {
+                      "type": "boolean",
+                      "description": "Se o timeout foi atingido",
+                      "example": true
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "example": "Pedido #456: FAL.AI falhou para página 2 (Request ID: abc123)"
+                      },
+                      "description": "Lista detalhada de erros"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [{"ApiKeyAuth": []}]
+      }
+    },
     "/webhook/check-faceswap": {
       "get": {
         "summary": "Verificar status do face swap e processar imagens prontas",
@@ -1586,11 +1683,11 @@
     },
     "/webhook/initiate-falai": {
       "get": {
-        "summary": "Processar ilustrações com FAL.AI Nano Banana Pro em lote (Modo Síncrono)",
-        "description": "Processa todos os pedidos no status 'created_assets_text' que ainda não tiveram o FAL.AI iniciado. Para cada página do livro, processa a edição facial na API do FAL.AI Nano Banana Pro em modo síncrono, gerando e salvando as ilustrações imediatamente. Usa o aspect_ratio personalizado definido em cada página do template (padrão: 16:9). Após processar todas as páginas, atualiza o status do pedido para 'created_assets_illustration'.",
+        "summary": "Iniciar geração de ilustrações com FAL.AI (Modo Assíncrono com Queue + Webhook)",
+        "description": "Inicia o processamento assíncrono de ilustrações para pedidos com status 'created_assets_text'. Utiliza queue.fal.run para processar em background e recebe notificação automática via webhook quando as imagens estão prontas. **Arquitetura:** (1) Inicia tarefas no FAL.AI e salva request_id, (2) FAL.AI processa e chama /webhook/falai-callback automaticamente, (3) Como fallback, /webhook/check-falai faz polling manual. Usa aspect_ratio personalizado de cada página (padrão: 16:9). **Controle de timeout:** Processa máximo 5 páginas por execução para evitar timeout de 3 minutos do WordPress.",
         "responses": {
           "200": {
-            "description": "Processo de FAL.AI iniciado com sucesso",
+            "description": "Tarefas FAL.AI iniciadas com sucesso",
             "content": {
               "application/json": {
                 "schema": {
@@ -1598,17 +1695,32 @@
                   "properties": {
                     "message": {
                       "type": "string",
-                      "example": "Processamento síncrono do FAL.AI concluído. 3 pedidos finalizados com ilustrações geradas."
+                      "example": "Processamento assíncrono do FAL.AI concluído. 15 tarefas iniciadas em 3 pedidos."
                     },
-                    "processed": {
+                    "initiated_pages": {
                       "type": "integer",
-                      "description": "Número de pedidos processados com sucesso",
+                      "description": "Número total de páginas/tarefas iniciadas",
+                      "example": 15
+                    },
+                    "processed_orders": {
+                      "type": "integer",
+                      "description": "Número de pedidos processados",
                       "example": 3
                     },
-                    "total": {
+                    "total_orders": {
                       "type": "integer",
                       "description": "Número total de pedidos encontrados",
                       "example": 3
+                    },
+                    "elapsed_time": {
+                      "type": "number",
+                      "description": "Tempo de execução em segundos",
+                      "example": 45.234
+                    },
+                    "timeout_reached": {
+                      "type": "boolean",
+                      "description": "Se o timeout foi atingido (continuar na próxima execução)",
+                      "example": false
                     },
                     "errors": {
                       "type": "array",
@@ -1632,17 +1744,32 @@
                   "properties": {
                     "message": {
                       "type": "string",
-                      "example": "Processamento de iniciação do FAL.AI concluído. 2 pedidos processados."
+                      "example": "Processamento assíncrono do FAL.AI concluído. 8 tarefas iniciadas em 2 pedidos."
                     },
-                    "processed": {
+                    "initiated_pages": {
                       "type": "integer",
-                      "description": "Número de pedidos processados com sucesso",
+                      "description": "Número total de páginas/tarefas iniciadas",
+                      "example": 8
+                    },
+                    "processed_orders": {
+                      "type": "integer",
+                      "description": "Número de pedidos processados",
                       "example": 2
                     },
-                    "total": {
+                    "total_orders": {
                       "type": "integer",
                       "description": "Número total de pedidos encontrados",
                       "example": 3
+                    },
+                    "elapsed_time": {
+                      "type": "number",
+                      "description": "Tempo de execução em segundos",
+                      "example": 152.456
+                    },
+                    "timeout_reached": {
+                      "type": "boolean",
+                      "description": "Se o timeout foi atingido",
+                      "example": true
                     },
                     "errors": {
                       "type": "array",
@@ -1659,6 +1786,147 @@
           }
         },
         "security": [{"ApiKeyAuth": []}]
+      }
+    },
+    "/webhook/falai-callback": {
+      "post": {
+        "summary": "Callback automático do FAL.AI (Webhook)",
+        "description": "Endpoint chamado automaticamente pelo FAL.AI quando uma imagem é processada e está pronta. Este é o método PRIORITÁRIO de recebimento de imagens. Recebe o payload com request_id, status e URL da imagem, faz o download, salva no WordPress e atualiza o ACF. Quando todas as páginas de um pedido estão completas, atualiza o status para 'created_assets_illustration'. **Não requer autenticação** pois é chamado pelo FAL.AI.",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["request_id", "status"],
+                "properties": {
+                  "request_id": {
+                    "type": "string",
+                    "description": "ID da tarefa FAL.AI",
+                    "example": "abc123def456"
+                  },
+                  "status": {
+                    "type": "string",
+                    "description": "Status da tarefa",
+                    "enum": ["COMPLETED", "SUCCESS", "FAILED", "ERROR", "IN_QUEUE", "PROCESSING"],
+                    "example": "COMPLETED"
+                  },
+                  "output": {
+                    "type": "object",
+                    "description": "Dados de saída da API",
+                    "properties": {
+                      "images": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "url": {
+                              "type": "string",
+                              "description": "URL da imagem gerada",
+                              "example": "https://fal.media/files/abc123.jpg"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Callback processado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Image processed successfully"
+                    },
+                    "order_id": {
+                      "type": "integer",
+                      "example": 123
+                    },
+                    "page_index": {
+                      "type": "integer",
+                      "example": 2
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "example": "abc123def456"
+                    },
+                    "all_complete": {
+                      "type": "boolean",
+                      "description": "Se todas as páginas do pedido foram completadas",
+                      "example": false
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro de validação ou payload inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "No request_id in payload"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Pedido não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Order not found for request_id"
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "example": "abc123def456"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro ao processar imagem",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Failed to save image"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/webhook/merge-assets": {

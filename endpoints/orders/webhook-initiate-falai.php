@@ -1,10 +1,17 @@
 <?php
 /**
- * Webhook endpoint for processing FAL.AI Nano Banana Pro (Modo Síncrono)
+ * Webhook endpoint for initiating FAL.AI Nano Banana Pro (Modo Assíncrono com Queue + Webhook)
  * 
- * This endpoint finds orders with status 'created_assets_text' and processes face edit with FAL.AI
- * for each page in synchronous mode. The images are generated and saved immediately,
- * updating the order status to 'created_assets_illustration' when complete.
+ * Este endpoint encontra pedidos com status 'created_assets_text' e inicia o processamento
+ * de face edit com FAL.AI em modo assíncrono usando queue.fal.run. 
+ * 
+ * FUNCIONAMENTO:
+ * 1. Inicia as tarefas no FAL.AI e salva o request_id de cada página
+ * 2. FAL.AI processa as imagens e chama o webhook de callback automaticamente
+ * 3. Como fallback, webhook-check-falai.php pode fazer polling manual dos status
+ * 
+ * Este arquivo NÃO baixa imagens - apenas inicia as tarefas.
+ * O download é feito via webhook callback ou polling fallback.
  * 
  * @package TrinityKit
  */
@@ -26,26 +33,52 @@ add_action('rest_api_init', function () {
 });
 
 /**
- * Process face edit with FAL.AI Nano Banana Pro (Modo Síncrono)
+ * Log estruturado para análise de performance
+ */
+function log_falai_performance($action, $data = array()) {
+    $timestamp = date('Y-m-d H:i:s');
+    $log_data = array_merge([
+        'timestamp' => $timestamp,
+        'action' => $action
+    ], $data);
+    error_log("[TrinityKit FAL.AI PERFORMANCE] " . json_encode($log_data, JSON_UNESCAPED_SLASHES));
+}
+
+/**
+ * Process face edit with FAL.AI Nano Banana Pro (Modo Assíncrono)
  * 
  * @param string $face_image_url URL da imagem do rosto da criança
  * @param string $target_image_url URL da imagem base para aplicar o face edit
  * @param string $prompt Prompt para guiar o processamento
  * @param string $aspect_ratio Proporção da imagem (ex: "16:9", "1:1", "9:16")
- * @return string|false URL da imagem gerada ou false em caso de erro
+ * @param int $order_id ID do pedido (para logs)
+ * @param int $page_index Índice da página (para logs)
+ * @return string|false Request ID (request_id ou gateway_request_id) ou false em caso de erro
  */
-function initiate_face_edit_with_falai($face_image_url, $target_image_url, $prompt, $aspect_ratio = '16:9') {
+function initiate_face_edit_with_falai($face_image_url, $target_image_url, $prompt, $aspect_ratio = '16:9', $order_id = null, $page_index = null) {
+    $api_request_start = microtime(true);
+    
     $api_key = get_option('trinitykitcms_falai_api_key');
     $base_url = get_option('trinitykitcms_falai_base_url');
 
     if (empty($api_key) || empty($base_url)) {
         error_log("[TrinityKit FAL.AI] Configurações do FAL.AI não encontradas");
+        log_falai_performance('initiate_api_error', [
+            'order_id' => $order_id,
+            'page_index' => $page_index,
+            'error' => 'config_not_found'
+        ]);
         return false;
     }
 
-    // URL CORRETA baseada na documentação oficial
-    // Endpoint: https://fal.run/fal-ai/nano-banana-pro/edit
-    $run_url = rtrim($base_url, '/') . '/fal-ai/nano-banana-pro/edit';
+    // URL para modo assíncrono usando queue
+    // Endpoint: https://queue.fal.run/fal-ai/nano-banana-pro/edit
+    $run_url = rtrim($base_url, '/');
+    // Se base_url não contém queue.fal.run, substituir fal.run por queue.fal.run
+    if (strpos($run_url, 'queue.fal.run') === false) {
+        $run_url = str_replace('fal.run', 'queue.fal.run', $run_url);
+    }
+    $run_url .= '/fal-ai/nano-banana-pro/edit';
     
     // Header de autenticação
     $headers = [
@@ -58,25 +91,31 @@ function initiate_face_edit_with_falai($face_image_url, $target_image_url, $prom
     error_log("[TrinityKit FAL.AI] API Key Length: " . strlen(trim($api_key)));
     error_log("[TrinityKit FAL.AI] Aspect Ratio: " . $aspect_ratio);
 
-    // Body CORRETO baseado na documentação
+    // Webhook URL para receber callback do FAL.AI quando a imagem estiver pronta
+    $site_url = get_site_url();
+    $webhook_url = $site_url . '/wp-json/trinitykitcms-api/v1/webhook/falai-callback';
+    
+    error_log("[TrinityKit FAL.AI] Webhook URL: " . $webhook_url);
+    
+    // Body para modo ASSÍNCRONO com WEBHOOK
     // A API espera: prompt + image_urls (array de 2 imagens)
     // Primeira imagem: ilustração base (target)
     // Segunda imagem: rosto da criança (face)
-    // sync_mode: true para retornar a imagem diretamente na resposta
     // aspect_ratio: proporção definida no template da página
     // resolution: resolução 2K para alta qualidade
+    // fal_webhook: URL para o FAL.AI chamar quando a imagem estiver pronta
     $body = [
         'prompt' => $prompt,
         'image_urls' => [
             $target_image_url,  // Ilustração base
             $face_image_url      // Rosto da criança
         ],
-        'sync_mode' => true,       // Modo síncrono - retorna imagem diretamente
         'aspect_ratio' => $aspect_ratio,  // Proporção da imagem do template
-        'resolution' => '2K'  // Resolução 2K para alta qualidade
+        'resolution' => '2K',  // Resolução 2K para alta qualidade
+        'fal_webhook' => $webhook_url  // Webhook para callback automático
     ];
 
-    // Requisição para iniciar o face edit
+    // Requisição para iniciar o face edit (modo assíncrono)
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $run_url);
     curl_setopt($ch, CURLOPT_POST, true);
@@ -85,10 +124,19 @@ function initiate_face_edit_with_falai($face_image_url, $target_image_url, $prom
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     
     $response = curl_exec($ch);
+    $api_request_time = microtime(true) - $api_request_start;
     
     if (curl_errno($ch)) {
-        error_log("[TrinityKit FAL.AI] Erro cURL na requisição: " . curl_error($ch));
+        $curl_error = curl_error($ch);
+        error_log("[TrinityKit FAL.AI] Erro cURL na requisição: " . $curl_error);
         curl_close($ch);
+        log_falai_performance('initiate_api_error', [
+            'order_id' => $order_id,
+            'page_index' => $page_index,
+            'error' => 'curl_error',
+            'error_message' => $curl_error,
+            'api_request_time' => round($api_request_time, 3)
+        ]);
         return false;
     }
     
@@ -103,6 +151,13 @@ function initiate_face_edit_with_falai($face_image_url, $target_image_url, $prom
     if ($http_code !== 200 && $http_code !== 201 && $http_code !== 202) {
         error_log("[TrinityKit FAL.AI] Erro API ($http_code): " . $response);
         error_log("[TrinityKit FAL.AI] Request URL: " . $request_info['url']);
+        log_falai_performance('initiate_api_error', [
+            'order_id' => $order_id,
+            'page_index' => $page_index,
+            'error' => 'http_error',
+            'http_code' => $http_code,
+            'api_request_time' => round($api_request_time, 3)
+        ]);
         return false;
     }
     
@@ -110,32 +165,49 @@ function initiate_face_edit_with_falai($face_image_url, $target_image_url, $prom
     
     if (json_last_error() !== JSON_ERROR_NONE) {
         error_log("[TrinityKit FAL.AI] Resposta JSON inválida: " . json_last_error_msg());
+        log_falai_performance('initiate_api_error', [
+            'order_id' => $order_id,
+            'page_index' => $page_index,
+            'error' => 'json_error',
+            'api_request_time' => round($api_request_time, 3)
+        ]);
         return false;
     }
     
-    // Modo SÍNCRONO: a API retorna a imagem diretamente
-    // Formato esperado: { "images": [{ "url": "...", ... }] }
-    // ou { "image": { "url": "..." } } ou { "image_url": "..." }
+    // Modo ASSÍNCRONO: a API retorna request_id ou gateway_request_id
+    // Formato esperado: { "request_id": "...", "status": "IN_QUEUE" }
+    // ou { "gateway_request_id": "..." }
     
-    // Tenta encontrar a URL da imagem na resposta
-    $image_url = null;
+    // Tenta encontrar o request_id na resposta
+    $request_id = null;
     
-    if (isset($response_data['images']) && is_array($response_data['images']) && !empty($response_data['images'][0])) {
-        $image_url = $response_data['images'][0]['url'] ?? $response_data['images'][0];
-    } elseif (isset($response_data['image']['url'])) {
-        $image_url = $response_data['image']['url'];
-    } elseif (isset($response_data['image_url'])) {
-        $image_url = $response_data['image_url'];
-    } elseif (isset($response_data['image']) && is_string($response_data['image'])) {
-        $image_url = $response_data['image'];
+    if (isset($response_data['request_id'])) {
+        $request_id = $response_data['request_id'];
+    } elseif (isset($response_data['gateway_request_id'])) {
+        $request_id = $response_data['gateway_request_id'];
+    } elseif (isset($response_data['id'])) {
+        $request_id = $response_data['id'];
     }
     
-    if ($image_url) {
-        error_log("[TrinityKit FAL.AI] Imagem recebida com sucesso (modo síncrono)");
-        return $image_url;
+    if ($request_id) {
+        error_log("[TrinityKit FAL.AI] Tarefa criada com sucesso (modo assíncrono). Request ID: " . $request_id);
+        log_falai_performance('initiate_api_success', [
+            'order_id' => $order_id,
+            'page_index' => $page_index,
+            'request_id' => $request_id,
+            'api_request_time' => round($api_request_time, 3),
+            'http_code' => $http_code
+        ]);
+        return $request_id;
     }
     
     error_log("[TrinityKit FAL.AI] Formato de resposta inesperado: " . json_encode($response_data));
+    log_falai_performance('initiate_api_error', [
+        'order_id' => $order_id,
+        'page_index' => $page_index,
+        'error' => 'unexpected_response_format',
+        'api_request_time' => round($api_request_time, 3)
+    ]);
     return false;
 }
 
@@ -159,138 +231,6 @@ function send_telegram_error_notification_falai($message, $title = "Erro no FAL.
 }
 
 /**
- * Download and save image from URL or Base64 to WordPress with professional metadata
- * 
- * @param string $image_url URL da imagem ou data URI Base64
- * @param int $order_id ID do pedido
- * @param string $child_name Nome da criança
- * @param int $page_index Índice da página (0-based)
- * @return string|false URL da imagem salva ou false em caso de erro
- */
-function save_falai_image_from_url_to_wordpress($image_url, $order_id = null, $child_name = '', $page_index = 0) {
-    // Check if it's a Base64 data URI (FAL.AI modo síncrono retorna Base64)
-    if (strpos($image_url, 'data:image/') === 0) {
-        // Extract Base64 data from data URI
-        // Format: data:image/png;base64,iVBORw0KGgo...
-        $parts = explode(',', $image_url, 2);
-        
-        if (count($parts) !== 2) {
-            error_log("[TrinityKit FAL.AI] Formato de data URI inválido");
-            return false;
-        }
-        
-        $image_data = base64_decode($parts[1]);
-        
-        if ($image_data === false) {
-            error_log("[TrinityKit FAL.AI] Erro ao decodificar Base64");
-            return false;
-        }
-        
-        if (empty($image_data)) {
-            error_log("[TrinityKit FAL.AI] Dados da imagem Base64 vazios");
-            return false;
-        }
-        
-        error_log("[TrinityKit FAL.AI] Imagem Base64 decodificada com sucesso (" . strlen($image_data) . " bytes)");
-    } else {
-        // Download the image from HTTP URL
-        $response = wp_remote_get($image_url);
-        
-        if (is_wp_error($response)) {
-            error_log("[TrinityKit FAL.AI] Erro ao baixar imagem: " . $response->get_error_message());
-            return false;
-        }
-        
-        $http_code = wp_remote_retrieve_response_code($response);
-        if ($http_code !== 200) {
-            error_log("[TrinityKit FAL.AI] Erro HTTP ao baixar imagem: $http_code");
-            return false;
-        }
-        
-        $image_data = wp_remote_retrieve_body($response);
-        
-        if (empty($image_data)) {
-            error_log("[TrinityKit FAL.AI] Dados da imagem vazios");
-            return false;
-        }
-    }
-    
-    // Generate professional filename
-    $page_number = $page_index + 1;
-    $sanitized_child_name = sanitize_file_name($child_name);
-    $timestamp = date('Y-m-d_H-i-s');
-    
-    if ($order_id && $sanitized_child_name) {
-        $filename = "falai-pedido-{$order_id}-{$sanitized_child_name}-pagina-{$page_number}-{$timestamp}.jpg";
-    } else {
-        $filename = "falai-{$timestamp}-" . uniqid() . ".jpg";
-    }
-    
-    $upload_dir = wp_upload_dir();
-    $file_path = $upload_dir['path'] . '/' . $filename;
-    
-    // Save file
-    $file_saved = file_put_contents($file_path, $image_data);
-    
-    if ($file_saved === false) {
-        error_log("[TrinityKit FAL.AI] Erro ao salvar arquivo de imagem");
-        return false;
-    }
-    
-    // Prepare professional data for WordPress insertion
-    $file_type = wp_check_filetype($filename, null);
-    
-    $professional_title = $child_name ? 
-        "Ilustração FAL.AI - {$child_name} - Página {$page_number}" : 
-        "Ilustração FAL.AI - Página {$page_number}";
-    
-    $professional_content = $order_id ? 
-        "Ilustração personalizada gerada via FAL.AI Nano Banana Pro para o pedido #{$order_id}. Criança: {$child_name}. Página {$page_number} do livro personalizado. Campo unificado: generated_illustration." :
-        "Ilustração personalizada gerada via FAL.AI.";
-    
-    $attachment = array(
-        'post_mime_type' => $file_type['type'],
-        'post_title' => $professional_title,
-        'post_content' => $professional_content,
-        'post_excerpt' => "FAL.AI - Pedido #{$order_id} - {$child_name} - Página {$page_number}",
-        'post_status' => 'inherit'
-    );
-    
-    // Insert into WordPress
-    $attach_id = wp_insert_attachment($attachment, $file_path);
-    
-    if (is_wp_error($attach_id)) {
-        error_log("[TrinityKit FAL.AI] Erro ao inserir anexo: " . $attach_id->get_error_message());
-        return false;
-    }
-    
-    // Add professional metadata
-    if ($order_id) {
-        update_post_meta($attach_id, '_trinitykitcms_order_id', $order_id);
-        update_post_meta($attach_id, '_trinitykitcms_child_name', $child_name);
-        update_post_meta($attach_id, '_trinitykitcms_page_number', $page_number);
-        update_post_meta($attach_id, '_trinitykitcms_page_index', $page_index);
-        update_post_meta($attach_id, '_trinitykitcms_generation_method', 'falai_nano_banana_pro');
-        update_post_meta($attach_id, '_trinitykitcms_generation_date', current_time('mysql'));
-        update_post_meta($attach_id, '_trinitykitcms_file_source', 'webhook_initiate_falai');
-        update_post_meta($attach_id, '_trinitykitcms_original_url', $image_url);
-    }
-    
-    // Add ALT text for accessibility
-    $alt_text = $child_name ? 
-        "Ilustração personalizada de {$child_name} na página {$page_number}" :
-        "Ilustração personalizada página {$page_number}";
-    update_post_meta($attach_id, '_wp_attachment_image_alt', $alt_text);
-    
-    // Generate image sizes
-    require_once(ABSPATH . 'wp-admin/includes/image.php');
-    $attach_data = wp_generate_attachment_metadata($attach_id, $file_path);
-    wp_update_attachment_metadata($attach_id, $attach_data);
-    
-    return wp_get_attachment_url($attach_id);
-}
-
-/**
  * Handles the initiate FAL.AI webhook
  * 
  * @param WP_REST_Request $request The request object
@@ -301,6 +241,16 @@ function trinitykit_handle_initiate_falai_webhook($request) {
     if (is_wp_error($api_validation)) {
         return $api_validation;
     }
+    
+    // Controle de timeout: parar antes de 2.5 minutos (150 segundos)
+    $max_execution_time = 150; // 2.5 minutos
+    $start_time = microtime(true);
+    $start_time_seconds = time();
+    
+    log_falai_performance('webhook_initiate_start', [
+        'max_execution_time' => $max_execution_time,
+        'timestamp' => date('Y-m-d H:i:s')
+    ]);
     
     // Get all orders with status 'created_assets_text' and falai_initiated = false
     $args = array(
@@ -329,14 +279,28 @@ function trinitykit_handle_initiate_falai_webhook($request) {
     );
 
     $orders = get_posts($args);
-    $processed = 0;
+    $processed_orders = 0;
+    $initiated_pages_total = 0;
     $errors = array();
 
     // Prompt padrão para o FAL.AI
     $default_prompt = "CRITICAL: Only replace the protagonist's face. Do NOT alter, move, or change: character positions, background elements, composition, layout, other characters, objects, or any part of the illustration except the protagonist's face. Preserve the exact artistic style, proportions, lighting, texture, and color palette. Maintain a realistic, photorealistic, and stylish aesthetic - do not cartoonize, stylize excessively, or make it look like a drawing. Keep the illustration looking natural, professional, and true to the original style. Apply the child's face maintaining the same position, angle, and expression as the original illustration. Preserve the child's gender, hair color, eye color, and match the illustrated skin tone exactly to the child's real skin tone. The background and all other elements must remain completely unchanged.";
 
     foreach ($orders as $order) {
+        // Verificar timeout antes de processar cada pedido
+        $elapsed_time = time() - $start_time_seconds;
+        $elapsed_time_precise = microtime(true) - $start_time;
+        if ($elapsed_time >= $max_execution_time) {
+            error_log("[TrinityKit FAL.AI] Timeout atingido após $elapsed_time segundos. Parando processamento.");
+            log_falai_performance('webhook_initiate_timeout', [
+                'elapsed_time' => round($elapsed_time_precise, 3),
+                'orders_processed' => $processed_orders,
+                'pages_initiated' => $initiated_pages_total
+            ]);
+            break;
+        }
         $order_id = $order->ID;
+        $order_start_time = microtime(true);
         
         // Get order details
         $child_name = get_field('child_name', $order_id);
@@ -371,9 +335,36 @@ function trinitykit_handle_initiate_falai_webhook($request) {
         $page_error_messages = array();
         $initiated_pages = 0;
         $skipped_pages = 0;
+        $pages_processed_this_batch = 0;
+        $max_pages_per_batch = 5; // Processar máximo 5 páginas por execução
         
         // Process each page individually
         foreach ($template_pages as $index => $page) {
+            // Verificar timeout antes de processar cada página
+            $elapsed_time = time() - $start_time;
+            if ($elapsed_time >= $max_execution_time) {
+                error_log("[TrinityKit FAL.AI] Timeout atingido. Parando processamento de páginas.");
+                break;
+            }
+            
+            // Limitar número de páginas processadas por execução
+            if ($pages_processed_this_batch >= $max_pages_per_batch) {
+                error_log("[TrinityKit FAL.AI] Limite de páginas por lote atingido ($max_pages_per_batch). Continuando na próxima execução.");
+                break;
+            }
+            
+            // Verificar se esta página já tem falai_task_id (já foi iniciada)
+            $existing_task_id = $page['falai_task_id'] ?? null;
+            if (!empty($existing_task_id)) {
+                $initiated_pages++;
+                continue;
+            }
+            
+            // Verificar se esta página já tem generated_illustration (já está completa)
+            if (!empty($page['generated_illustration'])) {
+                $initiated_pages++;
+                continue;
+            }
             // Check if this page should skip face edit
             $skip_faceswap = !empty($page['skip_faceswap']) && $page['skip_faceswap'] === true;
             
@@ -444,99 +435,112 @@ function trinitykit_handle_initiate_falai_webhook($request) {
                 $aspect_ratio = $page['aspect_ratio'];
             }
 
-            // Initiate face edit with FAL.AI (modo síncrono)
-            $image_url = initiate_face_edit_with_falai($face_image_url, $target_image_url, $default_prompt, $aspect_ratio);
+            // Initiate face edit with FAL.AI (modo assíncrono - retorna request_id)
+            $page_start_time = microtime(true);
+            $request_id = initiate_face_edit_with_falai($face_image_url, $target_image_url, $default_prompt, $aspect_ratio, $order_id, $index);
+            $page_api_time = microtime(true) - $page_start_time;
             
-            if ($image_url === false) {
-                $error_msg = "Erro ao processar FAL.AI face edit da página $index do pedido #$order_id";
+            if ($request_id === false) {
+                $error_msg = "Erro ao iniciar FAL.AI face edit da página $index do pedido #$order_id";
                 error_log("[TrinityKit FAL.AI] $error_msg");
                 $page_errors++;
                 $page_error_messages[] = $error_msg;
+                log_falai_performance('page_initiate_error', [
+                    'order_id' => $order_id,
+                    'page_index' => $index,
+                    'page_api_time' => round($page_api_time, 3)
+                ]);
                 send_telegram_error_notification_falai("Pedido #$order_id: $error_msg");
                 continue;
             }
 
-            // Salvar a imagem no WordPress (modo síncrono - imagem já está pronta)
-            $saved_image_url = save_falai_image_from_url_to_wordpress($image_url, $order_id, $child_name, $index);
-            
-            if ($saved_image_url === false) {
-                $error_msg = "Erro ao salvar imagem FAL.AI da página $index do pedido #$order_id";
-                error_log("[TrinityKit FAL.AI] $error_msg");
-                $page_errors++;
-                $page_error_messages[] = $error_msg;
-                send_telegram_error_notification_falai("Pedido #$order_id: $error_msg");
-                continue;
-            }
-            
-            // Salvar a ilustração processada no ACF (campo unificado)
-            $attachment_id = attachment_url_to_postid($saved_image_url);
-            if (!$attachment_id) {
-                $error_msg = "Não foi possível obter ID do attachment da página $index do pedido #$order_id";
-                error_log("[TrinityKit FAL.AI] $error_msg");
-                $page_errors++;
-                $page_error_messages[] = $error_msg;
-                send_telegram_error_notification_falai("Pedido #$order_id: $error_msg");
-                continue;
-            }
-            
-            $field_key = "generated_book_pages_{$index}_generated_illustration";
-            $update_result = update_field($field_key, $attachment_id, $order_id);
+            // Salvar o request_id (falai_task_id) no ACF
+            $acf_start_time = microtime(true);
+            $field_key = "generated_book_pages_{$index}_falai_task_id";
+            $update_result = update_field($field_key, $request_id, $order_id);
+            $acf_time = microtime(true) - $acf_start_time;
             
             if ($update_result) {
                 $initiated_pages++;
-                error_log("[TrinityKit FAL.AI] Página $index do pedido #$order_id processada com sucesso");
+                $pages_processed_this_batch++;
+                $initiated_pages_total++;
+                $total_page_time = microtime(true) - $page_start_time;
+                error_log("[TrinityKit FAL.AI] Tarefa FAL.AI iniciada para página $index do pedido #$order_id. Request ID: $request_id");
+                log_falai_performance('page_initiate_success', [
+                    'order_id' => $order_id,
+                    'page_index' => $index,
+                    'request_id' => $request_id,
+                    'page_api_time' => round($page_api_time, 3),
+                    'acf_time' => round($acf_time, 3),
+                    'total_page_time' => round($total_page_time, 3)
+                ]);
             } else {
-                $error_msg = "Falha ao salvar ilustração da página $index do pedido #$order_id no ACF";
+                $error_msg = "Falha ao salvar falai_task_id da página $index do pedido #$order_id no ACF";
                 error_log("[TrinityKit FAL.AI] $error_msg");
                 $page_errors++;
                 $page_error_messages[] = $error_msg;
+                log_falai_performance('page_initiate_acf_error', [
+                    'order_id' => $order_id,
+                    'page_index' => $index,
+                    'request_id' => $request_id,
+                    'page_api_time' => round($page_api_time, 3),
+                    'acf_time' => round($acf_time, 3)
+                ]);
                 send_telegram_error_notification_falai("Pedido #$order_id: $error_msg");
             }
         }
 
-        // Verificar se todas as páginas foram processadas com sucesso (modo síncrono)
-        $total_processed_pages = $initiated_pages + $skipped_pages;
+        // Verificar se todas as páginas foram iniciadas (não necessariamente completas)
+        $total_pages = count($template_pages);
+        $total_initiated = $initiated_pages + $skipped_pages;
         
         if ($page_errors > 0) {
-            $error_msg = "Falha ao processar FAL.AI para $page_errors páginas do pedido #$order_id. Erros: " . implode(' | ', $page_error_messages);
+            $error_msg = "Falha ao iniciar FAL.AI para $page_errors páginas do pedido #$order_id. Erros: " . implode(' | ', $page_error_messages);
             error_log("[TrinityKit FAL.AI] $error_msg");
             $errors[] = $error_msg;
-            
-            if ($total_processed_pages === 0) {
-                continue;
-            }
         }
         
-        // No modo síncrono, as imagens já estão prontas - atualizar status diretamente
-        if ($total_processed_pages === count($template_pages)) {
-            // Marcar como iniciado e finalizado
+        // Marcar como iniciado se todas as páginas foram iniciadas (ou puladas)
+        // Nota: O status do pedido será atualizado no webhook-check-falai.php quando todas as imagens estiverem prontas
+        $order_time = microtime(true) - $order_start_time;
+        if ($total_initiated === $total_pages) {
             update_field('falai_initiated', true, $order_id);
+            $processed_orders++;
             
-            // Atualizar status do pedido para 'created_assets_illustration'
-            $status_updated = update_field('order_status', 'created_assets_illustration', $order_id);
-            
-            if ($status_updated) {
-                // Add log entry
-                $log_message = "Ilustrações com FAL.AI geradas para $child_name ($initiated_pages páginas)";
-                if ($skipped_pages > 0) {
-                    $log_message .= " e $skipped_pages páginas sem processamento";
-                }
-                
-                trinitykit_add_post_log(
-                    $order_id,
-                    'webhook-initiate-falai',
-                    $log_message,
-                    'created_assets_text',
-                    'created_assets_illustration'
-                );
-                
-                $processed++;
-            } else {
-                $error_msg = "Falha ao atualizar status do pedido #$order_id para created_assets_illustration";
-                error_log("[TrinityKit FAL.AI] $error_msg");
-                $errors[] = $error_msg;
-                send_telegram_error_notification_falai("Pedido #$order_id: $error_msg");
+            // Add log entry
+            $log_message = "Tarefas FAL.AI iniciadas para $child_name ($initiated_pages páginas iniciadas";
+            if ($skipped_pages > 0) {
+                $log_message .= ", $skipped_pages páginas sem processamento";
             }
+            $log_message .= "). Aguardando conclusão das imagens.";
+            
+            trinitykit_add_post_log(
+                $order_id,
+                'webhook-initiate-falai',
+                $log_message,
+                'created_assets_text',
+                'created_assets_text' // Status não muda ainda, apenas quando imagens estiverem prontas
+            );
+            
+            log_falai_performance('order_completed', [
+                'order_id' => $order_id,
+                'child_name' => $child_name,
+                'initiated_pages' => $initiated_pages,
+                'skipped_pages' => $skipped_pages,
+                'page_errors' => $page_errors,
+                'order_time' => round($order_time, 3)
+            ]);
+        } else {
+            log_falai_performance('order_partial', [
+                'order_id' => $order_id,
+                'child_name' => $child_name,
+                'initiated_pages' => $initiated_pages,
+                'skipped_pages' => $skipped_pages,
+                'total_pages' => $total_pages,
+                'total_initiated' => $total_initiated,
+                'page_errors' => $page_errors,
+                'order_time' => round($order_time, 3)
+            ]);
         }
     }
     
@@ -544,10 +548,31 @@ function trinitykit_handle_initiate_falai_webhook($request) {
         error_log("[TrinityKit FAL.AI] Erros encontrados: " . implode(" | ", $errors));
     }
     
+    $elapsed_time = time() - $start_time_seconds;
+    $elapsed_time_precise = microtime(true) - $start_time;
+    $message = "Processamento assíncrono do FAL.AI concluído. {$initiated_pages_total} tarefas iniciadas em {$processed_orders} pedidos.";
+    $timeout_reached = $elapsed_time >= $max_execution_time;
+    if ($timeout_reached) {
+        $message .= " Timeout atingido - continuar na próxima execução.";
+    }
+    
+    log_falai_performance('webhook_initiate_end', [
+        'elapsed_time' => round($elapsed_time_precise, 3),
+        'elapsed_time_seconds' => $elapsed_time,
+        'initiated_pages_total' => $initiated_pages_total,
+        'processed_orders' => $processed_orders,
+        'total_orders' => count($orders),
+        'timeout_reached' => $timeout_reached,
+        'errors_count' => count($errors)
+    ]);
+    
     return new WP_REST_Response(array(
-        'message' => "Processamento síncrono do FAL.AI concluído. {$processed} pedidos finalizados com ilustrações geradas.",
-        'processed' => $processed,
-        'total' => count($orders),
+        'message' => $message,
+        'initiated_pages' => $initiated_pages_total,
+        'processed_orders' => $processed_orders,
+        'total_orders' => count($orders),
+        'elapsed_time' => round($elapsed_time_precise, 3),
+        'timeout_reached' => $timeout_reached,
         'errors' => $errors
     ), !empty($errors) ? 500 : 200);
 }

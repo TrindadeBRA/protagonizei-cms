@@ -314,6 +314,14 @@ function register_order_fields() {
                             'required' => 0,
                         ),
                         array(
+                            'key' => 'field_falai_task_id',
+                            'label' => 'FAL.AI Task ID',
+                            'name' => 'falai_task_id',
+                            'type' => 'text',
+                            'instructions' => 'ID da tarefa de FAL.AI retornado pela API (request_id ou gateway_request_id)',
+                            'required' => 0,
+                        ),
+                        array(
                             'key' => 'field_generated_illustration',
                             'label' => 'Ilustração da Página Processada',
                             'name' => 'generated_illustration',
