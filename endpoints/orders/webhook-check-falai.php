@@ -779,6 +779,9 @@ function trinitykit_handle_check_falai_webhook($request) {
             $task_status = $status_data['status'] ?? null;
             
             if ($task_status === 'COMPLETED' || $task_status === 'SUCCESS') {
+                // Log da resposta completa para debug
+                error_log("[TrinityKit FAL.AI] Resposta completa da API: " . json_encode($status_data));
+                
                 // Process the image URL from the API response
                 // Formato pode variar: { "images": [{ "url": "..." }] } ou { "image_url": "..." } ou { "image": { "url": "..." } }
                 $image_url_to_download = null;
