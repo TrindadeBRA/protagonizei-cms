@@ -610,13 +610,9 @@ function trinitykit_handle_check_falai_webhook($request) {
         return $api_validation;
     }
     
-    // Controle de timeout: parar antes de 2.5 minutos (150 segundos)
-    $max_execution_time = 150; // 2.5 minutos
     $start_time = microtime(true);
-    $start_time_seconds = time();
     
     log_falai_performance('webhook_check_start', [
-        'max_execution_time' => $max_execution_time,
         'timestamp' => date('Y-m-d H:i:s')
     ]);
     
@@ -644,19 +640,6 @@ function trinitykit_handle_check_falai_webhook($request) {
     $errors = array();
 
     foreach ($orders as $order) {
-        // Verificar timeout antes de processar cada pedido
-        $elapsed_time = time() - $start_time_seconds;
-        $elapsed_time_precise = microtime(true) - $start_time;
-        if ($elapsed_time >= $max_execution_time) {
-            error_log("[TrinityKit FAL.AI] Timeout atingido após $elapsed_time segundos. Parando processamento.");
-            log_falai_performance('webhook_check_timeout', [
-                'elapsed_time' => round($elapsed_time_precise, 3),
-                'orders_processed' => $processed,
-                'pages_completed' => 0 // Será calculado depois
-            ]);
-            break;
-        }
-        
         $order_id = $order->ID;
         $order_start_time = microtime(true);
         
@@ -674,24 +657,9 @@ function trinitykit_handle_check_falai_webhook($request) {
         $completed_pages = 0;
         $failed_pages = 0;
         $pending_pages = 0;
-        $pages_processed_this_batch = 0;
-        $max_pages_per_batch = 5; // Processar máximo 5 páginas por execução
         
         // Check each page's FAL.AI status
         foreach ($generated_pages as $index => $page) {
-            // Verificar timeout antes de processar cada página
-            $elapsed_time = time() - $start_time;
-            if ($elapsed_time >= $max_execution_time) {
-                error_log("[TrinityKit FAL.AI] Timeout atingido. Parando processamento de páginas.");
-                break;
-            }
-            
-            // Limitar número de páginas processadas por execução
-            if ($pages_processed_this_batch >= $max_pages_per_batch) {
-                error_log("[TrinityKit FAL.AI] Limite de páginas por lote atingido ($max_pages_per_batch). Continuando na próxima execução.");
-                break;
-            }
-            
             // Check if this page should skip face edit
             $skip_faceswap = !empty($page['skip_faceswap']) && $page['skip_faceswap'] === true;
             
@@ -845,7 +813,6 @@ function trinitykit_handle_check_falai_webhook($request) {
                     
                     if ($update_result) {
                         $completed_pages++;
-                        $pages_processed_this_batch++;
                         $total_page_time = microtime(true) - $page_check_start;
                         error_log("[TrinityKit FAL.AI] Página $index do pedido #$order_id processada com sucesso");
                         log_falai_performance('page_completed', [
@@ -1006,20 +973,13 @@ function trinitykit_handle_check_falai_webhook($request) {
         error_log("[TrinityKit FAL.AI] Erros encontrados: " . implode(" | ", $errors));
     }
     
-    $elapsed_time = time() - $start_time_seconds;
     $elapsed_time_precise = microtime(true) - $start_time;
     $message = "Verificação de FAL.AI concluída. {$processed} pedidos finalizados.";
-    $timeout_reached = $elapsed_time >= $max_execution_time;
-    if ($timeout_reached) {
-        $message .= " Timeout atingido - continuar na próxima execução.";
-    }
     
     log_falai_performance('webhook_check_end', [
         'elapsed_time' => round($elapsed_time_precise, 3),
-        'elapsed_time_seconds' => $elapsed_time,
         'processed_orders' => $processed,
         'total_orders' => count($orders),
-        'timeout_reached' => $timeout_reached,
         'errors_count' => count($errors)
     ]);
     
@@ -1029,7 +989,6 @@ function trinitykit_handle_check_falai_webhook($request) {
         'processed' => $processed,
         'total' => count($orders),
         'elapsed_time' => round($elapsed_time_precise, 3),
-        'timeout_reached' => $timeout_reached,
         'errors' => $errors
     ), !empty($errors) ? 500 : 200);
 }

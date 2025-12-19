@@ -242,13 +242,9 @@ function trinitykit_handle_initiate_falai_webhook($request) {
         return $api_validation;
     }
     
-    // Controle de timeout: parar antes de 2.5 minutos (150 segundos)
-    $max_execution_time = 150; // 2.5 minutos
     $start_time = microtime(true);
-    $start_time_seconds = time();
     
     log_falai_performance('webhook_initiate_start', [
-        'max_execution_time' => $max_execution_time,
         'timestamp' => date('Y-m-d H:i:s')
     ]);
     
@@ -287,18 +283,6 @@ function trinitykit_handle_initiate_falai_webhook($request) {
     $default_prompt = "CRITICAL: Only replace the protagonist's face. Do NOT alter, move, or change: character positions, background elements, composition, layout, other characters, objects, or any part of the illustration except the protagonist's face. Preserve the exact artistic style, proportions, lighting, texture, and color palette. Maintain a realistic, photorealistic, and stylish aesthetic - do not cartoonize, stylize excessively, or make it look like a drawing. Keep the illustration looking natural, professional, and true to the original style. Apply the child's face maintaining the same position, angle, and expression as the original illustration. Preserve the child's gender, hair color, eye color, and match the illustrated skin tone exactly to the child's real skin tone. The background and all other elements must remain completely unchanged.";
 
     foreach ($orders as $order) {
-        // Verificar timeout antes de processar cada pedido
-        $elapsed_time = time() - $start_time_seconds;
-        $elapsed_time_precise = microtime(true) - $start_time;
-        if ($elapsed_time >= $max_execution_time) {
-            error_log("[TrinityKit FAL.AI] Timeout atingido após $elapsed_time segundos. Parando processamento.");
-            log_falai_performance('webhook_initiate_timeout', [
-                'elapsed_time' => round($elapsed_time_precise, 3),
-                'orders_processed' => $processed_orders,
-                'pages_initiated' => $initiated_pages_total
-            ]);
-            break;
-        }
         $order_id = $order->ID;
         $order_start_time = microtime(true);
         
@@ -335,24 +319,9 @@ function trinitykit_handle_initiate_falai_webhook($request) {
         $page_error_messages = array();
         $initiated_pages = 0;
         $skipped_pages = 0;
-        $pages_processed_this_batch = 0;
-        $max_pages_per_batch = 5; // Processar máximo 5 páginas por execução
         
         // Process each page individually
         foreach ($template_pages as $index => $page) {
-            // Verificar timeout antes de processar cada página
-            $elapsed_time = time() - $start_time;
-            if ($elapsed_time >= $max_execution_time) {
-                error_log("[TrinityKit FAL.AI] Timeout atingido. Parando processamento de páginas.");
-                break;
-            }
-            
-            // Limitar número de páginas processadas por execução
-            if ($pages_processed_this_batch >= $max_pages_per_batch) {
-                error_log("[TrinityKit FAL.AI] Limite de páginas por lote atingido ($max_pages_per_batch). Continuando na próxima execução.");
-                break;
-            }
-            
             // Verificar se esta página já tem falai_task_id (já foi iniciada)
             $existing_task_id = $page['falai_task_id'] ?? null;
             if (!empty($existing_task_id)) {
@@ -462,7 +431,6 @@ function trinitykit_handle_initiate_falai_webhook($request) {
             
             if ($update_result) {
                 $initiated_pages++;
-                $pages_processed_this_batch++;
                 $initiated_pages_total++;
                 $total_page_time = microtime(true) - $page_start_time;
                 error_log("[TrinityKit FAL.AI] Tarefa FAL.AI iniciada para página $index do pedido #$order_id. Request ID: $request_id");
@@ -548,21 +516,14 @@ function trinitykit_handle_initiate_falai_webhook($request) {
         error_log("[TrinityKit FAL.AI] Erros encontrados: " . implode(" | ", $errors));
     }
     
-    $elapsed_time = time() - $start_time_seconds;
     $elapsed_time_precise = microtime(true) - $start_time;
     $message = "Processamento assíncrono do FAL.AI concluído. {$initiated_pages_total} tarefas iniciadas em {$processed_orders} pedidos.";
-    $timeout_reached = $elapsed_time >= $max_execution_time;
-    if ($timeout_reached) {
-        $message .= " Timeout atingido - continuar na próxima execução.";
-    }
     
     log_falai_performance('webhook_initiate_end', [
         'elapsed_time' => round($elapsed_time_precise, 3),
-        'elapsed_time_seconds' => $elapsed_time,
         'initiated_pages_total' => $initiated_pages_total,
         'processed_orders' => $processed_orders,
         'total_orders' => count($orders),
-        'timeout_reached' => $timeout_reached,
         'errors_count' => count($errors)
     ]);
     
@@ -572,7 +533,6 @@ function trinitykit_handle_initiate_falai_webhook($request) {
         'processed_orders' => $processed_orders,
         'total_orders' => count($orders),
         'elapsed_time' => round($elapsed_time_precise, 3),
-        'timeout_reached' => $timeout_reached,
         'errors' => $errors
     ), !empty($errors) ? 500 : 200);
 }

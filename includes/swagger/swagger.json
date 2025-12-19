@@ -1510,7 +1510,7 @@
     "/webhook/check-falai": {
       "get": {
         "summary": "Verificar status FAL.AI e processar imagens (Polling Fallback)",
-        "description": "**FALLBACK POLLING** - Usado como backup caso o webhook callback falhe. Verifica manualmente o status de tarefas FAL.AI pendentes. Processa pedidos com 'created_assets_text' e 'falai_initiated = true', verificando páginas com 'falai_task_id' mas sem 'generated_illustration'. Consulta a API FAL.AI (/status/{request_id}), baixa imagens prontas e atualiza ACF. Atualiza status para 'created_assets_illustration' quando completo. **Controle de timeout:** Processa máximo 5 páginas por execução.",
+        "description": "**FALLBACK POLLING** - Usado como backup caso o webhook callback falhe. Verifica manualmente o status de tarefas FAL.AI pendentes. Processa pedidos com 'created_assets_text' e 'falai_initiated = true', verificando páginas com 'falai_task_id' mas sem 'generated_illustration'. Consulta a API FAL.AI (/status/{request_id}), baixa imagens prontas e atualiza ACF. Atualiza status para 'created_assets_illustration' quando completo. **Cron:** Executa de 5 em 5 minutos automaticamente.",
         "responses": {
           "200": {
             "description": "Verificação concluída com sucesso",
@@ -1537,11 +1537,6 @@
                       "type": "number",
                       "description": "Tempo de execução em segundos",
                       "example": 89.123
-                    },
-                    "timeout_reached": {
-                      "type": "boolean",
-                      "description": "Se o timeout foi atingido",
-                      "example": false
                     },
                     "errors": {
                       "type": "array",
@@ -1581,11 +1576,6 @@
                       "type": "number",
                       "description": "Tempo de execução em segundos",
                       "example": 152.789
-                    },
-                    "timeout_reached": {
-                      "type": "boolean",
-                      "description": "Se o timeout foi atingido",
-                      "example": true
                     },
                     "errors": {
                       "type": "array",
@@ -1684,7 +1674,7 @@
     "/webhook/initiate-falai": {
       "get": {
         "summary": "Iniciar geração de ilustrações com FAL.AI (Modo Assíncrono com Queue + Webhook)",
-        "description": "Inicia o processamento assíncrono de ilustrações para pedidos com status 'created_assets_text'. Utiliza queue.fal.run para processar em background e recebe notificação automática via webhook quando as imagens estão prontas. **Arquitetura:** (1) Inicia tarefas no FAL.AI e salva request_id, (2) FAL.AI processa e chama /webhook/falai-callback automaticamente, (3) Como fallback, /webhook/check-falai faz polling manual. Usa aspect_ratio personalizado de cada página (padrão: 16:9). **Controle de timeout:** Processa máximo 5 páginas por execução para evitar timeout de 3 minutos do WordPress.",
+        "description": "Inicia o processamento assíncrono de ilustrações para pedidos com status 'created_assets_text'. Utiliza queue.fal.run para processar em background e recebe notificação automática via webhook quando as imagens estão prontas. **Arquitetura:** (1) Inicia tarefas no FAL.AI e salva request_id, (2) FAL.AI processa e chama /webhook/falai-callback automaticamente, (3) Como fallback, /webhook/check-falai faz polling manual. Usa aspect_ratio personalizado de cada página (padrão: 16:9). **Cron:** Executa de 5 em 5 minutos. Se faltar task_id em alguma página, o cron vai processar novamente. Campo 'falai_initiated' só é marcado como true quando TODAS as páginas (exceto skip_faceswap) tiverem task_id.",
         "responses": {
           "200": {
             "description": "Tarefas FAL.AI iniciadas com sucesso",
@@ -1716,11 +1706,6 @@
                       "type": "number",
                       "description": "Tempo de execução em segundos",
                       "example": 45.234
-                    },
-                    "timeout_reached": {
-                      "type": "boolean",
-                      "description": "Se o timeout foi atingido (continuar na próxima execução)",
-                      "example": false
                     },
                     "errors": {
                       "type": "array",
@@ -1765,11 +1750,6 @@
                       "type": "number",
                       "description": "Tempo de execução em segundos",
                       "example": 152.456
-                    },
-                    "timeout_reached": {
-                      "type": "boolean",
-                      "description": "Se o timeout foi atingido",
-                      "example": true
                     },
                     "errors": {
                       "type": "array",
