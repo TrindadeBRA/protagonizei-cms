@@ -273,8 +273,25 @@ function trinitykit_handle_initiate_falai_webhook($request) {
     $initiated_pages_total = 0;
     $errors = array();
 
-    // Prompt padrão para o FAL.AI
-    $default_prompt = "CRITICAL: Only replace the protagonist's face. Do NOT alter, move, or change: character positions, background elements, composition, layout, other characters, objects, or any part of the illustration except the protagonist's face. Preserve the exact artistic style, proportions, lighting, texture, and color palette. Maintain a realistic, photorealistic, and stylish aesthetic - do not cartoonize, stylize excessively, or make it look like a drawing. Keep the illustration looking natural, professional, and true to the original style. Apply the child's face maintaining the same position, angle, and expression as the original illustration. Preserve the child's gender, hair color, eye color, and match the illustrated skin tone exactly to the child's real skin tone. The background and all other elements must remain completely unchanged.";
+    // Buscar prompt das configurações
+    $custom_prompt = get_option('trinitykitcms_falai_prompt', '');
+    $default_prompt = trim($custom_prompt);
+    
+    // Verificar se o prompt está configurado
+    if (empty($default_prompt)) {
+        $error_msg = "Prompt FAL.AI não configurado. Configure o prompt em Integrações > Configurações do FAL.AI.";
+        error_log("[TrinityKit FAL.AI] $error_msg");
+        send_telegram_error_notification_falai($error_msg);
+        
+        return new WP_REST_Response(array(
+            'message' => $error_msg,
+            'initiated_pages' => 0,
+            'processed_orders' => 0,
+            'total_orders' => count($orders),
+            'elapsed_time' => 0,
+            'errors' => array($error_msg)
+        ), 500);
+    }
 
     foreach ($orders as $order) {
         $order_id = $order->ID;

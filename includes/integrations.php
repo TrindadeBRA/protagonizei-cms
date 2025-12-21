@@ -33,6 +33,7 @@ function trinitykitcms_register_integration_settings() {
     // Registrar configurações do FAL.AI
     register_setting('trinitykitcms_falai_settings', 'trinitykitcms_falai_api_key', 'sanitize_text_field');
     register_setting('trinitykitcms_falai_settings', 'trinitykitcms_falai_base_url', 'sanitize_url');
+    register_setting('trinitykitcms_falai_settings', 'trinitykitcms_falai_prompt', 'sanitize_textarea_field');
 }
 add_action('admin_init', 'trinitykitcms_register_integration_settings');
 
@@ -246,6 +247,14 @@ function trinitykitcms_render_integrations_page() {
                         <td>
                             <input type="url" name="trinitykitcms_falai_base_url" value="<?php echo esc_attr(get_option('trinitykitcms_falai_base_url')); ?>" class="regular-text">
                             <p class="description">URL base da API do FAL.AI. Use <strong>https://fal.run</strong> (recomendado).</p>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <th scope="row">Prompt FAL.AI <span style="color: red;">*</span></th>
+                        <td>
+                            <textarea name="trinitykitcms_falai_prompt" rows="6" class="large-text" required><?php echo esc_textarea(get_option('trinitykitcms_falai_prompt', '')); ?></textarea>
+                            <p class="description"><strong>Obrigatório:</strong> Prompt usado para processamento de face edit com FAL.AI. O webhook retornará erro se este campo estiver vazio.</p>
                         </td>
                     </tr>
                 </table>
