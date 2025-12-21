@@ -1730,7 +1730,7 @@
       "post": {
         "tags": ["Pedidos - Processamento"],
         "summary": "Callback automático do FAL.AI (Webhook) - PRIORITÁRIO",
-        "description": "**ARQUIVO DEDICADO:** `webhook-falai-callback.php` - Endpoint chamado automaticamente pelo FAL.AI quando uma imagem é processada e está pronta. Este é o método **PRIORITÁRIO** de recebimento de imagens. **LOGS DETALHADOS:** Registra cada etapa do processamento (recebimento, decodificação JSON, busca do pedido, extração da URL, download, salvamento, ACF, verificação de completude) com prefixo `[TrinityKit FAL.AI CALLBACK]` para debug facilitado. **FLUXO:** (1) Recebe payload com request_id, status e dados da imagem, (2) Busca qual pedido/página corresponde, (3) Faz download e salva no WordPress com metadados profissionais, (4) Atualiza campo ACF `generated_illustration`, (5) Quando todas as páginas estão completas, atualiza status para 'created_assets_illustration'. **Não requer autenticação** pois é chamado pelo FAL.AI. **MÚLTIPLOS FORMATOS:** Suporta diferentes estruturas de payload (output.images[0].url, output.image.url, output.image_url, response_url).",
+        "description": "**ARQUIVO DEDICADO:** `webhook-falai-callback.php` - Endpoint chamado automaticamente pelo FAL.AI quando uma imagem é processada e está pronta. Este é o método **PRIORITÁRIO** de recebimento de imagens. **LOGS DETALHADOS:** Registra cada etapa do processamento (recebimento, decodificação JSON, busca do pedido, extração da URL, download, salvamento, ACF, verificação de completude) com prefixo `[TrinityKit FAL.AI CALLBACK]` para debug facilitado. **FLUXO:** (1) Recebe payload com request_id e dados da imagem no formato nano-banana-multi-edit, (2) Busca qual pedido/página corresponde ao request_id, (3) Extrai URL da imagem de `images[0].url`, (4) Faz download e salva no WordPress com metadados profissionais, (5) Atualiza campo ACF `generated_illustration`, (6) Quando todas as páginas estão completas, atualiza status para 'created_assets_illustration'. **Não requer autenticação** pois é chamado pelo FAL.AI. **FORMATO ESPERADO:** Payload com `images` no nível raiz contendo array de objetos com `url`, `file_name` e `content_type`.",
         "security": [],
         "requestBody": {
           "required": true,
@@ -1738,77 +1738,54 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["request_id", "status"],
+                "required": ["request_id", "images"],
                 "properties": {
                   "request_id": {
                     "type": "string",
                     "description": "ID da tarefa FAL.AI (usado para identificar pedido/página)",
                     "example": "abc123def456"
                   },
-                  "status": {
-                    "type": "string",
-                    "description": "Status da tarefa",
-                    "enum": ["COMPLETED", "SUCCESS", "FAILED", "ERROR", "IN_QUEUE", "PROCESSING"],
-                    "example": "COMPLETED"
-                  },
-                  "response_url": {
-                    "type": "string",
-                    "description": "URL para buscar resposta completa (quando aplicável)",
-                    "example": "https://queue.fal.run/fal-ai/nano-banana-pro/requests/abc123/response"
-                  },
-                  "output": {
-                    "type": "object",
-                    "description": "Dados de saída da API (múltiplos formatos suportados)",
-                    "properties": {
-                      "images": {
-                        "type": "array",
-                        "description": "Array de imagens (formato 1: object com url, formato 2: string direta)",
-                        "items": {
-                          "oneOf": [
-                            {
-                              "type": "object",
-                              "properties": {
-                                "url": {
-                                  "type": "string",
-                                  "description": "URL da imagem gerada",
-                                  "example": "https://fal.media/files/abc123.jpg"
-                                }
-                              }
-                            },
-                            {
-                              "type": "string",
-                              "description": "URL direta da imagem",
-                              "example": "https://fal.media/files/abc123.jpg"
-                            }
-                          ]
+                  "images": {
+                    "type": "array",
+                    "description": "Array de imagens geradas (formato nano-banana-multi-edit)",
+                    "items": {
+                      "type": "object",
+                      "required": ["url"],
+                      "properties": {
+                        "file_name": {
+                          "type": "string",
+                          "description": "Nome do arquivo da imagem",
+                          "example": "nano-banana-multi-edit-output.png"
+                        },
+                        "content_type": {
+                          "type": "string",
+                          "description": "Tipo MIME da imagem",
+                          "example": "image/png"
+                        },
+                        "url": {
+                          "type": "string",
+                          "description": "URL da imagem gerada para download",
+                          "example": "https://storage.googleapis.com/falserverless/example_outputs/nano-banana-multi-edit-output.png"
                         }
-                      },
-                      "image": {
-                        "oneOf": [
-                          {
-                            "type": "object",
-                            "properties": {
-                              "url": {
-                                "type": "string",
-                                "description": "URL da imagem (formato alternativo)",
-                                "example": "https://fal.media/files/abc123.jpg"
-                              }
-                            }
-                          },
-                          {
-                            "type": "string",
-                            "description": "URL direta da imagem (formato alternativo)",
-                            "example": "https://fal.media/files/abc123.jpg"
-                          }
-                        ]
-                      },
-                      "image_url": {
-                        "type": "string",
-                        "description": "URL da imagem (formato alternativo 3)",
-                        "example": "https://fal.media/files/abc123.jpg"
                       }
                     }
+                  },
+                  "description": {
+                    "type": "string",
+                    "description": "Descrição opcional do processamento",
+                    "example": ""
                   }
+                },
+                "example": {
+                  "request_id": "abc123def456",
+                  "images": [
+                    {
+                      "file_name": "nano-banana-multi-edit-output.png",
+                      "content_type": "image/png",
+                      "url": "https://storage.googleapis.com/falserverless/example_outputs/nano-banana-multi-edit-output.png"
+                    }
+                  ],
+                  "description": ""
                 }
               }
             }
@@ -1816,7 +1793,7 @@
         },
         "responses": {
           "200": {
-            "description": "Callback processado com sucesso ou status não final",
+            "description": "Callback processado com sucesso",
             "content": {
               "application/json": {
                 "schema": {
@@ -1869,28 +1846,6 @@
                           "example": 2
                         }
                       }
-                    },
-                    {
-                      "type": "object",
-                      "description": "Status não é COMPLETED/SUCCESS (ainda processando ou falhou)",
-                      "properties": {
-                        "message": {
-                          "type": "string",
-                          "example": "Status not completed"
-                        },
-                        "status": {
-                          "type": "string",
-                          "example": "IN_QUEUE"
-                        },
-                        "order_id": {
-                          "type": "integer",
-                          "example": 123
-                        },
-                        "page_index": {
-                          "type": "integer",
-                          "example": 2
-                        }
-                      }
                     }
                   ]
                 }
@@ -1902,13 +1857,39 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string",
-                      "example": "No request_id in payload"
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "error": {
+                          "type": "string",
+                          "example": "No request_id in payload"
+                        }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "error": {
+                          "type": "string",
+                          "example": "No image URL in payload"
+                        }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "error": {
+                          "type": "string",
+                          "example": "Invalid JSON"
+                        },
+                        "message": {
+                          "type": "string",
+                          "example": "Erro ao decodificar JSON: Syntax error"
+                        }
+                      }
                     }
-                  }
+                  ]
                 }
               }
             }
@@ -1938,13 +1919,26 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string",
-                      "example": "Failed to save image"
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "error": {
+                          "type": "string",
+                          "example": "Failed to save image"
+                        }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "error": {
+                          "type": "string",
+                          "example": "Failed to update ACF field"
+                        }
+                      }
                     }
-                  }
+                  ]
                 }
               }
             }
