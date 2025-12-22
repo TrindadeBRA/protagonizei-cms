@@ -165,12 +165,14 @@ class Protagonizei_Recent_Orders_Widget extends WP_Widget {
             echo '<div class="space-y-3">';
             foreach ($orders as $order) {
                 $status = get_field('order_status', $order->ID);
+                // Normalizar o status (trim e lowercase para garantir correspondência)
+                $status = $status ? strtolower(trim($status)) : '';
                 $child_name = get_field('child_name', $order->ID);
                 $buyer_email = get_field('buyer_email', $order->ID);
                 $date = get_the_date('d/m/Y H:i', $order->ID);
                 $payment_date = get_field('payment_date', $order->ID);
                 
-                $status_label = isset($status_labels[$status]) ? $status_labels[$status] : $status;
+                $status_label = isset($status_labels[$status]) ? $status_labels[$status] : ucfirst(str_replace('_', ' ', $status));
                 $status_color = isset($status_colors[$status]) ? $status_colors[$status] : 'bg-gray-100 text-gray-800';
                 
                 echo '<div class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">';
@@ -413,13 +415,15 @@ function protagonizei_dashboard_recent_orders_widget() {
         echo '<div class="space-y-2 sm:space-y-3">';
         foreach ($orders as $order) {
             $status = get_field('order_status', $order->ID);
+            // Normalizar o status (trim e lowercase para garantir correspondência)
+            $status = $status ? strtolower(trim($status)) : '';
             $child_name = get_field('child_name', $order->ID);
             $buyer_email = get_field('buyer_email', $order->ID);
             $date = get_the_date('d/m/Y H:i', $order->ID);
             $payment_date = get_field('payment_date', $order->ID);
             $view_link = get_permalink($order->ID);
             
-            $status_label = isset($status_labels[$status]) ? $status_labels[$status] : $status;
+            $status_label = isset($status_labels[$status]) ? $status_labels[$status] : ucfirst(str_replace('_', ' ', $status));
             $status_color = isset($status_colors[$status]) ? $status_colors[$status] : 'bg-gray-100 text-gray-800';
             
             echo '<div class="bg-white border border-gray-200 rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow">';
