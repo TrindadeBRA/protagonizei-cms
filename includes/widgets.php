@@ -2,7 +2,7 @@
 
 /**
  * Widget: Últimos Contatos
- * Exibe os últimos 10 contatos recebidos com data, nome e tags
+ * Exibe os últimos 5 contatos recebidos com data, nome e tags
  */
 class Protagonizei_Recent_Contacts_Widget extends WP_Widget {
 
@@ -11,7 +11,7 @@ class Protagonizei_Recent_Contacts_Widget extends WP_Widget {
             'protagonizei_recent_contacts',
             'Últimos Contatos',
             array(
-                'description' => 'Exibe os últimos 10 contatos recebidos com data, nome e tags'
+                'description' => 'Exibe os últimos 5 contatos recebidos com data, nome e tags'
             )
         );
     }
@@ -26,10 +26,10 @@ class Protagonizei_Recent_Contacts_Widget extends WP_Widget {
             echo $args['before_title'] . apply_filters('widget_title', $instance['title']) . $args['after_title'];
         }
 
-        // Buscar últimos 10 contatos
+        // Buscar últimos 5 contatos
         $contacts = get_posts(array(
             'post_type' => 'contact_form',
-            'posts_per_page' => 10,
+            'posts_per_page' => 5,
             'orderby' => 'date',
             'order' => 'DESC',
             'post_status' => 'publish'
@@ -202,7 +202,7 @@ class Protagonizei_Recent_Orders_Widget extends WP_Widget {
 
     public function form($instance) {
         $title = !empty($instance['title']) ? $instance['title'] : 'Pedidos Recebidos';
-        $posts_per_page = !empty($instance['posts_per_page']) ? $instance['posts_per_page'] : 10;
+        $posts_per_page = !empty($instance['posts_per_page']) ? $instance['posts_per_page'] : 5;
         ?>
         <p>
             <label for="<?php echo esc_attr($this->get_field_id('title')); ?>">Título:</label>
@@ -222,7 +222,7 @@ class Protagonizei_Recent_Orders_Widget extends WP_Widget {
     public function update($new_instance, $old_instance) {
         $instance = array();
         $instance['title'] = (!empty($new_instance['title'])) ? strip_tags($new_instance['title']) : '';
-        $instance['posts_per_page'] = (!empty($new_instance['posts_per_page'])) ? intval($new_instance['posts_per_page']) : 10;
+        $instance['posts_per_page'] = (!empty($new_instance['posts_per_page'])) ? intval($new_instance['posts_per_page']) : 5;
         return $instance;
     }
 }
@@ -302,10 +302,10 @@ add_action('admin_head', 'protagonizei_widget_styles');
  * Widget do Dashboard: Últimos Contatos
  */
 function protagonizei_dashboard_recent_contacts_widget() {
-    // Buscar últimos 10 contatos
+    // Buscar últimos 5 contatos
     $contacts = get_posts(array(
         'post_type' => 'contact_form',
-        'posts_per_page' => 10,
+        'posts_per_page' => 5,
         'orderby' => 'date',
         'order' => 'DESC',
         'post_status' => 'publish'
@@ -367,7 +367,7 @@ function protagonizei_dashboard_recent_orders_widget() {
     // Buscar pedidos
     $orders = get_posts(array(
         'post_type' => 'orders',
-        'posts_per_page' => 10,
+        'posts_per_page' => 5,
         'orderby' => 'date',
         'order' => 'DESC',
         'post_status' => 'publish'
