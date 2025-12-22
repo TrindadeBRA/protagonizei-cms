@@ -37,6 +37,7 @@ if (isset($_POST['action']) && $_POST['action'] === 'update_order_status' && wp_
             'ready_for_delivery' => 'Pronto para Entrega',
             'delivered' => 'Entregue',
             'completed' => 'Concluído (Entregue e PDF Gerado)',
+            'canceled' => 'Cancelado',
             'error' => 'Erro'
         );
         
@@ -94,6 +95,7 @@ $status_labels = array(
     'ready_for_delivery' => 'Pronto para Entrega',
     'delivered' => 'Entregue',
     'completed' => 'Concluído (Entregue e PDF Gerado)',
+    'canceled' => 'Cancelado',
     'error' => 'Erro'
 );
 
@@ -109,6 +111,7 @@ $status_colors = array(
     'ready_for_delivery' => 'bg-orange-100 text-orange-800',
     'delivered' => 'bg-teal-100 text-teal-800',
     'completed' => 'bg-green-100 text-green-800',
+    'canceled' => 'bg-red-100 text-red-800',
     'error' => 'bg-red-100 text-red-800'
 );
 ?>
@@ -292,7 +295,8 @@ $status_colors = array(
                                 'created_assets_merge' => 'Assets Finalizados',
                                 'ready_for_delivery' => 'Pronto para Entrega',
                                 'delivered' => 'Entregue ao Cliente',
-                                'completed' => 'Processo Concluído'
+                                'completed' => 'Processo Concluído',
+                                'canceled' => 'Pedido Cancelado'
                             );
                             
                             $current_index = array_search($order_status, array_keys($status_flow));
@@ -1269,7 +1273,7 @@ $status_colors = array(
         
         // Função para confirmar mudanças de status críticas
         function confirmStatusChange(newStatus) {
-            const criticalStatuses = ['error', 'delivered', 'completed'];
+            const criticalStatuses = ['error', 'delivered', 'completed', 'canceled'];
             if (criticalStatuses.includes(newStatus)) {
                 return confirm('Tem certeza que deseja alterar para este status? Esta ação pode ser irreversível.');
             }

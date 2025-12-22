@@ -30,6 +30,7 @@ $status_labels = array(
     'ready_for_delivery' => 'Pronto para Entrega',
     'delivered' => 'Entregue',
     'completed' => 'Concluído',
+    'canceled' => 'Cancelado',
     'error' => 'Erro'
 );
 
