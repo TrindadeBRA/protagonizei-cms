@@ -500,8 +500,15 @@ function protagonizei_dashboard_stats_widget() {
             $order_status = get_field('order_status');
             $payment_amount = get_field('payment_amount') ?: 0;
             
+            // Contar todos os status, incluindo cancelados
             if (isset($status_counts[$order_status])) {
                 $status_counts[$order_status]++;
+            } else {
+                // Se o status não estiver no array, adicionar dinamicamente
+                $status_counts[$order_status] = 1;
+                if (!isset($status_labels[$order_status])) {
+                    $status_labels[$order_status] = ucfirst(str_replace('_', ' ', $order_status));
+                }
             }
             
             if ($order_status === 'paid' || $order_status === 'thanked' || $order_status === 'delivered' || $order_status === 'completed') {
