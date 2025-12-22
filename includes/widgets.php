@@ -390,6 +390,7 @@ function protagonizei_dashboard_recent_orders_widget() {
             'ready_for_delivery' => 'Pronto para Entrega',
             'delivered' => 'Entregue',
             'completed' => 'Concluído',
+            'canceled' => 'Cancelado',
             'error' => 'Erro'
         );
 
@@ -405,6 +406,7 @@ function protagonizei_dashboard_recent_orders_widget() {
             'ready_for_delivery' => 'bg-teal-100 text-teal-800',
             'delivered' => 'bg-emerald-100 text-emerald-800',
             'completed' => 'bg-green-200 text-green-900',
+            'canceled' => 'bg-red-100 text-red-800',
             'error' => 'bg-red-100 text-red-800'
         );
 
