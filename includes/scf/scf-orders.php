@@ -36,6 +36,7 @@ function register_order_fields() {
                         'ready_for_delivery' => 'Pronto para Entrega',
                         'delivered' => 'Entregue',
                         'completed' => 'Concluído (Entregue e PDF Gerado)',
+                        'canceled' => 'Cancelado',
                         'error' => 'Erro'
                     ),
                     'default_value' => 'created',

@@ -83,6 +83,7 @@ function orders_column_content( $column, $post_id ) {
                 'ready_for_delivery' => 'Pronto para Entrega',
                 'delivered' => 'Entregue',
                 'completed' => 'Concluído (Entregue e PDF Gerado)',
+                'canceled' => 'Cancelado',
                 'error' => 'Erro'
             );
             echo isset($status_labels[$status]) ? $status_labels[$status] : $status;
@@ -127,6 +128,7 @@ function add_status_filter_to_orders() {
             'ready_for_delivery' => 'Pronto para Entrega',
             'delivered' => 'Entregue',
             'completed' => 'Concluído (Entregue e PDF Gerado)',
+            'canceled' => 'Cancelado',
             'error' => 'Erro'
         );
         

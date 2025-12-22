@@ -2534,6 +2534,112 @@
           }
         }
       }
+    },
+    "/webhook/update-order-status": {
+      "get": {
+        "tags": ["Pedidos - Gestão"],
+        "summary": "Atualizar status de pedidos automaticamente",
+        "description": "Webhook que atualiza automaticamente o status dos pedidos baseado em regras de tempo. Verifica pedidos entregues (delivered) há mais de 24h e atualiza para 'completed' (Concluído). Também verifica pedidos aguardando pagamento (awaiting_payment) há mais de 2h e atualiza para 'canceled' (Cancelado). Este endpoint é projetado para ser chamado por um cron job de hora em hora para manter os status dos pedidos atualizados automaticamente.",
+        "security": [{"ApiKeyAuth": []}],
+        "responses": {
+          "200": {
+            "description": "Processamento concluído com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Mensagem de sucesso com estatísticas de processamento",
+                      "example": "Processamento concluído. 2 pedidos concluídos, 1 pedidos cancelados."
+                    },
+                    "completed": {
+                      "type": "integer",
+                      "description": "Número de pedidos atualizados de 'delivered' para 'completed'",
+                      "example": 2
+                    },
+                    "canceled": {
+                      "type": "integer",
+                      "description": "Número de pedidos atualizados de 'awaiting_payment' para 'canceled'",
+                      "example": 1
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Lista de erros encontrados durante o processamento (vazia em caso de sucesso total)",
+                      "example": []
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Erro de autenticação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "invalid_api_key"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "API Key inválida ou não fornecida"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "integer",
+                          "example": 401
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno do servidor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Processamento concluído. 1 pedidos concluídos, 0 pedidos cancelados."
+                    },
+                    "completed": {
+                      "type": "integer",
+                      "example": 1
+                    },
+                    "canceled": {
+                      "type": "integer",
+                      "example": 0
+                    },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "example": "[TrinityKit] Falha ao atualizar status do pedido #123 de 'delivered' para 'completed'"
+                      },
+                      "description": "Lista detalhada de erros encontrados"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
