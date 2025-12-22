@@ -265,7 +265,8 @@ function protagonizei_widget_styles() {
             /* Garantir que os widgets do dashboard usem Tailwind */
             #protagonizei_recent_contacts_dashboard .inside,
             #protagonizei_recent_orders_dashboard .inside,
-            #protagonizei_stats_dashboard .inside {
+            #protagonizei_stats_dashboard .inside,
+            #protagonizei_api_balances_dashboard .inside {
                 padding: 12px;
             }
             /* Ajustar altura dos gráficos */
@@ -681,6 +682,205 @@ function protagonizei_dashboard_stats_widget() {
 }
 
 /**
+ * ============================================
+ * FUNÇÕES PARA BUSCAR SALDOS DAS APIs
+ * ============================================
+ */
+
+/**
+ * Buscar saldo do Deepseek
+ * @return array|false Array com informações de saldo ou false em caso de erro
+ */
+function protagonizei_get_deepseek_balance() {
+    // Verificar cache (5 minutos)
+    $cache_key = 'protagonizei_deepseek_balance';
+    $cached = get_transient($cache_key);
+    if ($cached !== false) {
+        return $cached;
+    }
+
+    $api_key = get_option('trinitykitcms_deepseek_api_key');
+    $base_url = get_option('trinitykitcms_deepseek_base_url');
+
+    if (empty($api_key)) {
+        return array(
+            'success' => false,
+            'error' => 'API Key não configurada',
+            'balance' => null
+        );
+    }
+
+    // Endpoint para buscar saldo
+    $balance_url = 'https://api.deepseek.com/user/balance';
+    
+    $headers = array(
+        'Authorization: Bearer ' . trim($api_key),
+        'Content-Type: application/json'
+    );
+
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $balance_url);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+    
+    $response = curl_exec($ch);
+    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    
+    if (curl_errno($ch)) {
+        $error = curl_error($ch);
+        curl_close($ch);
+        $result = array(
+            'success' => false,
+            'error' => 'Erro cURL: ' . $error,
+            'balance' => null
+        );
+        set_transient($cache_key, $result, 60); // Cache de erro por 1 minuto
+        return $result;
+    }
+    
+    curl_close($ch);
+
+    if ($http_code !== 200) {
+        $result = array(
+            'success' => false,
+            'error' => 'Erro HTTP ' . $http_code,
+            'balance' => null
+        );
+        set_transient($cache_key, $result, 60); // Cache de erro por 1 minuto
+        return $result;
+    }
+
+    $response_data = json_decode($response, true);
+
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        $result = array(
+            'success' => false,
+            'error' => 'Resposta JSON inválida',
+            'balance' => null
+        );
+        set_transient($cache_key, $result, 60);
+        return $result;
+    }
+
+    // Processar resposta do Deepseek
+    $balance_info = array(
+        'success' => true,
+        'error' => null,
+        'balance' => null,
+        'currency' => null,
+        'granted_balance' => null,
+        'topped_up_balance' => null
+    );
+
+    if (isset($response_data['balance_infos']) && is_array($response_data['balance_infos']) && !empty($response_data['balance_infos'])) {
+        $balance_data = $response_data['balance_infos'][0];
+        $balance_info['balance'] = isset($balance_data['total_balance']) ? floatval($balance_data['total_balance']) : 0;
+        $balance_info['currency'] = isset($balance_data['currency']) ? $balance_data['currency'] : 'CNY';
+        $balance_info['granted_balance'] = isset($balance_data['granted_balance']) ? floatval($balance_data['granted_balance']) : 0;
+        $balance_info['topped_up_balance'] = isset($balance_data['topped_up_balance']) ? floatval($balance_data['topped_up_balance']) : 0;
+    } else {
+        $balance_info['success'] = false;
+        $balance_info['error'] = 'Formato de resposta inválido';
+    }
+
+    // Cache por 5 minutos
+    set_transient($cache_key, $balance_info, 300);
+    
+    return $balance_info;
+}
+
+
+/**
+ * Widget do Dashboard: Saldos das APIs
+ */
+function protagonizei_dashboard_api_balances_widget() {
+    // Buscar saldo do Deepseek
+    $deepseek_balance = protagonizei_get_deepseek_balance();
+    
+    ?>
+    <div class="space-y-3 sm:space-y-4">
+        <!-- Deepseek -->
+        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-200">
+            <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 sm:w-10 sm:h-10 bg-blue-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <svg class="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-semibold text-gray-900">Deepseek</h3>
+                        <a href="https://platform.deepseek.com/usage" target="_blank" class="text-xs text-blue-600 hover:text-blue-800">Ver uso →</a>
+                    </div>
+                </div>
+                <?php if ($deepseek_balance['success']): ?>
+                    <div class="text-right">
+                        <p class="text-lg sm:text-xl font-bold text-blue-900">
+                            <?php echo number_format($deepseek_balance['balance'], 2, ',', '.'); ?>
+                            <span class="text-xs font-normal text-gray-600"><?php echo esc_html($deepseek_balance['currency'] ?? 'CNY'); ?></span>
+                        </p>
+                        <?php if ($deepseek_balance['granted_balance'] > 0 || $deepseek_balance['topped_up_balance'] > 0): ?>
+                            <p class="text-xs text-gray-600 mt-1">
+                                <?php if ($deepseek_balance['granted_balance'] > 0): ?>
+                                    <span>Concedido: <?php echo number_format($deepseek_balance['granted_balance'], 2, ',', '.'); ?></span>
+                                <?php endif; ?>
+                                <?php if ($deepseek_balance['topped_up_balance'] > 0): ?>
+                                    <span class="ml-2">Recarregado: <?php echo number_format($deepseek_balance['topped_up_balance'], 2, ',', '.'); ?></span>
+                                <?php endif; ?>
+                            </p>
+                        <?php endif; ?>
+                    </div>
+                <?php else: ?>
+                    <div class="text-right">
+                        <p class="text-sm font-medium text-red-600">Erro</p>
+                        <p class="text-xs text-gray-500 mt-1"><?php echo esc_html($deepseek_balance['error'] ?? 'Erro desconhecido'); ?></p>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <!-- FAL.AI -->
+        <div class="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-4 border border-purple-200">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 sm:w-10 sm:h-10 bg-purple-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <svg class="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-semibold text-gray-900">FAL.AI</h3>
+                        <a href="https://fal.ai/dashboard/usage-billing/credits" target="_blank" class="text-xs text-purple-600 hover:text-purple-800 font-medium">Ver uso →</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Botão para atualizar -->
+    <div class="mt-4 pt-4 border-t border-gray-200">
+        <form method="post" action="">
+            <?php wp_nonce_field('protagonizei_refresh_balances', 'protagonizei_balances_nonce'); ?>
+            <button type="submit" name="refresh_balances" class="w-full px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors">
+                🔄 Atualizar Saldos
+            </button>
+        </form>
+    </div>
+
+    <?php
+    // Processar atualização manual
+    if (isset($_POST['refresh_balances']) && check_admin_referer('protagonizei_refresh_balances', 'protagonizei_balances_nonce')) {
+        // Limpar cache do Deepseek
+        delete_transient('protagonizei_deepseek_balance');
+        
+        // Redirecionar para evitar reenvio do formulário
+        wp_redirect(admin_url('index.php'));
+        exit;
+    }
+}
+
+/**
  * Adicionar widgets ao dashboard
  */
 function protagonizei_add_dashboard_widgets() {
@@ -700,6 +900,12 @@ function protagonizei_add_dashboard_widgets() {
         'protagonizei_stats_dashboard',
         'Estatísticas e Gráficos',
         'protagonizei_dashboard_stats_widget'
+    );
+    
+    wp_add_dashboard_widget(
+        'protagonizei_api_balances_dashboard',
+        'Saldos das APIs',
+        'protagonizei_dashboard_api_balances_widget'
     );
 }
 add_action('wp_dashboard_setup', 'protagonizei_add_dashboard_widgets');

@@ -39,7 +39,15 @@
     },
     {
       "name": "Pedidos - Processamento",
-      "description": "Endpoints para processar pedidos (textos, ilustrações, FAL.AI, face swap, merge, PDF)"
+      "description": "Endpoints para processar pedidos (textos, merge, PDF)"
+    },
+    {
+      "name": "Face Swap",
+      "description": "Endpoints relacionados ao processo de face swap (iniciar e verificar)"
+    },
+    {
+      "name": "FAL.AI",
+      "description": "Endpoints relacionados à geração de ilustrações com FAL.AI (iniciar, callback e verificar)"
     },
     {
       "name": "Pedidos - Entrega",
@@ -1474,7 +1482,7 @@
     },
     "/webhook/initiate-faceswap": {
       "get": {
-        "tags": ["Pedidos - Processamento"],
+        "tags": ["Face Swap"],
         "summary": "Iniciar processo de face swap em lote",
         "description": "Processa todos os pedidos no status 'created_assets_text' que ainda não tiveram o face swap iniciado. Para cada página do livro, inicia o processo de face swap na API externa e salva os IDs das tarefas retornadas.",
         "security": [{"ApiKeyAuth": []}],
@@ -1552,7 +1560,7 @@
     },
     "/webhook/check-faceswap": {
       "get": {
-        "tags": ["Pedidos - Processamento"],
+        "tags": ["Face Swap"],
         "summary": "Verificar status do face swap e processar imagens prontas",
         "description": "Processa todos os pedidos no status 'created_assets_text' que já tiveram o face swap iniciado (face_swap_initiated = true). Verifica o status das tarefas na API externa e processa as imagens que estão prontas, salvando-as no WordPress e atualizando o status do pedido quando todas as páginas estiverem concluídas.",
         "security": [{"ApiKeyAuth": []}],
@@ -1630,7 +1638,7 @@
     },
     "/webhook/initiate-falai": {
       "get": {
-        "tags": ["Pedidos - Processamento"],
+        "tags": ["FAL.AI"],
         "summary": "Iniciar geração de ilustrações com FAL.AI (Modo Assíncrono com Queue + Webhook)",
         "description": "**ARQUIVO:** `webhook-initiate-falai.php` - Inicia o processamento assíncrono de ilustrações para pedidos com status 'created_assets_text' e 'falai_initiated != true'. Utiliza `queue.fal.run/fal-ai/nano-banana-pro/edit` para processar em background e configura webhook automático (campo `webhook_url` no body da requisição) para notificação quando imagens estão prontas. **Arquitetura:** (1) Inicia tarefas no FAL.AI e salva `request_id` no campo `falai_task_id`, (2) FAL.AI processa e chama `/webhook/falai-callback` automaticamente via webhook_url configurado (PRIORITÁRIO e mais rápido), (3) Como fallback, `/webhook-check-falai` faz polling manual de 5 em 5 min. **WEBHOOK_URL:** Campo correto enviado ao FAL.AI para callback automático: `{site_url}/wp-json/trinitykitcms-api/v1/webhook/falai-callback`. **PROMPT:** Prompt profissional para preservar estilo, composição e elementos da ilustração original, aplicando apenas o rosto da criança. **ASPECT_RATIO:** Usa aspect_ratio personalizado de cada página do template (padrão: 16:9). **SKIP_FACESWAP:** Páginas marcadas como `skip_faceswap` copiam ilustração base diretamente. **FALAI_INITIATED:** Campo só é marcado como `true` quando TODAS as páginas (exceto skip_faceswap) tiverem `falai_task_id`. **Cron:** Executa de 5 em 5 minutos. Se faltar task_id, processa novamente (resume de onde parou).",
         "security": [{"ApiKeyAuth": []}],
@@ -1728,7 +1736,7 @@
     },
     "/webhook/falai-callback": {
       "post": {
-        "tags": ["Pedidos - Processamento"],
+        "tags": ["FAL.AI"],
         "summary": "Callback automático do FAL.AI (Webhook) - PRIORITÁRIO",
         "description": "**ARQUIVO DEDICADO:** `webhook-falai-callback.php` - Endpoint chamado automaticamente pelo FAL.AI quando uma imagem é processada e está pronta. Este é o método **PRIORITÁRIO** de recebimento de imagens. **LOGS DETALHADOS:** Registra cada etapa do processamento (recebimento, decodificação JSON, busca do pedido, extração da URL, download, salvamento, ACF, verificação de completude) com prefixo `[TrinityKit FAL.AI CALLBACK]` para debug facilitado. **FLUXO:** (1) Recebe payload com request_id e dados da imagem no formato nano-banana-multi-edit, (2) Busca qual pedido/página corresponde ao request_id, (3) Extrai URL da imagem de `images[0].url`, (4) Faz download e salva no WordPress com metadados profissionais, (5) Atualiza campo ACF `generated_illustration`, (6) Quando todas as páginas estão completas, atualiza status para 'created_assets_illustration'. **Não requer autenticação** pois é chamado pelo FAL.AI. **FORMATO ESPERADO:** Payload com `images` no nível raiz contendo array de objetos com `url`, `file_name` e `content_type`.",
         "security": [],
@@ -1948,7 +1956,7 @@
     },
     "/webhook/check-falai": {
       "get": {
-        "tags": ["Pedidos - Processamento"],
+        "tags": ["FAL.AI"],
         "summary": "Verificar status FAL.AI e processar imagens (Polling Fallback)",
         "description": "**ARQUIVO:** `webhook-check-falai.php` - **FALLBACK POLLING** - Usado como backup caso o webhook callback (`/webhook/falai-callback`) falhe ou não seja recebido. Verifica manualmente o status de tarefas FAL.AI pendentes. **QUANDO USAR:** Apenas como fallback; o callback automático é prioritário e mais rápido. **FUNCIONAMENTO:** Processa pedidos com 'created_assets_text' e 'falai_initiated = true', verificando páginas com 'falai_task_id' mas sem 'generated_illustration'. Consulta a API FAL.AI (`/fal-ai/nano-banana-pro/requests/{request_id}/status`), depois busca `response_url` para obter imagem final, baixa e atualiza ACF. Atualiza status para 'created_assets_illustration' quando completo. **RATE LIMIT:** 1.5s entre requisições. **SKIP_FACESWAP:** Copia ilustração base para páginas marcadas como skip. **Cron:** Executa de 5 em 5 minutos automaticamente.",
         "security": [{"ApiKeyAuth": []}],
