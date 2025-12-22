@@ -91,7 +91,7 @@ function trinitykitcms_render_integrations_page() {
 
         <!-- Bloco de configurações do Deepseek -->
         <div class="card" style="max-width: 800px; padding: 20px; margin-bottom: 20px;">
-            <h2>Configurações do Deepseek</h2>
+            <h2 style="display: flex; align-items: center; gap: 10px;">Configurações do Deepseek - <a href="https://platform.deepseek.com/usage" target="_blank">Uso</a></h2>
             <form method="post" action="options.php">
                 <?php
                 settings_fields('trinitykitcms_deepseek_settings');
@@ -227,7 +227,7 @@ function trinitykitcms_render_integrations_page() {
 
         <!-- Bloco de configurações do FAL.AI -->
         <div class="card" style="max-width: 800px; padding: 20px; margin-bottom: 20px;">
-            <h2 style="display: flex; align-items: center; gap: 10px;">Configurações do FAL.AI - <a href="https://fal.ai" target="_blank">FAL.AI</a></h2>
+            <h2 style="display: flex; align-items: center; gap: 10px;">Configurações do FAL.AI - <a href="https://fal.ai/dashboard/usage-billing/credits" target="_blank">Créditos</a></h2>
             <form method="post" action="options.php">
                 <?php
                 settings_fields('trinitykitcms_falai_settings');
