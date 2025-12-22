@@ -26,7 +26,7 @@ function register_coupons_post_type() {
 	$args = array(
 		'labels'              => $labels,
 		'public'              => false,
-		'publicly_queryable'  => false,
+		'publicly_queryable'  => true, // Permite URLs públicas, mas controlado por template
 		'show_ui'             => true,
 		'show_in_menu'        => true,
 		'query_var'           => true,
@@ -42,6 +42,16 @@ function register_coupons_post_type() {
 	register_post_type( 'coupons', $args );
 }
 add_action( 'init', 'register_coupons_post_type' );
+
+/**
+ * Restringe acesso aos cupons apenas para usuários autenticados com permissão
+ */
+function restrict_coupons_access() {
+	if (is_singular('coupons') && !current_user_can('edit_posts')) {
+		wp_die(__('Você não tem permissão para acessar esta página.'), 'Acesso Negado', array('response' => 403));
+	}
+}
+add_action('template_redirect', 'restrict_coupons_access');
 
 /**
  * Adiciona colunas personalizadas na listagem de cupons

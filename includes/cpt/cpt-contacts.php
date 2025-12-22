@@ -52,6 +52,16 @@ function register_contact_form_post_type() {
 }
 add_action( 'init', 'register_contact_form_post_type' );
 
+/**
+ * Restringe acesso aos contatos apenas para usuários autenticados com permissão
+ */
+function restrict_contacts_access() {
+	if (is_singular('contact_form') && !current_user_can('edit_posts')) {
+		wp_die(__('Você não tem permissão para acessar esta página.'), 'Acesso Negado', array('response' => 403));
+	}
+}
+add_action('template_redirect', 'restrict_contacts_access');
+
 function contact_form_columns( $columns ) {
     $columns['name'] = 'Nome';
     $columns['email'] = 'Email';
