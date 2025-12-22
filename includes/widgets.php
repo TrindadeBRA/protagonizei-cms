@@ -320,13 +320,13 @@ function protagonizei_dashboard_recent_contacts_widget() {
             $phone = get_field('phone', $contact->ID);
             $date = get_the_date('d/m/Y H:i', $contact->ID);
             $tags = wp_get_post_terms($contact->ID, 'contact_tags', array('fields' => 'names'));
-            $edit_link = get_edit_post_link($contact->ID);
+            $view_link = get_permalink($contact->ID);
             
             echo '<div class="bg-white border border-gray-200 rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow">';
             echo '<div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-2">';
             echo '<div class="flex-1 min-w-0">';
-            if ($edit_link) {
-                echo '<h4 class="font-semibold text-gray-900 text-sm truncate"><a href="' . esc_url($edit_link) . '" class="hover:text-blue-600">' . esc_html($name ?: 'Sem nome') . '</a></h4>';
+            if ($view_link) {
+                echo '<h4 class="font-semibold text-gray-900 text-sm truncate"><a href="' . esc_url($view_link) . '" class="hover:text-blue-600">' . esc_html($name ?: 'Sem nome') . '</a></h4>';
             } else {
                 echo '<h4 class="font-semibold text-gray-900 text-sm truncate">' . esc_html($name ?: 'Sem nome') . '</h4>';
             }
@@ -412,7 +412,7 @@ function protagonizei_dashboard_recent_orders_widget() {
             $buyer_email = get_field('buyer_email', $order->ID);
             $date = get_the_date('d/m/Y H:i', $order->ID);
             $payment_date = get_field('payment_date', $order->ID);
-            $edit_link = get_edit_post_link($order->ID);
+            $view_link = get_permalink($order->ID);
             
             $status_label = isset($status_labels[$status]) ? $status_labels[$status] : $status;
             $status_color = isset($status_colors[$status]) ? $status_colors[$status] : 'bg-gray-100 text-gray-800';
@@ -420,8 +420,8 @@ function protagonizei_dashboard_recent_orders_widget() {
             echo '<div class="bg-white border border-gray-200 rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow">';
             echo '<div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-2">';
             echo '<div class="flex-1 min-w-0">';
-            if ($edit_link) {
-                echo '<h4 class="font-semibold text-gray-900 text-sm truncate"><a href="' . esc_url($edit_link) . '" class="hover:text-blue-600">Pedido #' . esc_html($order->ID) . '</a></h4>';
+            if ($view_link) {
+                echo '<h4 class="font-semibold text-gray-900 text-sm truncate"><a href="' . esc_url($view_link) . '" class="hover:text-blue-600">Pedido #' . esc_html($order->ID) . '</a></h4>';
             } else {
                 echo '<h4 class="font-semibold text-gray-900 text-sm truncate">Pedido #' . esc_html($order->ID) . '</h4>';
             }

@@ -187,7 +187,7 @@ $status_colors = array(
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
             <!-- Coluna Principal -->
-            <div class="lg:col-span-2 space-y-6">
+            <div class="lg:col-span-2 space-y-6 order-2 lg:order-1">
                 
                 <!-- Gerenciamento de Status -->
                 <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 lg:p-8" x-data="{ showStatusModal: false, isDelivering: false }">
@@ -492,37 +492,96 @@ $status_colors = array(
                                             <?php 
                                             $skip_faceswap = !empty($page['skip_faceswap']) && $page['skip_faceswap'] === true;
                                             if ($skip_faceswap): ?>
-                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800" title="Esta página não precisa de face swap">
+                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800" title="Esta página não precisa de processamento de API (FaceSwap ou FAL.AI)">
                                                     <i class="fas fa-ban mr-1"></i>
-                                                    Sem Face Swap
+                                                    Sem Processamento
                                                 </span>
                                             <?php endif; ?>
                                         </div>
                                         
                                         <?php 
-                                        // Mostrar informações do Face Swap se aplicável
+                                        // Mostrar informações das APIs de processamento
                                         if (!$skip_faceswap): ?>
-                                            <?php if (isset($page['faceswap_task_id']) && !empty($page['faceswap_task_id'])): ?>
-                                                <div class="mb-3 p-2 bg-blue-50 border border-blue-200 rounded text-xs">
-                                                    <p class="text-blue-800">
-                                                        <i class="fas fa-sync-alt mr-1"></i>
-                                                        <strong>Face Swap Task ID:</strong> 
-                                                        <code class="bg-blue-100 px-1 rounded"><?php echo esc_html($page['faceswap_task_id']); ?></code>
-                                                    </p>
-                                                </div>
-                                            <?php elseif (!isset($page['generated_illustration']) || empty($page['generated_illustration'])): ?>
-                                                <div class="mb-3 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs">
-                                                    <p class="text-yellow-800">
-                                                        <i class="fas fa-clock mr-1"></i>
-                                                        Face swap pendente
-                                                    </p>
-                                                </div>
-                                            <?php endif; ?>
+                                            <div class="mb-3 space-y-2">
+                                                <?php 
+                                                $has_faceswap = isset($page['faceswap_task_id']) && !empty($page['faceswap_task_id']);
+                                                $has_falai = isset($page['falai_task_id']) && !empty($page['falai_task_id']);
+                                                $has_illustration = isset($page['generated_illustration']) && !empty($page['generated_illustration']);
+                                                
+                                                // FaceSwap
+                                                if ($has_faceswap): ?>
+                                                    <div class="p-2 bg-blue-50 border border-blue-200 rounded text-xs">
+                                                        <p class="text-blue-800 flex items-center">
+                                                            <i class="fas fa-sync-alt mr-2"></i>
+                                                            <strong>FaceSwap:</strong> 
+                                                            <code class="bg-blue-100 px-1 rounded ml-1"><?php echo esc_html($page['faceswap_task_id']); ?></code>
+                                                            <?php if ($has_illustration): ?>
+                                                                <span class="ml-2 text-green-600">
+                                                                    <i class="fas fa-check-circle"></i> Concluído
+                                                                </span>
+                                                            <?php else: ?>
+                                                                <span class="ml-2 text-yellow-600">
+                                                                    <i class="fas fa-clock"></i> Processando
+                                                                </span>
+                                                            <?php endif; ?>
+                                                        </p>
+                                                    </div>
+                                                <?php endif; ?>
+                                                
+                                                <?php 
+                                                // FAL.AI
+                                                if ($has_falai): ?>
+                                                    <div class="p-2 bg-purple-50 border border-purple-200 rounded text-xs">
+                                                        <p class="text-purple-800 flex items-center">
+                                                            <i class="fas fa-magic mr-2"></i>
+                                                            <strong>FAL.AI:</strong> 
+                                                            <code class="bg-purple-100 px-1 rounded ml-1"><?php echo esc_html($page['falai_task_id']); ?></code>
+                                                            <?php if ($has_illustration): ?>
+                                                                <span class="ml-2 text-green-600">
+                                                                    <i class="fas fa-check-circle"></i> Concluído
+                                                                </span>
+                                                            <?php else: ?>
+                                                                <span class="ml-2 text-yellow-600">
+                                                                    <i class="fas fa-clock"></i> Processando
+                                                                </span>
+                                                            <?php endif; ?>
+                                                        </p>
+                                                    </div>
+                                                <?php endif; ?>
+                                                
+                                                <?php 
+                                                // Se não tem nenhuma API mas também não tem ilustração, está pendente
+                                                if (!$has_faceswap && !$has_falai && !$has_illustration): ?>
+                                                    <div class="p-2 bg-yellow-50 border border-yellow-200 rounded text-xs">
+                                                        <p class="text-yellow-800">
+                                                            <i class="fas fa-clock mr-1"></i>
+                                                            Processamento pendente (aguardando API)
+                                                        </p>
+                                                    </div>
+                                                <?php endif; ?>
+                                                
+                                                <?php 
+                                                // Mostrar qual API foi usada se a ilustração já foi gerada
+                                                if ($has_illustration && ($has_faceswap || $has_falai)): ?>
+                                                    <div class="p-2 bg-gray-50 border border-gray-200 rounded text-xs">
+                                                        <p class="text-gray-600">
+                                                            <i class="fas fa-info-circle mr-1"></i>
+                                                            Processado com: 
+                                                            <?php 
+                                                            $apis_used = array();
+                                                            if ($has_faceswap) $apis_used[] = 'FaceSwap';
+                                                            if ($has_falai) $apis_used[] = 'FAL.AI';
+                                                            echo esc_html(implode(' + ', $apis_used));
+                                                            ?>
+                                                        </p>
+                                                    </div>
+                                                <?php endif; ?>
+                                            </div>
                                         <?php else: ?>
                                             <div class="mb-3 p-2 bg-green-50 border border-green-200 rounded text-xs">
                                                 <p class="text-green-800">
                                                     <i class="fas fa-check-circle mr-1"></i>
-                                                    Ilustração base usada diretamente (sem face swap)
+                                                    Ilustração base usada diretamente (sem processamento de API)
                                                 </p>
                                             </div>
                                         <?php endif; ?>
@@ -744,7 +803,7 @@ $status_colors = array(
             </div>
 
             <!-- Sidebar -->
-            <div class="space-y-4 sm:space-y-6">
+            <div class="space-y-4 sm:space-y-6 order-1 lg:order-2">
                 
                 <!-- Informações da Criança -->
                 <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
@@ -992,9 +1051,14 @@ $status_colors = array(
                                                 <?php 
                                                 $template_skip_faceswap = !empty($page['skip_faceswap']) && $page['skip_faceswap'] === true;
                                                 if ($template_skip_faceswap): ?>
-                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 self-start sm:self-auto" title="Esta página do template não precisa de face swap">
+                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 self-start sm:self-auto" title="Esta página do template não precisa de processamento de API (FaceSwap ou FAL.AI)">
                                                         <i class="fas fa-ban mr-1"></i>
-                                                        Sem Face Swap
+                                                        Sem Processamento
+                                                    </span>
+                                                <?php else: ?>
+                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 self-start sm:self-auto" title="Esta página será processada com FaceSwap ou FAL.AI">
+                                                        <i class="fas fa-magic mr-1"></i>
+                                                        Com Processamento
                                                     </span>
                                                 <?php endif; ?>
                                             </div>
