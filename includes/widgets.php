@@ -270,6 +270,7 @@ function protagonizei_widget_styles() {
             #protagonizei_recent_contacts_dashboard .inside,
             #protagonizei_recent_orders_dashboard .inside,
             #protagonizei_stats_dashboard .inside,
+            #protagonizei_coupons_dashboard .inside,
             #protagonizei_api_balances_dashboard .inside {
                 padding: 12px;
             }
@@ -531,15 +532,6 @@ function protagonizei_dashboard_stats_widget() {
 
     $total_orders = array_sum($status_counts);
 
-    // Buscar dados dos cupons
-    $coupons_query = new WP_Query(array(
-        'post_type' => 'coupons',
-        'posts_per_page' => -1,
-        'post_status' => 'publish'
-    ));
-    $total_coupons = $coupons_query->found_posts;
-    wp_reset_postdata();
-
     // Mapeamento de cores semânticas para cada status (mesmas cores dos badges)
     $status_chart_colors = array(
         'created' => '#9CA3AF',                    // gray-400 (neutro)
@@ -599,20 +591,6 @@ function protagonizei_dashboard_stats_widget() {
                 <div class="w-8 h-8 sm:w-10 sm:h-10 bg-green-500 rounded-lg flex items-center justify-center flex-shrink-0 ml-2">
                     <svg class="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                </div>
-            </div>
-        </div>
-        
-        <div class="bg-purple-50 rounded-lg p-3 sm:p-4 border border-purple-200 sm:col-span-2">
-            <div class="flex items-center justify-between">
-                <div class="flex-1 min-w-0">
-                    <p class="text-xs font-medium text-purple-600 uppercase truncate">Cupons</p>
-                    <p class="text-xl sm:text-2xl font-bold text-purple-900 mt-1 break-words"><?php echo number_format($total_coupons); ?></p>
-                </div>
-                <div class="w-8 h-8 sm:w-10 sm:h-10 bg-purple-500 rounded-lg flex items-center justify-center flex-shrink-0 ml-2">
-                    <svg class="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 002 2h3a2 2 0 002-2V7a2 2 0 00-2-2H5zM5 13a2 2 0 00-2 2v3a2 2 0 002 2h3a2 2 0 002-2v-3a2 2 0 00-2-2H5zM19 5a2 2 0 012 2v3a2 2 0 01-2 2h-3a2 2 0 01-2-2V7a2 2 0 012-2h3zM19 13a2 2 0 012 2v3a2 2 0 01-2 2h-3a2 2 0 01-2-2v-3a2 2 0 012-2h3z"></path>
                     </svg>
                 </div>
             </div>
@@ -699,19 +677,151 @@ function protagonizei_dashboard_stats_widget() {
     })();
     </script>
     <?php endif; ?>
-
-    <!-- Links Rápidos -->
-    <div class="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-gray-200">
-        <div class="flex flex-col sm:flex-row gap-2">
-            <a href="<?php echo admin_url('edit.php?post_type=orders'); ?>" class="flex-1 text-center px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-sm font-medium transition-colors">
-                Ver Pedidos
-            </a>
-            <a href="<?php echo admin_url('edit.php?post_type=coupons'); ?>" class="flex-1 text-center px-3 py-2 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-lg text-sm font-medium transition-colors">
-                Ver Cupons
-            </a>
-        </div>
-    </div>
     <?php
+}
+
+/**
+ * Widget do Dashboard: Cupons e Vendas
+ */
+function protagonizei_dashboard_coupons_widget() {
+    // Buscar todos os cupons (publicados e rascunho)
+    $coupons_query = new WP_Query(array(
+        'post_type' => 'coupons',
+        'posts_per_page' => -1,
+        'post_status' => array('publish', 'draft')
+    ));
+
+    if (empty($coupons_query->posts)) {
+        echo '<p class="text-gray-500 text-sm">Nenhum cupom encontrado.</p>';
+        
+        // Link para ver todos os cupons
+        $all_coupons_link = admin_url('edit.php?post_type=coupons');
+        echo '<div class="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-gray-200">';
+        echo '<a href="' . esc_url($all_coupons_link) . '" class="text-sm text-blue-600 hover:text-blue-800 font-medium">Ver todos os cupons →</a>';
+        echo '</div>';
+        
+        wp_reset_postdata();
+        return;
+    }
+
+    $coupons_data = array();
+    
+    // Processar cada cupom
+    foreach ($coupons_query->posts as $coupon_post) {
+        $coupon_id = $coupon_post->ID;
+        $coupon_code = get_the_title($coupon_id);
+        $discount_type = get_field('discount_type', $coupon_id);
+        $discount_fixed_amount = get_field('discount_fixed_amount', $coupon_id) ?: 0;
+        $discount_percentage = get_field('discount_percentage', $coupon_id) ?: 0;
+        $post_status = $coupon_post->post_status;
+        
+        // Buscar pedidos que usaram este cupom
+        $coupon_orders = new WP_Query(array(
+            'post_type' => 'orders',
+            'posts_per_page' => -1,
+            'post_status' => 'publish',
+            'meta_query' => array(
+                array(
+                    'key' => 'applied_coupon',
+                    'value' => $coupon_code,
+                    'compare' => '='
+                )
+            )
+        ));
+        
+        $total_sales = 0;
+        $total_discount = 0;
+        $usage_count = 0;
+        
+        if ($coupon_orders->have_posts()) {
+            while ($coupon_orders->have_posts()) {
+                $coupon_orders->the_post();
+                $payment_amount = get_field('payment_amount') ?: 0;
+                $total_sales += $payment_amount;
+                $usage_count++;
+                
+                // Calcular desconto baseado no tipo
+                if ($discount_type === 'fixed') {
+                    $total_discount += $discount_fixed_amount;
+                } elseif ($discount_type === 'percent') {
+                    $original_amount = $payment_amount / (1 - ($discount_percentage / 100));
+                    $total_discount += ($original_amount - $payment_amount);
+                }
+            }
+            wp_reset_postdata();
+        }
+        
+        $coupons_data[] = array(
+            'id' => $coupon_id,
+            'code' => $coupon_code,
+            'type' => $discount_type,
+            'discount_value' => $discount_type === 'fixed' ? $discount_fixed_amount : $discount_percentage,
+            'usage_count' => $usage_count,
+            'total_sales' => $total_sales,
+            'total_discount' => $total_discount,
+            'status' => $post_status
+        );
+    }
+    wp_reset_postdata();
+    
+    // Ordenar por uso (mais usado primeiro)
+    usort($coupons_data, function($a, $b) {
+        return $b['usage_count'] - $a['usage_count'];
+    });
+    
+    echo '<div class="space-y-2 sm:space-y-3">';
+    foreach ($coupons_data as $coupon) {
+        $edit_link = get_edit_post_link($coupon['id']);
+        $status_badge = $coupon['status'] === 'publish' 
+            ? '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Publicado</span>'
+            : '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">Rascunho</span>';
+        
+        echo '<div class="bg-white border border-gray-200 rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow">';
+        echo '<div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-2">';
+        echo '<div class="flex-1 min-w-0">';
+        if ($edit_link) {
+            echo '<h4 class="font-semibold text-gray-900 text-sm truncate"><a href="' . esc_url($edit_link) . '" class="hover:text-blue-600">' . esc_html($coupon['code']) . '</a></h4>';
+        } else {
+            echo '<h4 class="font-semibold text-gray-900 text-sm truncate">' . esc_html($coupon['code']) . '</h4>';
+        }
+        echo '<div class="flex items-center gap-2 mt-1">';
+        echo $status_badge;
+        echo '<span class="inline-flex px-2 py-0.5 text-xs font-semibold rounded-full ' . ($coupon['type'] === 'fixed' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800') . '">';
+        echo $coupon['type'] === 'fixed' ? 'Fixo' : 'Percentual';
+        echo '</span>';
+        if ($coupon['type'] === 'fixed') {
+            echo '<span class="text-xs text-gray-600">R$ ' . number_format($coupon['discount_value'], 2, ',', '.') . '</span>';
+        } else {
+            echo '<span class="text-xs text-gray-600">' . number_format($coupon['discount_value'], 1) . '%</span>';
+        }
+        echo '</div>';
+        echo '</div>';
+        echo '</div>';
+        
+        // Estatísticas do cupom
+        echo '<div class="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 mt-3 pt-3 border-t border-gray-100">';
+        echo '<div class="text-center sm:text-left">';
+        echo '<p class="text-xs text-gray-500">Vendas</p>';
+        echo '<p class="text-sm sm:text-base font-bold text-gray-900">' . number_format($coupon['usage_count']) . '</p>';
+        echo '</div>';
+        echo '<div class="text-center sm:text-left">';
+        echo '<p class="text-xs text-gray-500">Total Vendido</p>';
+        echo '<p class="text-sm sm:text-base font-bold text-green-600">R$ ' . number_format($coupon['total_sales'], 2, ',', '.') . '</p>';
+        echo '</div>';
+        echo '<div class="text-center sm:text-left col-span-2 sm:col-span-1">';
+        echo '<p class="text-xs text-gray-500">Descontado</p>';
+        echo '<p class="text-sm sm:text-base font-bold text-red-600">R$ ' . number_format($coupon['total_discount'], 2, ',', '.') . '</p>';
+        echo '</div>';
+        echo '</div>';
+        echo '</div>';
+    }
+    echo '</div>';
+    
+    // Link para ver todos os cupons
+    $all_coupons_link = admin_url('edit.php?post_type=coupons');
+    echo '<div class="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-gray-200">';
+    echo '<a href="' . esc_url($all_coupons_link) . '" class="text-sm text-blue-600 hover:text-blue-800 font-medium">Ver todos os cupons →</a>';
+    echo '</div>';
 }
 
 /**
@@ -933,6 +1043,12 @@ function protagonizei_add_dashboard_widgets() {
         'protagonizei_stats_dashboard',
         'Estatísticas e Gráficos',
         'protagonizei_dashboard_stats_widget'
+    );
+    
+    wp_add_dashboard_widget(
+        'protagonizei_coupons_dashboard',
+        'Cupons e Vendas',
+        'protagonizei_dashboard_coupons_widget'
     );
     
     wp_add_dashboard_widget(
