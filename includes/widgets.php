@@ -938,15 +938,8 @@ function protagonizei_get_deepseek_balance() {
  * Widget do Dashboard: Saldos das APIs
  */
 function protagonizei_dashboard_api_balances_widget() {
-    // Processar atualização manual ANTES de qualquer output
-    if (isset($_POST['refresh_balances']) && check_admin_referer('protagonizei_refresh_balances', 'protagonizei_balances_nonce')) {
-        // Limpar cache do Deepseek
-        delete_transient('protagonizei_deepseek_balance');
-        
-        // Redirecionar para evitar reenvio do formulário
-        wp_redirect(admin_url('index.php'));
-        exit;
-    }
+    // Limpar cache ao carregar para sempre buscar dados atualizados
+    delete_transient('protagonizei_deepseek_balance');
     
     // Buscar saldo do Deepseek
     $deepseek_balance = protagonizei_get_deepseek_balance();
@@ -1009,16 +1002,6 @@ function protagonizei_dashboard_api_balances_widget() {
                 </div>
             </div>
         </div>
-    </div>
-
-    <!-- Botão para atualizar -->
-    <div class="mt-4 pt-4 border-t border-gray-200">
-        <form method="post" action="">
-            <?php wp_nonce_field('protagonizei_refresh_balances', 'protagonizei_balances_nonce'); ?>
-            <button type="submit" name="refresh_balances" class="w-full px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors">
-                🔄 Atualizar Saldos
-            </button>
-        </form>
     </div>
     <?php
 }
