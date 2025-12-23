@@ -127,53 +127,89 @@ add_filter('rest_index', function ($response) {
 
 add_action('rest_api_init', function () {
     add_filter('rest_pre_serve_request', function ($served, $result, $request, $server) {
-        $frontend_url = get_option('trinitykitcms_frontend_app_url');
+        $request_uri = $request->get_route();
         
-        // Origens base permitidas (apenas desenvolvimento e CMS)
-        $allowed_origins = [
-            'http://localhost:3000',
-            'http://localhost:8080',
-            'https://cms.protagonizei.com',
-        ];
-
-        // Adicionar URLs do frontend (suporta múltiplas URLs separadas por vírgula)
-        if (!empty($frontend_url)) {
-            $frontend_urls = array_map('trim', explode(',', $frontend_url));
-            $allowed_origins = array_merge($allowed_origins, $frontend_urls);
+        // Endpoint de webhook que não precisa de verificação CORS (chamado por serviço externo FAL.AI)
+        $is_webhook_falai = strpos($request_uri, '/webhook/falai-callback') !== false;
+        
+        // Tratar preflight OPTIONS request primeiro
+        if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+            if ($is_webhook_falai) {
+                // Webhook FAL.AI: permitir qualquer origem
+                header('Access-Control-Allow-Origin: *');
+            } else {
+                // Outros endpoints: verificar origem permitida
+                $origin = $_SERVER['HTTP_ORIGIN'] ?? null;
+                if ($origin && in_array($origin, trinitykitcms_get_allowed_origins())) {
+                    header("Access-Control-Allow-Origin: $origin");
+                    header('Access-Control-Allow-Credentials: true');
+                }
+            }
+            
+            header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+            header('Access-Control-Allow-Headers: Origin, Content-Type, Accept, Authorization, X-API-Key, X-Requested-With');
+            header('Access-Control-Max-Age: 86400');
+            status_header(200);
+            exit();
         }
-
-        // Remover valores vazios e duplicados
-        $allowed_origins = array_values(array_filter(array_unique($allowed_origins)));
-
+        
+        // Se for webhook FAL.AI, permitir sem verificação de origem
+        if ($is_webhook_falai) {
+            $origin = $_SERVER['HTTP_ORIGIN'] ?? '*';
+            header("Access-Control-Allow-Origin: $origin");
+            header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+            header('Access-Control-Allow-Headers: Origin, Content-Type, Accept, Authorization, X-API-Key, X-Requested-With');
+            return $served;
+        }
+        
+        // Verificação CORS padrão para outros endpoints
         if (isset($_SERVER['HTTP_ORIGIN'])) {
             $origin = $_SERVER['HTTP_ORIGIN'];
-
+            $allowed_origins = trinitykitcms_get_allowed_origins();
+            
             if (in_array($origin, $allowed_origins)) {
                 header("Access-Control-Allow-Origin: $origin");
                 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
                 header('Access-Control-Allow-Headers: Origin, Content-Type, Accept, Authorization, X-API-Key, X-Requested-With');
                 header('Access-Control-Allow-Credentials: true');
-                header('Access-Control-Max-Age: 86400');    // cache for 1 day
+                header('Access-Control-Max-Age: 86400');
             } else {
-                // Log para debug (remover em produção)
-                error_log('CORS bloqueado para origem: ' . $origin);
-                error_log('Origens permitidas: ' . implode(', ', $allowed_origins));
+                error_log('[TrinityKit CORS] Bloqueado para origem: ' . $origin);
+                error_log('[TrinityKit CORS] Origens permitidas: ' . implode(', ', $allowed_origins));
                 
                 header('HTTP/1.1 403 Forbidden');
                 echo json_encode(['message' => 'CORS bloqueado']);
                 exit;
             }
         }
-
-        // Handle preflight OPTIONS request
-        if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-            status_header(200);
-            exit();
-        }
-
+        
         return $served;
     }, 10, 4);
 });
+
+/**
+ * Retorna lista de origens permitidas para CORS
+ * 
+ * @return array Lista de origens permitidas
+ */
+function trinitykitcms_get_allowed_origins() {
+    // Origens base permitidas (apenas desenvolvimento e CMS)
+    $allowed_origins = [
+        'http://localhost:3000',
+        'http://localhost:8080',
+        'https://cms.protagonizei.com',
+    ];
+    
+    // Adicionar URLs do frontend (suporta múltiplas URLs separadas por vírgula)
+    $frontend_url = get_option('trinitykitcms_frontend_app_url');
+    if (!empty($frontend_url)) {
+        $frontend_urls = array_map('trim', explode(',', $frontend_url));
+        $allowed_origins = array_merge($allowed_origins, $frontend_urls);
+    }
+    
+    // Remover valores vazios e duplicados
+    return array_values(array_filter(array_unique($allowed_origins)));
+}
 
 // Rewrite post preview and view URLs to use frontend domain
 function trinitykitcms_rewrite_post_preview_url($preview_link, $post) {
