@@ -603,13 +603,22 @@ $status_colors = array(
                                         $has_falai_illustration = isset($page['falai_illustration']) && !empty($page['falai_illustration']);
                                         $has_general_illustration = isset($page['generated_illustration']) && !empty($page['generated_illustration']);
                                         
-                                        // Mostrar ilustrações quando disponíveis
+                                        // Mostrar ilustrações quando disponíveis (priorizar campos específicos)
                                         if ($has_faceswap_illustration || $has_falai_illustration || $has_general_illustration): ?>
                                             <div class="mb-3 space-y-3">
-                                                <p class="text-sm text-gray-600 mb-2 font-medium">Ilustrações Geradas:</p>
+                                                <p class="text-sm text-gray-600 mb-2 font-medium">
+                                                    Ilustrações Geradas:
+                                                    <?php if ($has_faceswap_illustration && $has_falai_illustration): ?>
+                                                        <span class="text-xs text-gray-500">(Ambas as APIs processadas)</span>
+                                                    <?php elseif ($has_faceswap_illustration): ?>
+                                                        <span class="text-xs text-blue-600">(FaceSwap)</span>
+                                                    <?php elseif ($has_falai_illustration): ?>
+                                                        <span class="text-xs text-purple-600">(FAL.AI)</span>
+                                                    <?php endif; ?>
+                                                </p>
                                                 
                                                 <?php 
-                                                // Mostrar ilustração do FaceSwap se disponível
+                                                // Mostrar ilustração do FaceSwap se disponível (sempre que existir)
                                                 if ($has_faceswap_illustration): 
                                                     $faceswap_thumb = '';
                                                     $faceswap_full = '';
@@ -673,7 +682,8 @@ $status_colors = array(
                                                 <?php endif; ?>
                                                 
                                                 <?php 
-                                                // Mostrar ilustração geral apenas se não houver ilustrações específicas
+                                                // Mostrar ilustração geral apenas se não houver ilustrações específicas de nenhuma API
+                                                // (fallback para compatibilidade com versões antigas ou outros processos)
                                                 if (!$has_faceswap_illustration && !$has_falai_illustration && $has_general_illustration): 
                                                     $general_thumb = '';
                                                     $general_full = '';

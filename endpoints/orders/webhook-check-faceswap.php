@@ -354,8 +354,8 @@ function trinitykit_handle_check_faceswap_webhook($request) {
                 continue;
             }
 
-            // Check if this page already has a generated illustration
-            if (!empty($page['generated_illustration'])) {
+            // Check if this page already has a FaceSwap illustration (verificar campo específico)
+            if (!empty($page['faceswap_illustration'])) {
                 $completed_pages++;
                 continue;
             }
@@ -519,14 +519,14 @@ function trinitykit_handle_check_faceswap_webhook($request) {
                     continue;
                 }
                 
-                // Update only the illustration of this specific page using ACF
-                $field_key = "generated_book_pages_{$index}_generated_illustration";
-                error_log("[TrinityKit] Atualizando ACF - Field: $field_key, Attachment ID: $attachment_id, Order ID: $order_id");
-                $update_result = update_field($field_key, $attachment_id, $order_id);
-                
-                // Also save to the specific FaceSwap illustration field
+                // Save to the specific FaceSwap illustration field (campo específico do FaceSwap)
                 $faceswap_field_key = "generated_book_pages_{$index}_faceswap_illustration";
-                update_field($faceswap_field_key, $attachment_id, $order_id);
+                error_log("[TrinityKit] Atualizando ACF - Field: $faceswap_field_key, Attachment ID: $attachment_id, Order ID: $order_id");
+                $update_result = update_field($faceswap_field_key, $attachment_id, $order_id);
+                
+                // Also update the general illustration field (campo geral para compatibilidade)
+                $field_key = "generated_book_pages_{$index}_generated_illustration";
+                update_field($field_key, $attachment_id, $order_id);
                 
                 error_log("[TrinityKit] Resultado do update_field: " . ($update_result ? 'SUCESSO' : 'FALHA') . " | Field: $field_key");
                 

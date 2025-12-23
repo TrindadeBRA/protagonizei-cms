@@ -425,8 +425,8 @@ function trinitykit_handle_check_falai_webhook($request) {
                 continue;
             }
 
-            // Check if this page already has a generated illustration
-            if (!empty($page['generated_illustration'])) {
+            // Check if this page already has a FAL.AI illustration (verificar campo específico)
+            if (!empty($page['falai_illustration'])) {
                 $completed_pages++;
                 continue;
             }
@@ -543,13 +543,13 @@ function trinitykit_handle_check_falai_webhook($request) {
                         $attachment_id = 0; // Fallback
                     }
                     
-                    // Update only the illustration of this specific page using ACF
-                    $field_key = "generated_book_pages_{$index}_generated_illustration";
-                    $update_result = update_field($field_key, $attachment_id, $order_id);
-                    
-                    // Also save to the specific FAL.AI illustration field
+                    // Save to the specific FAL.AI illustration field (campo específico do FAL.AI)
                     $falai_field_key = "generated_book_pages_{$index}_falai_illustration";
-                    update_field($falai_field_key, $attachment_id, $order_id);
+                    $update_result = update_field($falai_field_key, $attachment_id, $order_id);
+                    
+                    // Also update the general illustration field (campo geral para compatibilidade)
+                    $field_key = "generated_book_pages_{$index}_generated_illustration";
+                    update_field($field_key, $attachment_id, $order_id);
                     
                     $acf_time = microtime(true) - $acf_start;
                     
