@@ -510,7 +510,8 @@ $status_colors = array(
                                                 <?php 
                                                 $has_faceswap = isset($page['faceswap_task_id']) && !empty($page['faceswap_task_id']);
                                                 $has_falai = isset($page['falai_task_id']) && !empty($page['falai_task_id']);
-                                                $has_illustration = isset($page['generated_illustration']) && !empty($page['generated_illustration']);
+                                                $has_illustration = (isset($page['falai_illustration']) && !empty($page['falai_illustration'])) || 
+                                                                    (isset($page['faceswap_illustration']) && !empty($page['faceswap_illustration']));
                                                 
                                                 // FaceSwap
                                                 if ($has_faceswap): ?>
@@ -601,10 +602,9 @@ $status_colors = array(
                                         // Verificar se há ilustrações específicas de cada API
                                         $has_faceswap_illustration = isset($page['faceswap_illustration']) && !empty($page['faceswap_illustration']);
                                         $has_falai_illustration = isset($page['falai_illustration']) && !empty($page['falai_illustration']);
-                                        $has_general_illustration = isset($page['generated_illustration']) && !empty($page['generated_illustration']);
                                         
-                                        // Mostrar ilustrações quando disponíveis (priorizar campos específicos)
-                                        if ($has_faceswap_illustration || $has_falai_illustration || $has_general_illustration): ?>
+                                        // Mostrar ilustrações quando disponíveis
+                                        if ($has_faceswap_illustration || $has_falai_illustration): ?>
                                             <div class="mb-3 space-y-3">
                                                 <p class="text-sm text-gray-600 mb-2 font-medium">
                                                     Ilustrações Geradas:
@@ -681,38 +681,6 @@ $status_colors = array(
                                                     </div>
                                                 <?php endif; ?>
                                                 
-                                                <?php 
-                                                // Mostrar ilustração geral apenas se não houver ilustrações específicas de nenhuma API
-                                                // (fallback para compatibilidade com versões antigas ou outros processos)
-                                                if (!$has_faceswap_illustration && !$has_falai_illustration && $has_general_illustration): 
-                                                    $general_thumb = '';
-                                                    $general_full = '';
-                                                    if (is_array($page['generated_illustration'])) {
-                                                        $general_thumb = $page['generated_illustration']['sizes']['medium'] ?? $page['generated_illustration']['url'] ?? '';
-                                                        $general_full = $page['generated_illustration']['url'] ?? '';
-                                                    } elseif (is_numeric($page['generated_illustration'])) {
-                                                        $general_thumb = wp_get_attachment_image_url($page['generated_illustration'], 'medium');
-                                                        $general_full = wp_get_attachment_image_url($page['generated_illustration'], 'full');
-                                                    }
-                                                ?>
-                                                    <div class="border border-gray-200 rounded-lg p-3 bg-gray-50">
-                                                        <p class="text-xs font-medium text-gray-700 mb-2 flex items-center">
-                                                            <i class="fas fa-image mr-2"></i>
-                                                            Ilustração Processada
-                                                        </p>
-                                                        <?php if ($general_thumb): ?>
-                                                            <a href="<?php echo esc_url($general_full ?: $general_thumb); ?>" target="_blank" class="block hover:opacity-80 transition-opacity" title="Clique para ver em tamanho original">
-                                                                <img src="<?php echo esc_url($general_thumb); ?>" 
-                                                                     alt="Ilustração da Página <?php echo $index + 1; ?>" 
-                                                                     class="clickable-image w-full h-32 object-cover rounded border hover:border-purple-300">
-                                                            </a>
-                                                            <p class="text-xs text-gray-400 mt-1">
-                                                                <i class="fas fa-external-link-alt mr-1"></i>
-                                                                Clique para ver em tamanho original
-                                                            </p>
-                                                        <?php endif; ?>
-                                                    </div>
-                                                <?php endif; ?>
                                             </div>
                                         <?php endif; ?>
                                         

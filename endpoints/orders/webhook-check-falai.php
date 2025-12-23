@@ -8,8 +8,8 @@
  * FUNCIONAMENTO:
  * - Executado manualmente ou via cron
  * - Encontra pedidos com 'created_assets_text' e 'falai_initiated = true'
- * - Verifica páginas que têm 'falai_task_id' mas não têm 'generated_illustration'
- * - Baixa e salva imagens prontas
+ * - Verifica páginas que têm 'falai_task_id' mas não têm 'falai_illustration' (campo específico)
+ * - Baixa e salva imagens prontas no campo falai_illustration
  * - Atualiza status do pedido para 'created_assets_illustration' quando completo
  * 
  * @package TrinityKit
@@ -356,7 +356,8 @@ function trinitykit_handle_check_falai_webhook($request) {
             
             // If page skips face edit, just copy the base illustration
             if ($skip_faceswap) {
-                if (!empty($page['generated_illustration'])) {
+                // Verificar se já tem ilustração (FAL.AI ou FaceSwap)
+                if (!empty($page['falai_illustration']) || !empty($page['faceswap_illustration'])) {
                     $completed_pages++;
                 } else {
                     // Get the base illustration from template matching gender and skin tone
@@ -402,8 +403,9 @@ function trinitykit_handle_check_falai_webhook($request) {
                         continue;
                     }
                     
-                    // Copy the base illustration to generated_illustration
-                    $field_key = "generated_book_pages_{$index}_generated_illustration";
+                    // Copy the base illustration to falai_illustration (FAL.AI tem prioridade)
+                    // Para páginas que pulam processamento, usamos FAL.AI como campo padrão
+                    $field_key = "generated_book_pages_{$index}_falai_illustration";
                     $update_result = update_field($field_key, $base_image['ID'], $order_id);
                     
                     if ($update_result) {
@@ -546,10 +548,6 @@ function trinitykit_handle_check_falai_webhook($request) {
                     // Save to the specific FAL.AI illustration field (campo específico do FAL.AI)
                     $falai_field_key = "generated_book_pages_{$index}_falai_illustration";
                     $update_result = update_field($falai_field_key, $attachment_id, $order_id);
-                    
-                    // Also update the general illustration field (campo geral para compatibilidade)
-                    $field_key = "generated_book_pages_{$index}_generated_illustration";
-                    update_field($field_key, $attachment_id, $order_id);
                     
                     $acf_time = microtime(true) - $acf_start;
                     

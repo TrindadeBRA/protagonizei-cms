@@ -22,6 +22,26 @@ add_action('rest_api_init', function () {
 });
 
 /**
+ * Get illustration from page with priority: FAL.AI > FaceSwap
+ * 
+ * @param array $page Page data from ACF
+ * @return mixed Illustration ID or null
+ */
+function get_page_illustration($page) {
+    // Prioridade 1: FAL.AI (preferência)
+    if (!empty($page['falai_illustration'])) {
+        return $page['falai_illustration'];
+    }
+    
+    // Prioridade 2: FaceSwap
+    if (!empty($page['faceswap_illustration'])) {
+        return $page['faceswap_illustration'];
+    }
+    
+    return null;
+}
+
+/**
  * Calculate text area coordinates based on position
  * 
  * @param int $image_width Width of the image
@@ -717,7 +737,8 @@ function trinitykit_handle_merge_assets_webhook($request) {
         // Process each generated page
         foreach ($generated_pages as $index => $page) {
             $text_content = $page['generated_text_content'] ?? '';
-            $illustration_id = $page['generated_illustration'] ?? null;
+            // Usar função helper para obter ilustração com prioridade (FAL.AI > FaceSwap)
+            $illustration_id = get_page_illustration($page);
             
             // Get font size: PRIORIDADE para o template (fonte da verdade), depois página gerada, depois 'medio'
             // Normalizar o valor: pode vir como string, array ou null

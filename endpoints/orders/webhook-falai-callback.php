@@ -8,7 +8,7 @@
  * 1. FAL.AI chama este endpoint com o payload contendo request_id e dados da imagem
  * 2. Buscamos qual pedido/página corresponde ao request_id
  * 3. Baixamos e salvamos a imagem no WordPress
- * 4. Atualizamos o campo ACF generated_illustration
+ * 4. Atualizamos o campo ACF falai_illustration (campo específico)
  * 5. Se todas as páginas estiverem completas, atualizamos o status do pedido
  * 
  * @package TrinityKit
@@ -117,14 +117,15 @@ function trinitykit_handle_falai_callback($request) {
         ), 200);
     }
     
-    // Verificar se já tem ilustração (evitar duplicação)
+    // Verificar se já tem ilustração FAL.AI (evitar duplicação)
     $generated_pages = get_field('generated_book_pages', $found_order);
     $page = $generated_pages[$found_page_index] ?? null;
     
-    if (!empty($page['generated_illustration'])) {
-        error_log("[TrinityKit FAL.AI CALLBACK] Página já tem ilustração. Ignorando callback.");
+    // Verificar campo específico do FAL.AI primeiro
+    if (!empty($page['falai_illustration'])) {
+        error_log("[TrinityKit FAL.AI CALLBACK] Página já tem ilustração FAL.AI. Ignorando callback.");
         return new WP_REST_Response(array(
-            'message' => 'Page already has illustration',
+            'message' => 'Page already has FAL.AI illustration',
             'order_id' => $found_order,
             'page_index' => $found_page_index
         ), 200);
@@ -183,18 +184,15 @@ function trinitykit_handle_falai_callback($request) {
     
     error_log("[TrinityKit FAL.AI CALLBACK] Imagem salva com sucesso: $saved_image_url");
     
-    // Atualizar o campo generated_illustration no ACF
+    // Salvar no campo específico do FAL.AI
     $attachment_id = attachment_url_to_postid($saved_image_url);
     if (!$attachment_id) {
         $attachment_id = 0;
     }
     
-    $field_key = "generated_book_pages_{$found_page_index}_generated_illustration";
-    $update_result = update_field($field_key, $attachment_id, $found_order);
-    
-    // Also save to the specific FAL.AI illustration field
+    // Salvar no campo específico do FAL.AI
     $falai_field_key = "generated_book_pages_{$found_page_index}_falai_illustration";
-    update_field($falai_field_key, $attachment_id, $found_order);
+    $update_result = update_field($falai_field_key, $attachment_id, $found_order);
     
     if (!$update_result) {
         error_log("[TrinityKit FAL.AI CALLBACK] ERRO: Falha ao atualizar campo ACF");
@@ -225,7 +223,11 @@ function trinitykit_handle_falai_callback($request) {
             continue;
         }
         
-        if (empty($pg['generated_illustration'])) {
+        // Verificar se tem ilustração (FAL.AI ou FaceSwap)
+        $has_illustration = !empty($pg['falai_illustration']) || 
+                           !empty($pg['faceswap_illustration']);
+        
+        if (!$has_illustration) {
             $all_complete = false;
         } else {
             $completed_count++;

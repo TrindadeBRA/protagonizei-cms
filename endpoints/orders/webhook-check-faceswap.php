@@ -285,7 +285,8 @@ function trinitykit_handle_check_faceswap_webhook($request) {
             
             // If page skips face swap, just copy the base illustration
             if ($skip_faceswap) {
-                if (!empty($page['generated_illustration'])) {
+                // Verificar se já tem ilustração (FAL.AI ou FaceSwap)
+                if (!empty($page['falai_illustration']) || !empty($page['faceswap_illustration'])) {
                     $completed_pages++;
                 } else {
                     // Get the base illustration from template matching gender and skin tone
@@ -331,8 +332,9 @@ function trinitykit_handle_check_faceswap_webhook($request) {
                         continue;
                     }
                     
-                    // Copy the base illustration to generated_illustration
-                    $field_key = "generated_book_pages_{$index}_generated_illustration";
+                    // Copy the base illustration to falai_illustration (FAL.AI tem prioridade)
+                    // Para páginas que pulam processamento, usamos FAL.AI como campo padrão
+                    $field_key = "generated_book_pages_{$index}_falai_illustration";
                     $update_result = update_field($field_key, $base_image['ID'], $order_id);
                     
                     if ($update_result) {
@@ -523,10 +525,6 @@ function trinitykit_handle_check_faceswap_webhook($request) {
                 $faceswap_field_key = "generated_book_pages_{$index}_faceswap_illustration";
                 error_log("[TrinityKit] Atualizando ACF - Field: $faceswap_field_key, Attachment ID: $attachment_id, Order ID: $order_id");
                 $update_result = update_field($faceswap_field_key, $attachment_id, $order_id);
-                
-                // Also update the general illustration field (campo geral para compatibilidade)
-                $field_key = "generated_book_pages_{$index}_generated_illustration";
-                update_field($field_key, $attachment_id, $order_id);
                 
                 error_log("[TrinityKit] Resultado do update_field: " . ($update_result ? 'SUCESSO' : 'FALHA') . " | Field: $field_key");
                 

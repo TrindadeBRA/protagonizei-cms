@@ -219,7 +219,9 @@ function trinitykit_handle_initiate_faceswap_webhook($request) {
                 
                 // Try to copy the base illustration if found
                 if (!empty($base_image) && !empty($base_image['ID'])) {
-                    $field_key = "generated_book_pages_{$index}_generated_illustration";
+                    // Copy the base illustration to falai_illustration (FAL.AI tem prioridade)
+                    // Para páginas que pulam processamento, usamos FAL.AI como campo padrão
+                    $field_key = "generated_book_pages_{$index}_falai_illustration";
                     $update_result = update_field($field_key, $base_image['ID'], $order_id);
                     
                     if ($update_result) {
