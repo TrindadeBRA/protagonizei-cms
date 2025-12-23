@@ -28,15 +28,16 @@ add_action('rest_api_init', function () {
  * Check face swap status with FaceSwap API
  * 
  * @param string $task_id ID da tarefa de face swap
- * @return array|false Array com status e dados ou false em caso de erro
+ * @return array|false Array com status e dados ou false em caso de erro (com 'error_response' no array)
  */
 function check_face_swap_status($task_id) {
     $api_key = get_option('trinitykitcms_faceswap_api_key');
     $base_url = get_option('trinitykitcms_faceswap_base_url');
 
     if (empty($api_key) || empty($base_url)) {
-        error_log("[TrinityKit] Configurações do FaceSwap não encontradas");
-        return false;
+        $error_msg = "[TrinityKit] Configurações do FaceSwap não encontradas";
+        error_log($error_msg);
+        return array('error' => true, 'error_response' => $error_msg);
     }
 
     $status_url = $base_url . '/status/' . $task_id;
@@ -52,32 +53,36 @@ function check_face_swap_status($task_id) {
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     
     $response = curl_exec($ch);
-    
-    if (curl_errno($ch)) {
-        error_log("[TrinityKit] Erro cURL na verificação de status: " . curl_error($ch));
-        curl_close($ch);
-        return false;
-    }
-    
+    $curl_error = curl_errno($ch) ? curl_error($ch) : null;
     $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
     
+    if ($curl_error) {
+        $error_msg = "[TrinityKit] Erro cURL na verificação de status: " . $curl_error;
+        error_log($error_msg);
+        return array('error' => true, 'error_response' => $error_msg, 'curl_error' => $curl_error);
+    }
+    
     if ($http_code !== 200) {
-        error_log("[TrinityKit] Erro na verificação de status ($http_code): " . $response);
+        $error_msg = "[TrinityKit] Erro na verificação de status ($http_code): " . $response;
+        error_log($error_msg);
         if ($http_code === 404 && is_string($response) && stripos($response, 'request does not exist') !== false) {
             return array(
                 'status' => 'NOT_FOUND',
                 'error' => $response,
+                'error_response' => $response,
+                'http_code' => $http_code
             );
         }
-        return false;
+        return array('error' => true, 'error_response' => $response, 'http_code' => $http_code);
     }
     
     $status_data = json_decode($response, true);
     
     if (json_last_error() !== JSON_ERROR_NONE) {
-        error_log("[TrinityKit] Resposta JSON inválida na verificação de status: " . json_last_error_msg());
-        return false;
+        $error_msg = "[TrinityKit] Resposta JSON inválida na verificação de status: " . json_last_error_msg() . " | Resposta: " . $response;
+        error_log($error_msg);
+        return array('error' => true, 'error_response' => $response, 'json_error' => json_last_error_msg());
     }
     
     return $status_data;
@@ -90,28 +95,38 @@ function check_face_swap_status($task_id) {
  * @param int $order_id ID do pedido
  * @param string $child_name Nome da criança
  * @param int $page_index Índice da página (0-based)
- * @return string|false URL da imagem salva ou false em caso de erro
+ * @return string|array URL da imagem salva ou array com 'error' => true e 'error_response' em caso de erro
  */
 function save_image_from_url_to_wordpress($image_url, $order_id = null, $child_name = '', $page_index = 0) {
     // Download the image
     $response = wp_remote_get($image_url);
     
     if (is_wp_error($response)) {
-        error_log("[TrinityKit] Erro ao baixar imagem: " . $response->get_error_message());
-        return false;
+        $error_message = $response->get_error_message();
+        $error_code = $response->get_error_code();
+        $error_data = $response->get_error_data();
+        $error_log_msg = "[TrinityKit] Erro ao baixar imagem: " . $error_message . " | Código: " . $error_code;
+        if ($error_data) {
+            $error_log_msg .= " | Dados: " . print_r($error_data, true);
+        }
+        error_log($error_log_msg);
+        return array('error' => true, 'error_response' => $error_message, 'error_code' => $error_code, 'error_data' => $error_data);
     }
     
     $http_code = wp_remote_retrieve_response_code($response);
     if ($http_code !== 200) {
-        error_log("[TrinityKit] Erro HTTP ao baixar imagem: $http_code");
-        return false;
+        $response_body = wp_remote_retrieve_body($response);
+        $error_log_msg = "[TrinityKit] Erro HTTP ao baixar imagem: $http_code | Resposta: " . $response_body;
+        error_log($error_log_msg);
+        return array('error' => true, 'error_response' => $response_body, 'http_code' => $http_code);
     }
     
     $image_data = wp_remote_retrieve_body($response);
     
     if (empty($image_data)) {
-        error_log("[TrinityKit] Dados da imagem vazios");
-        return false;
+        $error_log_msg = "[TrinityKit] Dados da imagem vazios | URL: " . $image_url;
+        error_log($error_log_msg);
+        return array('error' => true, 'error_response' => 'Dados da imagem vazios', 'url' => $image_url);
     }
     
     // Generate professional filename
@@ -132,8 +147,13 @@ function save_image_from_url_to_wordpress($image_url, $order_id = null, $child_n
     $file_saved = file_put_contents($file_path, $image_data);
     
     if ($file_saved === false) {
-        error_log("[TrinityKit] Erro ao salvar arquivo de imagem");
-        return false;
+        $last_error = error_get_last();
+        $error_log_msg = "[TrinityKit] Erro ao salvar arquivo de imagem | Caminho: " . $file_path;
+        if ($last_error) {
+            $error_log_msg .= " | Erro PHP: " . $last_error['message'];
+        }
+        error_log($error_log_msg);
+        return array('error' => true, 'error_response' => $last_error ? $last_error['message'] : 'Erro desconhecido ao salvar arquivo', 'file_path' => $file_path);
     }
     
     // Prepare professional data for WordPress insertion
@@ -160,8 +180,15 @@ function save_image_from_url_to_wordpress($image_url, $order_id = null, $child_n
     $attach_id = wp_insert_attachment($attachment, $file_path);
     
     if (is_wp_error($attach_id)) {
-        error_log("[TrinityKit] Erro ao inserir anexo: " . $attach_id->get_error_message());
-        return false;
+        $error_message = $attach_id->get_error_message();
+        $error_code = $attach_id->get_error_code();
+        $error_data = $attach_id->get_error_data();
+        $error_log_msg = "[TrinityKit] Erro ao inserir anexo: " . $error_message . " | Código: " . $error_code;
+        if ($error_data) {
+            $error_log_msg .= " | Dados: " . print_r($error_data, true);
+        }
+        error_log($error_log_msg);
+        return array('error' => true, 'error_response' => $error_message, 'error_code' => $error_code, 'error_data' => $error_data);
     }
     
     // Add professional metadata
@@ -330,9 +357,37 @@ function trinitykit_handle_check_faceswap_webhook($request) {
             usleep(1500000);
             $status_data = check_face_swap_status($task_id);
             
-            if ($status_data === false) {
-                error_log("[TrinityKit] Erro ao verificar status da página $index do pedido #$order_id");
+            if (is_array($status_data) && isset($status_data['error']) && $status_data['error'] === true) {
+                $error_response = $status_data['error_response'] ?? 'Resposta de erro não disponível';
+                $error_log_msg = "[TrinityKit] Erro ao verificar status da página $index do pedido #$order_id | Task ID: $task_id | Resposta: " . $error_response;
+                error_log($error_log_msg);
                 $failed_pages++;
+                
+                // Send Telegram notification with error response
+                $child_name = get_field('child_name', $order_id);
+                $order_url = get_permalink($order_id);
+                
+                $telegram_msg = "🚨 <b>ERRO NA VERIFICAÇÃO DE STATUS</b> 🚨\n\n";
+                $telegram_msg .= "❌ <b>Falha ao verificar status do Face Swap</b>\n";
+                $telegram_msg .= "👶 <b>Criança:</b> " . htmlspecialchars($child_name) . "\n";
+                $telegram_msg .= "📄 <b>Página:</b> " . ($index + 1) . "\n";
+                $telegram_msg .= "🔢 <b>Pedido:</b> #" . $order_id . "\n";
+                $telegram_msg .= "🆔 <b>Task ID:</b> " . htmlspecialchars($task_id) . "\n\n";
+                $telegram_msg .= "📋 <b>Resposta do Erro:</b>\n";
+                $telegram_msg .= "<code>" . htmlspecialchars(substr($error_response, 0, 500)) . "</code>\n\n";
+                $telegram_msg .= "🔗 <a href='" . esc_url($order_url) . "'>ABRIR PEDIDO</a>";
+                
+                try {
+                    $telegram = new TelegramService();
+                    if ($telegram->isConfigured()) {
+                        $date = new DateTime('now', new DateTimeZone('America/Sao_Paulo'));
+                        $telegram_msg .= "\n\n📅 " . $date->format('d/m/Y H:i:s');
+                        $telegram->sendTextMessage($telegram_msg);
+                    }
+                } catch (Exception $e) {
+                    error_log("[TrinityKit] Erro ao enviar notificação Telegram: " . $e->getMessage());
+                }
+                
                 continue;
             }
             if (is_array($status_data) && isset($status_data['status']) && $status_data['status'] === 'NOT_FOUND') {
@@ -342,17 +397,79 @@ function trinitykit_handle_check_faceswap_webhook($request) {
 
             if ($status_data['status'] === 'COMPLETED') {
                 // Process the image URL from the API response
-                $output_data = $status_data['output'];
+                $output_data = $status_data['output'] ?? null;
                 $image_url_to_download = $output_data['image_url'] ?? null;
                 
                 if (empty($image_url_to_download)) {
+                    $response_json = json_encode($status_data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
                     $error_msg = "URL da imagem não encontrada na resposta da API para página $index do pedido #$order_id";
-                    error_log("[TrinityKit] $error_msg");
+                    $error_log_msg = "[TrinityKit] $error_msg | Resposta completa: " . $response_json;
+                    error_log($error_log_msg);
                     $failed_pages++;
+                    
+                    // Send Telegram notification
+                    $child_name = get_field('child_name', $order_id);
+                    $order_url = get_permalink($order_id);
+                    
+                    $telegram_msg = "🚨 <b>ERRO: URL DA IMAGEM NÃO ENCONTRADA</b> 🚨\n\n";
+                    $telegram_msg .= "❌ <b>URL da imagem ausente na resposta</b>\n";
+                    $telegram_msg .= "👶 <b>Criança:</b> " . htmlspecialchars($child_name) . "\n";
+                    $telegram_msg .= "📄 <b>Página:</b> " . ($index + 1) . "\n";
+                    $telegram_msg .= "🔢 <b>Pedido:</b> #" . $order_id . "\n\n";
+                    $telegram_msg .= "📋 <b>Resposta da API:</b>\n";
+                    $telegram_msg .= "<code>" . htmlspecialchars(substr($response_json, 0, 1000)) . "</code>\n\n";
+                    $telegram_msg .= "🔗 <a href='" . esc_url($order_url) . "'>ABRIR PEDIDO</a>";
+                    
+                    try {
+                        $telegram = new TelegramService();
+                        if ($telegram->isConfigured()) {
+                            $date = new DateTime('now', new DateTimeZone('America/Sao_Paulo'));
+                            $telegram_msg .= "\n\n📅 " . $date->format('d/m/Y H:i:s');
+                            $telegram->sendTextMessage($telegram_msg);
+                        }
+                    } catch (Exception $e) {
+                        error_log("[TrinityKit] Erro ao enviar notificação Telegram: " . $e->getMessage());
+                    }
+                    
                     continue;
                 }
                 
                 $saved_image_url = save_image_from_url_to_wordpress($image_url_to_download, $order_id, $child_name, $index);
+                
+                if (is_array($saved_image_url) && isset($saved_image_url['error']) && $saved_image_url['error'] === true) {
+                    // Error occurred in save_image_from_url_to_wordpress
+                    $error_response = $saved_image_url['error_response'] ?? 'Resposta de erro não disponível';
+                    $error_log_msg = "[TrinityKit] Erro ao salvar imagem processada da página $index do pedido #$order_id | Resposta: " . $error_response;
+                    error_log($error_log_msg);
+                    $failed_pages++;
+                    
+                    // Send notification for save error
+                    $child_name = get_field('child_name', $order_id);
+                    $order_url = get_permalink($order_id);
+                    
+                    $telegram_msg = "🚨 <b>ERRO NO PROCESSAMENTO</b> 🚨\n\n";
+                    $telegram_msg .= "💾 <b>Falha ao salvar imagem</b>\n";
+                    $telegram_msg .= "👶 <b>Criança:</b> " . htmlspecialchars($child_name) . "\n";
+                    $telegram_msg .= "📄 <b>Página:</b> " . ($index + 1) . "\n";
+                    $telegram_msg .= "🔢 <b>Pedido:</b> #" . $order_id . "\n";
+                    $telegram_msg .= "🔗 <b>URL:</b> " . htmlspecialchars($image_url_to_download) . "\n\n";
+                    $telegram_msg .= "📋 <b>Resposta do Erro:</b>\n";
+                    $telegram_msg .= "<code>" . htmlspecialchars(substr($error_response, 0, 500)) . "</code>\n\n";
+                    $telegram_msg .= "⚠️ <b>VERIFICAR MANUALMENTE</b>\n";
+                    $telegram_msg .= "🔗 <a href='" . esc_url($order_url) . "'>ABRIR PEDIDO</a>";
+                    
+                    try {
+                        $telegram = new TelegramService();
+                        if ($telegram->isConfigured()) {
+                            $date = new DateTime('now', new DateTimeZone('America/Sao_Paulo'));
+                            $telegram_msg .= "\n\n📅 " . $date->format('d/m/Y H:i:s');
+                            $telegram->sendTextMessage($telegram_msg);
+                        }
+                    } catch (Exception $e) {
+                        error_log("[TrinityKit] Erro ao enviar notificação Telegram: " . $e->getMessage());
+                    }
+                    continue;
+                }
                 
                 if ($saved_image_url) {
                     // Update the page with the new illustration
@@ -395,37 +512,12 @@ function trinitykit_handle_check_faceswap_webhook($request) {
                             error_log("[TrinityKit] Erro ao enviar notificação Telegram: " . $e->getMessage());
                         }
                     }
-                } else {
-                    $error_msg = "Erro ao salvar imagem processada da página $index do pedido #$order_id";
-                    error_log("[TrinityKit] $error_msg");
-                    $failed_pages++;
-                    
-                    // Send notification for save error
-                    $child_name = get_field('child_name', $order_id);
-                    $order_url = get_permalink($order_id);
-                    
-                    $telegram_msg = "🚨 <b>ERRO NO PROCESSAMENTO</b> 🚨\n\n";
-                    $telegram_msg .= "💾 <b>Falha ao salvar imagem</b>\n";
-                    $telegram_msg .= "👶 <b>Criança:</b> " . htmlspecialchars($child_name) . "\n";
-                    $telegram_msg .= "📄 <b>Página:</b> " . ($index + 1) . "\n";
-                    $telegram_msg .= "🔢 <b>Pedido:</b> #" . $order_id . "\n\n";
-                    $telegram_msg .= "⚠️ <b>VERIFICAR MANUALMENTE</b>\n";
-                    $telegram_msg .= "🔗 <a href='" . esc_url($order_url) . "'>ABRIR PEDIDO</a>";
-                    
-                    try {
-                        $telegram = new TelegramService();
-                        if ($telegram->isConfigured()) {
-                            $date = new DateTime('now', new DateTimeZone('America/Sao_Paulo'));
-                            $telegram_msg .= "\n\n📅 " . $date->format('d/m/Y H:i:s');
-                            $telegram->sendTextMessage($telegram_msg);
-                        }
-                    } catch (Exception $e) {
-                        error_log("[TrinityKit] Erro ao enviar notificação Telegram: " . $e->getMessage());
-                    }
                 }
             } elseif ($status_data['status'] === 'FAILED') {
+                $response_json = json_encode($status_data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
                 $error_msg = "Face swap falhou para página $index do pedido #$order_id (Task ID: $task_id)";
-                error_log("[TrinityKit] $error_msg");
+                $error_log_msg = "[TrinityKit] $error_msg | Resposta completa: " . $response_json;
+                error_log($error_log_msg);
                 $failed_pages++;
                 
                 // Send detailed Telegram notification with manual intervention request
@@ -436,7 +528,10 @@ function trinitykit_handle_check_faceswap_webhook($request) {
                 $telegram_msg .= "❌ <b>Erro na geração de ativo</b>\n";
                 $telegram_msg .= "👶 <b>Criança:</b> " . htmlspecialchars($child_name) . "\n";
                 $telegram_msg .= "📄 <b>Página:</b> " . ($index + 1) . "\n";
-                $telegram_msg .= "🔢 <b>Pedido:</b> #" . $order_id . "\n\n";
+                $telegram_msg .= "🔢 <b>Pedido:</b> #" . $order_id . "\n";
+                $telegram_msg .= "🆔 <b>Task ID:</b> " . htmlspecialchars($task_id) . "\n\n";
+                $telegram_msg .= "📋 <b>Resposta da API:</b>\n";
+                $telegram_msg .= "<code>" . htmlspecialchars(substr($response_json, 0, 1000)) . "</code>\n\n";
                 $telegram_msg .= "🔗 <a href='" . esc_url($order_url) . "'>ABRIR PEDIDO PARA CORREÇÃO</a>";
                 
                 try {
