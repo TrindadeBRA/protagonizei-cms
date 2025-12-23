@@ -1801,7 +1801,7 @@
         },
         "responses": {
           "200": {
-            "description": "Callback processado com sucesso",
+            "description": "Callback processado com sucesso (sempre retorna 200, mesmo quando pedido não encontrado)",
             "content": {
               "application/json": {
                 "schema": {
@@ -1854,6 +1854,24 @@
                           "example": 2
                         }
                       }
+                    },
+                    {
+                      "type": "object",
+                      "description": "Pedido não encontrado (mas retorna 200)",
+                      "properties": {
+                        "error": {
+                          "type": "string",
+                          "example": "Order not found for request_id"
+                        },
+                        "request_id": {
+                          "type": "string",
+                          "example": "abc123def456"
+                        },
+                        "message": {
+                          "type": "string",
+                          "example": "Request received but order not found"
+                        }
+                      }
                     }
                   ]
                 }
@@ -1898,26 +1916,6 @@
                       }
                     }
                   ]
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Pedido não encontrado",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string",
-                      "example": "Order not found for request_id"
-                    },
-                    "request_id": {
-                      "type": "string",
-                      "example": "abc123def456"
-                    }
-                  }
                 }
               }
             }

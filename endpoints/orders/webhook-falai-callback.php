@@ -38,9 +38,20 @@ add_action('rest_api_init', function () {
  * @return WP_REST_Response Response object
  */
 function trinitykit_handle_falai_callback($request) {
-    error_log("[TrinityKit FAL.AI CALLBACK] ========== INÍCIO DO CALLBACK ==========");
+    // Log imediato ao entrar no endpoint (antes de qualquer processamento)
+    $remote_addr = $_SERVER['REMOTE_ADDR'] ?? 'N/A';
+    $user_agent = $_SERVER['HTTP_USER_AGENT'] ?? 'N/A';
+    $content_length = $_SERVER['CONTENT_LENGTH'] ?? 'N/A';
+    $raw_body = $request->get_body();
+    $raw_body_truncated = strlen($raw_body) > 1000 ? substr($raw_body, 0, 1000) . '... [TRUNCATED]' : $raw_body;
     
-    $body = $request->get_body();
+    error_log("[TrinityKit FAL.AI CALLBACK] ========== INÍCIO DO CALLBACK ==========");
+    error_log("[TrinityKit FAL.AI CALLBACK] REMOTE_ADDR: $remote_addr");
+    error_log("[TrinityKit FAL.AI CALLBACK] HTTP_USER_AGENT: $user_agent");
+    error_log("[TrinityKit FAL.AI CALLBACK] CONTENT_LENGTH: $content_length");
+    error_log("[TrinityKit FAL.AI CALLBACK] RAW_BODY (truncado): $raw_body_truncated");
+    
+    $body = $raw_body;
     $payload = json_decode($body, true);
     
     if (json_last_error() !== JSON_ERROR_NONE) {
@@ -98,10 +109,12 @@ function trinitykit_handle_falai_callback($request) {
     
     if (!$found_order) {
         error_log("[TrinityKit FAL.AI CALLBACK] ERRO: Pedido não encontrado para request_id: $request_id");
+        // Sempre retornar 200, mesmo quando pedido não é encontrado
         return new WP_REST_Response(array(
             'error' => 'Order not found for request_id',
-            'request_id' => $request_id
-        ), 404);
+            'request_id' => $request_id,
+            'message' => 'Request received but order not found'
+        ), 200);
     }
     
     // Verificar se já tem ilustração (evitar duplicação)
