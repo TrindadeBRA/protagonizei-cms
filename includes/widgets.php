@@ -540,16 +540,33 @@ function protagonizei_dashboard_stats_widget() {
     $total_coupons = $coupons_query->found_posts;
     wp_reset_postdata();
 
-    // Preparar dados para o gráfico
+    // Mapeamento de cores semânticas para cada status (mesmas cores dos badges)
+    $status_chart_colors = array(
+        'created' => '#9CA3AF',                    // gray-400 (neutro)
+        'awaiting_payment' => '#F59E0B',           // amber-500 (atenção)
+        'paid' => '#10B981',                       // green-500 (sucesso - pago)
+        'thanked' => '#3B82F6',                    // blue-500 (comunicação)
+        'created_assets_text' => '#8B5CF6',        // purple-500 (processamento)
+        'created_assets_illustration' => '#6366F1', // indigo-500 (processamento)
+        'created_assets_merge' => '#EC4899',       // pink-500 (processamento)
+        'ready_for_delivery' => '#14B8A6',         // teal-500 (pronto)
+        'delivered' => '#059669',                  // emerald-600 (entregue - verde esmeralda)
+        'completed' => '#15803D',                  // green-700 (concluído - verde escuro)
+        'canceled' => '#EF4444',                   // red-500 (cancelado - vermelho)
+        'error' => '#DC2626'                       // red-600 (erro - vermelho escuro)
+    );
+    
+    // Preparar dados para o gráfico com cores semânticas
     $chart_labels = array();
     $chart_data = array();
-    $chart_colors = array('#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#6B7280', '#14B8A6', '#F97316', '#84CC16', '#6366F1');
-    $color_index = 0;
+    $chart_colors = array();
     
     foreach ($status_counts as $status => $count) {
         if ($count > 0) {
             $chart_labels[] = $status_labels[$status];
             $chart_data[] = $count;
+            // Usar cor específica do status ou fallback para cinza
+            $chart_colors[] = isset($status_chart_colors[$status]) ? $status_chart_colors[$status] : '#9CA3AF';
         }
     }
 
@@ -625,16 +642,16 @@ function protagonizei_dashboard_stats_widget() {
         <!-- Legenda -->
         <div class="mt-3 sm:mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
             <?php 
-            $color_index = 0;
             foreach ($status_counts as $status => $count):
                 if ($count > 0):
+                    // Usar cor específica do status para a legenda (mesma cor do gráfico)
+                    $legend_color = isset($status_chart_colors[$status]) ? $status_chart_colors[$status] : '#9CA3AF';
             ?>
                 <div class="flex items-center truncate">
-                    <div class="w-3 h-3 rounded-full mr-2 flex-shrink-0" style="background-color: <?php echo $chart_colors[$color_index % count($chart_colors)]; ?>"></div>
+                    <div class="w-3 h-3 rounded-full mr-2 flex-shrink-0" style="background-color: <?php echo esc_attr($legend_color); ?>"></div>
                     <span class="text-gray-700 truncate"><?php echo esc_html($status_labels[$status]); ?> (<?php echo $count; ?>)</span>
                 </div>
             <?php 
-                $color_index++;
                 endif;
             endforeach; 
             ?>
@@ -652,7 +669,7 @@ function protagonizei_dashboard_stats_widget() {
                         labels: <?php echo json_encode($chart_labels); ?>,
                         datasets: [{
                             data: <?php echo json_encode($chart_data); ?>,
-                            backgroundColor: <?php echo json_encode(array_slice($chart_colors, 0, count($chart_data))); ?>,
+                            backgroundColor: <?php echo json_encode($chart_colors); ?>,
                             borderWidth: 2,
                             borderColor: '#ffffff'
                         }]
