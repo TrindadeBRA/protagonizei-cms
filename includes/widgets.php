@@ -938,6 +938,16 @@ function protagonizei_get_deepseek_balance() {
  * Widget do Dashboard: Saldos das APIs
  */
 function protagonizei_dashboard_api_balances_widget() {
+    // Processar atualização manual ANTES de qualquer output
+    if (isset($_POST['refresh_balances']) && check_admin_referer('protagonizei_refresh_balances', 'protagonizei_balances_nonce')) {
+        // Limpar cache do Deepseek
+        delete_transient('protagonizei_deepseek_balance');
+        
+        // Redirecionar para evitar reenvio do formulário
+        wp_redirect(admin_url('index.php'));
+        exit;
+    }
+    
     // Buscar saldo do Deepseek
     $deepseek_balance = protagonizei_get_deepseek_balance();
     
@@ -1010,17 +1020,7 @@ function protagonizei_dashboard_api_balances_widget() {
             </button>
         </form>
     </div>
-
     <?php
-    // Processar atualização manual
-    if (isset($_POST['refresh_balances']) && check_admin_referer('protagonizei_refresh_balances', 'protagonizei_balances_nonce')) {
-        // Limpar cache do Deepseek
-        delete_transient('protagonizei_deepseek_balance');
-        
-        // Redirecionar para evitar reenvio do formulário
-        wp_redirect(admin_url('index.php'));
-        exit;
-    }
 }
 
 /**
