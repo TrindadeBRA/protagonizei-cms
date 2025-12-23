@@ -750,7 +750,7 @@ function trinitykit_handle_merge_assets_webhook($request) {
             // Se for array, pegar o primeiro valor ou o valor 'value'
             if (is_array($raw_font_size)) {
                 $font_size = $raw_font_size['value'] ?? $raw_font_size[0] ?? 'medio';
-            } elseif (is_string($raw_font_size) && !empty(trim($raw_font_size))) {
+            } else if (is_string($raw_font_size) && !empty(trim($raw_font_size))) {
                 $font_size = trim($raw_font_size);
             } else {
                 $font_size = 'medio';
