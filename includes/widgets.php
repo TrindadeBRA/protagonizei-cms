@@ -146,20 +146,20 @@ class Protagonizei_Recent_Orders_Widget extends WP_Widget {
                 'error' => 'Erro'
             );
 
-            // Cores por status
+            // Cores por status (cores semânticas alinhadas com o significado)
             $status_colors = array(
                 'created' => 'bg-gray-100 text-gray-800',
-                'awaiting_payment' => 'bg-yellow-100 text-yellow-800',
+                'awaiting_payment' => 'bg-amber-100 text-amber-800',
                 'paid' => 'bg-green-100 text-green-800',
                 'thanked' => 'bg-blue-100 text-blue-800',
                 'created_assets_text' => 'bg-purple-100 text-purple-800',
                 'created_assets_illustration' => 'bg-indigo-100 text-indigo-800',
                 'created_assets_merge' => 'bg-pink-100 text-pink-800',
                 'ready_for_delivery' => 'bg-teal-100 text-teal-800',
-                'delivered' => 'bg-emerald-100 text-emerald-800',
-                'completed' => 'bg-green-200 text-green-900',
-                'canceled' => 'bg-red-100 text-red-800',
-                'error' => 'bg-red-100 text-red-800'
+                'delivered' => 'bg-emerald-200 text-emerald-900',
+                'completed' => 'bg-green-700 text-white',
+                'canceled' => 'bg-red-500 text-white',
+                'error' => 'bg-red-600 text-white'
             );
 
             echo '<div class="space-y-3">';
@@ -396,20 +396,20 @@ function protagonizei_dashboard_recent_orders_widget() {
             'error' => 'Erro'
         );
 
-        // Cores por status
+        // Cores por status (cores semânticas alinhadas com o significado)
         $status_colors = array(
             'created' => 'bg-gray-100 text-gray-800',
-            'awaiting_payment' => 'bg-yellow-100 text-yellow-800',
+            'awaiting_payment' => 'bg-amber-100 text-amber-800',
             'paid' => 'bg-green-100 text-green-800',
             'thanked' => 'bg-blue-100 text-blue-800',
             'created_assets_text' => 'bg-purple-100 text-purple-800',
             'created_assets_illustration' => 'bg-indigo-100 text-indigo-800',
             'created_assets_merge' => 'bg-pink-100 text-pink-800',
             'ready_for_delivery' => 'bg-teal-100 text-teal-800',
-            'delivered' => 'bg-emerald-100 text-emerald-800',
-            'completed' => 'bg-green-200 text-green-900',
-            'canceled' => 'bg-red-100 text-red-800',
-            'error' => 'bg-red-100 text-red-800'
+            'delivered' => 'bg-emerald-200 text-emerald-900',
+            'completed' => 'bg-green-700 text-white',
+            'canceled' => 'bg-red-500 text-white',
+            'error' => 'bg-red-600 text-white'
         );
 
         echo '<div class="space-y-2 sm:space-y-3">';
