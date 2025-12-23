@@ -546,6 +546,11 @@ function trinitykit_handle_check_falai_webhook($request) {
                     // Update only the illustration of this specific page using ACF
                     $field_key = "generated_book_pages_{$index}_generated_illustration";
                     $update_result = update_field($field_key, $attachment_id, $order_id);
+                    
+                    // Also save to the specific FAL.AI illustration field
+                    $falai_field_key = "generated_book_pages_{$index}_falai_illustration";
+                    update_field($falai_field_key, $attachment_id, $order_id);
+                    
                     $acf_time = microtime(true) - $acf_start;
                     
                     if ($update_result) {

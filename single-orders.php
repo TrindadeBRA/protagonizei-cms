@@ -597,39 +597,110 @@ $status_colors = array(
                                             </div>
                                         <?php endif; ?>
                                         
-                                        <?php if (isset($page['generated_illustration']) && $page['generated_illustration']): ?>
-                                            <div class="mb-3">
-                                                <p class="text-sm text-gray-600 mb-1">Ilustração:</p>
+                                        <?php 
+                                        // Verificar se há ilustrações específicas de cada API
+                                        $has_faceswap_illustration = isset($page['faceswap_illustration']) && !empty($page['faceswap_illustration']);
+                                        $has_falai_illustration = isset($page['falai_illustration']) && !empty($page['falai_illustration']);
+                                        $has_general_illustration = isset($page['generated_illustration']) && !empty($page['generated_illustration']);
+                                        
+                                        // Mostrar ilustrações quando disponíveis
+                                        if ($has_faceswap_illustration || $has_falai_illustration || $has_general_illustration): ?>
+                                            <div class="mb-3 space-y-3">
+                                                <p class="text-sm text-gray-600 mb-2 font-medium">Ilustrações Geradas:</p>
+                                                
                                                 <?php 
-                                                $illustration_url = '';
-                                                if (is_array($page['generated_illustration'])) {
-                                                    $illustration_url = $page['generated_illustration']['sizes']['medium'] ?? $page['generated_illustration']['url'] ?? '';
-                                                } elseif (is_numeric($page['generated_illustration'])) {
-                                                    $illustration_url = wp_get_attachment_image_url($page['generated_illustration'], 'medium');
-                                                }
-                                                ?>
-                                                <?php if ($illustration_url): ?>
-                                                    <?php 
-                                                    // Obter URL em tamanho full
-                                                    $full_illustration_url = '';
-                                                    if (is_array($page['generated_illustration'])) {
-                                                        $full_illustration_url = $page['generated_illustration']['url'] ?? '';
-                                                    } elseif (is_numeric($page['generated_illustration'])) {
-                                                        $full_illustration_url = wp_get_attachment_image_url($page['generated_illustration'], 'full');
+                                                // Mostrar ilustração do FaceSwap se disponível
+                                                if ($has_faceswap_illustration): 
+                                                    $faceswap_thumb = '';
+                                                    $faceswap_full = '';
+                                                    if (is_array($page['faceswap_illustration'])) {
+                                                        $faceswap_thumb = $page['faceswap_illustration']['sizes']['medium'] ?? $page['faceswap_illustration']['url'] ?? '';
+                                                        $faceswap_full = $page['faceswap_illustration']['url'] ?? '';
+                                                    } elseif (is_numeric($page['faceswap_illustration'])) {
+                                                        $faceswap_thumb = wp_get_attachment_image_url($page['faceswap_illustration'], 'medium');
+                                                        $faceswap_full = wp_get_attachment_image_url($page['faceswap_illustration'], 'full');
                                                     }
-                                                    ?>
-                                                    <a href="<?php echo esc_url($full_illustration_url ?: $illustration_url); ?>" target="_blank" class="block hover:opacity-80 transition-opacity" title="Clique para ver em tamanho original">
-                                                        <img src="<?php echo esc_url($illustration_url); ?>" 
-                                                             alt="Ilustração da Página <?php echo $index + 1; ?>" 
-                                                             class="clickable-image w-full h-32 object-cover rounded border hover:border-purple-300">
-                                                    </a>
-                                                    <p class="text-xs text-gray-400 mt-1">
-                                                        <i class="fas fa-external-link-alt mr-1"></i>
-                                                        Clique para ver em tamanho original
-                                                    </p>
-                                                <?php else: ?>
-                                                    <div class="w-full h-32 bg-gray-100 rounded border flex items-center justify-center">
-                                                        <span class="text-gray-400 text-sm">Ilustração não disponível</span>
+                                                ?>
+                                                    <div class="border border-blue-200 rounded-lg p-3 bg-blue-50">
+                                                        <p class="text-xs font-medium text-blue-800 mb-2 flex items-center">
+                                                            <i class="fas fa-sync-alt mr-2"></i>
+                                                            Ilustração FaceSwap
+                                                        </p>
+                                                        <?php if ($faceswap_thumb): ?>
+                                                            <a href="<?php echo esc_url($faceswap_full ?: $faceswap_thumb); ?>" target="_blank" class="block hover:opacity-80 transition-opacity" title="Clique para ver em tamanho original">
+                                                                <img src="<?php echo esc_url($faceswap_thumb); ?>" 
+                                                                     alt="Ilustração FaceSwap - Página <?php echo $index + 1; ?>" 
+                                                                     class="clickable-image w-full h-32 object-cover rounded border-2 border-blue-300 hover:border-blue-400">
+                                                            </a>
+                                                            <p class="text-xs text-blue-600 mt-1">
+                                                                <i class="fas fa-external-link-alt mr-1"></i>
+                                                                Clique para ver em tamanho original
+                                                            </p>
+                                                        <?php endif; ?>
+                                                    </div>
+                                                <?php endif; ?>
+                                                
+                                                <?php 
+                                                // Mostrar ilustração do FAL.AI se disponível
+                                                if ($has_falai_illustration): 
+                                                    $falai_thumb = '';
+                                                    $falai_full = '';
+                                                    if (is_array($page['falai_illustration'])) {
+                                                        $falai_thumb = $page['falai_illustration']['sizes']['medium'] ?? $page['falai_illustration']['url'] ?? '';
+                                                        $falai_full = $page['falai_illustration']['url'] ?? '';
+                                                    } elseif (is_numeric($page['falai_illustration'])) {
+                                                        $falai_thumb = wp_get_attachment_image_url($page['falai_illustration'], 'medium');
+                                                        $falai_full = wp_get_attachment_image_url($page['falai_illustration'], 'full');
+                                                    }
+                                                ?>
+                                                    <div class="border border-purple-200 rounded-lg p-3 bg-purple-50">
+                                                        <p class="text-xs font-medium text-purple-800 mb-2 flex items-center">
+                                                            <i class="fas fa-magic mr-2"></i>
+                                                            Ilustração FAL.AI
+                                                        </p>
+                                                        <?php if ($falai_thumb): ?>
+                                                            <a href="<?php echo esc_url($falai_full ?: $falai_thumb); ?>" target="_blank" class="block hover:opacity-80 transition-opacity" title="Clique para ver em tamanho original">
+                                                                <img src="<?php echo esc_url($falai_thumb); ?>" 
+                                                                     alt="Ilustração FAL.AI - Página <?php echo $index + 1; ?>" 
+                                                                     class="clickable-image w-full h-32 object-cover rounded border-2 border-purple-300 hover:border-purple-400">
+                                                            </a>
+                                                            <p class="text-xs text-purple-600 mt-1">
+                                                                <i class="fas fa-external-link-alt mr-1"></i>
+                                                                Clique para ver em tamanho original
+                                                            </p>
+                                                        <?php endif; ?>
+                                                    </div>
+                                                <?php endif; ?>
+                                                
+                                                <?php 
+                                                // Mostrar ilustração geral apenas se não houver ilustrações específicas
+                                                if (!$has_faceswap_illustration && !$has_falai_illustration && $has_general_illustration): 
+                                                    $general_thumb = '';
+                                                    $general_full = '';
+                                                    if (is_array($page['generated_illustration'])) {
+                                                        $general_thumb = $page['generated_illustration']['sizes']['medium'] ?? $page['generated_illustration']['url'] ?? '';
+                                                        $general_full = $page['generated_illustration']['url'] ?? '';
+                                                    } elseif (is_numeric($page['generated_illustration'])) {
+                                                        $general_thumb = wp_get_attachment_image_url($page['generated_illustration'], 'medium');
+                                                        $general_full = wp_get_attachment_image_url($page['generated_illustration'], 'full');
+                                                    }
+                                                ?>
+                                                    <div class="border border-gray-200 rounded-lg p-3 bg-gray-50">
+                                                        <p class="text-xs font-medium text-gray-700 mb-2 flex items-center">
+                                                            <i class="fas fa-image mr-2"></i>
+                                                            Ilustração Processada
+                                                        </p>
+                                                        <?php if ($general_thumb): ?>
+                                                            <a href="<?php echo esc_url($general_full ?: $general_thumb); ?>" target="_blank" class="block hover:opacity-80 transition-opacity" title="Clique para ver em tamanho original">
+                                                                <img src="<?php echo esc_url($general_thumb); ?>" 
+                                                                     alt="Ilustração da Página <?php echo $index + 1; ?>" 
+                                                                     class="clickable-image w-full h-32 object-cover rounded border hover:border-purple-300">
+                                                            </a>
+                                                            <p class="text-xs text-gray-400 mt-1">
+                                                                <i class="fas fa-external-link-alt mr-1"></i>
+                                                                Clique para ver em tamanho original
+                                                            </p>
+                                                        <?php endif; ?>
                                                     </div>
                                                 <?php endif; ?>
                                             </div>

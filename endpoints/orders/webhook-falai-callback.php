@@ -179,6 +179,10 @@ function trinitykit_handle_falai_callback($request) {
     $field_key = "generated_book_pages_{$found_page_index}_generated_illustration";
     $update_result = update_field($field_key, $attachment_id, $found_order);
     
+    // Also save to the specific FAL.AI illustration field
+    $falai_field_key = "generated_book_pages_{$found_page_index}_falai_illustration";
+    update_field($falai_field_key, $attachment_id, $found_order);
+    
     if (!$update_result) {
         error_log("[TrinityKit FAL.AI CALLBACK] ERRO: Falha ao atualizar campo ACF");
         send_telegram_error_notification_callback(

@@ -482,6 +482,10 @@ function trinitykit_handle_check_faceswap_webhook($request) {
                     $field_key = "generated_book_pages_{$index}_generated_illustration";
                     $update_result = update_field($field_key, $attachment_id, $order_id);
                     
+                    // Also save to the specific FaceSwap illustration field
+                    $faceswap_field_key = "generated_book_pages_{$index}_faceswap_illustration";
+                    update_field($faceswap_field_key, $attachment_id, $order_id);
+                    
                     if ($update_result) {
                         $completed_pages++;
                     } else {
