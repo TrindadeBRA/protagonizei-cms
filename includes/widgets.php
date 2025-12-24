@@ -307,30 +307,32 @@ add_action('admin_head', 'protagonizei_widget_styles');
  * Widget do Dashboard: Últimos Contatos
  */
 function protagonizei_dashboard_recent_contacts_widget() {
-    // Calcular contatos das últimas 24h
-    $last_24h_start = date('Y-m-d H:i:s', strtotime('-24 hours'));
+    // Calcular contatos do dia atual (00:00:00 às 23:59:59)
+    $today_start = date('Y-m-d 00:00:00');
+    $today_end = date('Y-m-d 23:59:59');
     
-    $contacts_24h_query = new WP_Query(array(
+    $contacts_today_query = new WP_Query(array(
         'post_type' => 'contact_form',
         'posts_per_page' => -1,
         'post_status' => 'publish',
         'date_query' => array(
             array(
-                'after' => $last_24h_start,
+                'after' => $today_start,
+                'before' => $today_end,
                 'inclusive' => true
             )
         )
     ));
     
-    $contacts_24h_count = $contacts_24h_query->found_posts;
+    $contacts_today_count = $contacts_today_query->found_posts;
     wp_reset_postdata();
     
     // Card de contador
     echo '<div class="bg-blue-50 rounded-lg p-3 sm:p-4 border border-blue-200 mb-4">';
     echo '<div class="flex items-center justify-between">';
     echo '<div class="flex-1 min-w-0">';
-    echo '<p class="text-xs font-medium text-blue-600 uppercase truncate">Contatos (24h)</p>';
-    echo '<p class="text-xl sm:text-2xl font-bold text-blue-900 mt-1 break-words">' . number_format($contacts_24h_count) . '</p>';
+    echo '<p class="text-xs font-medium text-blue-600 uppercase truncate">Contatos (Hoje)</p>';
+    echo '<p class="text-xl sm:text-2xl font-bold text-blue-900 mt-1 break-words">' . number_format($contacts_today_count) . '</p>';
     echo '</div>';
     echo '<div class="w-8 h-8 sm:w-10 sm:h-10 bg-blue-500 rounded-lg flex items-center justify-center flex-shrink-0 ml-2">';
     echo '<svg class="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">';
@@ -402,30 +404,32 @@ function protagonizei_dashboard_recent_contacts_widget() {
  * Widget do Dashboard: Pedidos Recebidos
  */
 function protagonizei_dashboard_recent_orders_widget() {
-    // Calcular pedidos das últimas 24h
-    $last_24h_start = date('Y-m-d H:i:s', strtotime('-24 hours'));
+    // Calcular pedidos do dia atual (00:00:00 às 23:59:59)
+    $today_start = date('Y-m-d 00:00:00');
+    $today_end = date('Y-m-d 23:59:59');
     
-    $orders_24h_query = new WP_Query(array(
+    $orders_today_query = new WP_Query(array(
         'post_type' => 'orders',
         'posts_per_page' => -1,
         'post_status' => 'publish',
         'date_query' => array(
             array(
-                'after' => $last_24h_start,
+                'after' => $today_start,
+                'before' => $today_end,
                 'inclusive' => true
             )
         )
     ));
     
-    $orders_24h_count = $orders_24h_query->found_posts;
+    $orders_today_count = $orders_today_query->found_posts;
     wp_reset_postdata();
     
     // Card de contador
     echo '<div class="bg-purple-50 rounded-lg p-3 sm:p-4 border border-purple-200 mb-4">';
     echo '<div class="flex items-center justify-between">';
     echo '<div class="flex-1 min-w-0">';
-    echo '<p class="text-xs font-medium text-purple-600 uppercase truncate">Pedidos (24h)</p>';
-    echo '<p class="text-xl sm:text-2xl font-bold text-purple-900 mt-1 break-words">' . number_format($orders_24h_count) . '</p>';
+    echo '<p class="text-xs font-medium text-purple-600 uppercase truncate">Pedidos (Hoje)</p>';
+    echo '<p class="text-xl sm:text-2xl font-bold text-purple-900 mt-1 break-words">' . number_format($orders_today_count) . '</p>';
     echo '</div>';
     echo '<div class="w-8 h-8 sm:w-10 sm:h-10 bg-purple-500 rounded-lg flex items-center justify-center flex-shrink-0 ml-2">';
     echo '<svg class="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">';
