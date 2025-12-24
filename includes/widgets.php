@@ -569,19 +569,15 @@ function protagonizei_dashboard_stats_widget() {
         wp_reset_postdata();
     }
     
-    // Calcular sem pagamentos + cancelados das últimas 24h (00:00:00 às 23:59:59)
-    $yesterday_start = date('Y-m-d 00:00:00', strtotime('-1 day'));
-    $yesterday_end = date('Y-m-d 23:59:59', strtotime('-1 day'));
-    $today_end_24h = date('Y-m-d 23:59:59');
-    
+    // Calcular sem pagamentos + cancelados do dia atual (00:00:00 às 23:59:59)
     $no_payment_canceled_query = new WP_Query(array(
         'post_type' => 'orders',
         'posts_per_page' => -1,
         'post_status' => 'publish',
         'date_query' => array(
             array(
-                'after' => $yesterday_start,
-                'before' => $today_end_24h,
+                'after' => $today_start,
+                'before' => $today_end,
                 'inclusive' => true
             )
         ),
@@ -683,7 +679,7 @@ function protagonizei_dashboard_stats_widget() {
                 <div class="flex-1 min-w-0">
                     <p class="text-xs font-medium text-red-600 uppercase truncate">Sem Pagamento + Cancelados</p>
                     <p class="text-lg sm:text-xl font-bold text-red-900 mt-1 break-words"><?php echo number_format($no_payment_canceled_count); ?></p>
-                    <p class="text-xs text-red-700 mt-1">Últimas 24h</p>
+                    <p class="text-xs text-red-700 mt-1">Hoje</p>
                 </div>
                 <div class="w-8 h-8 sm:w-10 sm:h-10 bg-red-500 rounded-lg flex items-center justify-center flex-shrink-0 ml-2">
                     <svg class="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
