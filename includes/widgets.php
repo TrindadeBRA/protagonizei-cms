@@ -532,6 +532,71 @@ function protagonizei_dashboard_stats_widget() {
 
     $total_orders = array_sum($status_counts);
 
+    // Calcular vendas do dia (00:00:00 às 23:59:59)
+    $today_start = date('Y-m-d 00:00:00');
+    $today_end = date('Y-m-d 23:59:59');
+    
+    $today_sales_query = new WP_Query(array(
+        'post_type' => 'orders',
+        'posts_per_page' => -1,
+        'post_status' => 'publish',
+        'date_query' => array(
+            array(
+                'after' => $today_start,
+                'before' => $today_end,
+                'inclusive' => true
+            )
+        ),
+        'meta_query' => array(
+            array(
+                'key' => 'order_status',
+                'value' => array('paid', 'thanked', 'delivered', 'completed'),
+                'compare' => 'IN'
+            )
+        )
+    ));
+    
+    $today_sales_amount = 0;
+    $today_sales_count = 0;
+    
+    if ($today_sales_query->have_posts()) {
+        while ($today_sales_query->have_posts()) {
+            $today_sales_query->the_post();
+            $payment_amount = get_field('payment_amount') ?: 0;
+            $today_sales_amount += $payment_amount;
+            $today_sales_count++;
+        }
+        wp_reset_postdata();
+    }
+    
+    // Calcular sem pagamentos + cancelados das últimas 24h (00:00:00 às 23:59:59)
+    $yesterday_start = date('Y-m-d 00:00:00', strtotime('-1 day'));
+    $yesterday_end = date('Y-m-d 23:59:59', strtotime('-1 day'));
+    $today_end_24h = date('Y-m-d 23:59:59');
+    
+    $no_payment_canceled_query = new WP_Query(array(
+        'post_type' => 'orders',
+        'posts_per_page' => -1,
+        'post_status' => 'publish',
+        'date_query' => array(
+            array(
+                'after' => $yesterday_start,
+                'before' => $today_end_24h,
+                'inclusive' => true
+            )
+        ),
+        'meta_query' => array(
+            array(
+                'key' => 'order_status',
+                'value' => array('awaiting_payment', 'created', 'canceled'),
+                'compare' => 'IN'
+            )
+        )
+    ));
+    
+    $no_payment_canceled_count = $no_payment_canceled_query->found_posts;
+    wp_reset_postdata();
+
     // Mapeamento de cores semânticas para cada status (mesmas cores dos badges)
     $status_chart_colors = array(
         'created' => '#9CA3AF',                    // gray-400 (neutro)
@@ -547,7 +612,7 @@ function protagonizei_dashboard_stats_widget() {
         'canceled' => '#EF4444',                   // red-500 (cancelado - vermelho)
         'error' => '#DC2626'                       // red-600 (erro - vermelho escuro)
     );
-    
+
     // Preparar dados para o gráfico com cores semânticas
     $chart_labels = array();
     $chart_data = array();
@@ -599,13 +664,33 @@ function protagonizei_dashboard_stats_widget() {
 
     <!-- Estatísticas Adicionais -->
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
-        <div class="bg-yellow-50 rounded-lg p-3 border border-yellow-200">
-            <p class="text-xs font-medium text-yellow-600 uppercase">Pedidos Pagos</p>
-            <p class="text-lg sm:text-xl font-bold text-yellow-900 mt-1"><?php echo number_format($paid_orders); ?></p>
+        <div class="bg-green-50 rounded-lg p-3 sm:p-4 border border-green-200">
+            <div class="flex items-center justify-between">
+                <div class="flex-1 min-w-0">
+                    <p class="text-xs font-medium text-green-600 uppercase truncate">Vendas no Dia</p>
+                    <p class="text-lg sm:text-xl font-bold text-green-900 mt-1 break-words">R$ <?php echo number_format($today_sales_amount, 2, ',', '.'); ?></p>
+                    <p class="text-xs text-green-700 mt-1"><?php echo number_format($today_sales_count); ?> pedido(s)</p>
+                </div>
+                <div class="w-8 h-8 sm:w-10 sm:h-10 bg-green-500 rounded-lg flex items-center justify-center flex-shrink-0 ml-2">
+                    <svg class="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+            </div>
         </div>
-        <div class="bg-orange-50 rounded-lg p-3 border border-orange-200">
-            <p class="text-xs font-medium text-orange-600 uppercase">Aguardando Pagamento</p>
-            <p class="text-lg sm:text-xl font-bold text-orange-900 mt-1"><?php echo number_format($pending_orders); ?></p>
+        <div class="bg-red-50 rounded-lg p-3 sm:p-4 border border-red-200">
+            <div class="flex items-center justify-between">
+                <div class="flex-1 min-w-0">
+                    <p class="text-xs font-medium text-red-600 uppercase truncate">Sem Pagamento + Cancelados</p>
+                    <p class="text-lg sm:text-xl font-bold text-red-900 mt-1 break-words"><?php echo number_format($no_payment_canceled_count); ?></p>
+                    <p class="text-xs text-red-700 mt-1">Últimas 24h</p>
+                </div>
+                <div class="w-8 h-8 sm:w-10 sm:h-10 bg-red-500 rounded-lg flex items-center justify-center flex-shrink-0 ml-2">
+                    <svg class="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+            </div>
         </div>
     </div>
 
