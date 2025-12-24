@@ -307,10 +307,43 @@ add_action('admin_head', 'protagonizei_widget_styles');
  * Widget do Dashboard: Últimos Contatos
  */
 function protagonizei_dashboard_recent_contacts_widget() {
-    // Buscar últimos 5 contatos
+    // Calcular contatos das últimas 24h
+    $last_24h_start = date('Y-m-d H:i:s', strtotime('-24 hours'));
+    
+    $contacts_24h_query = new WP_Query(array(
+        'post_type' => 'contact_form',
+        'posts_per_page' => -1,
+        'post_status' => 'publish',
+        'date_query' => array(
+            array(
+                'after' => $last_24h_start,
+                'inclusive' => true
+            )
+        )
+    ));
+    
+    $contacts_24h_count = $contacts_24h_query->found_posts;
+    wp_reset_postdata();
+    
+    // Card de contador
+    echo '<div class="bg-blue-50 rounded-lg p-3 sm:p-4 border border-blue-200 mb-4">';
+    echo '<div class="flex items-center justify-between">';
+    echo '<div class="flex-1 min-w-0">';
+    echo '<p class="text-xs font-medium text-blue-600 uppercase truncate">Contatos (24h)</p>';
+    echo '<p class="text-xl sm:text-2xl font-bold text-blue-900 mt-1 break-words">' . number_format($contacts_24h_count) . '</p>';
+    echo '</div>';
+    echo '<div class="w-8 h-8 sm:w-10 sm:h-10 bg-blue-500 rounded-lg flex items-center justify-center flex-shrink-0 ml-2">';
+    echo '<svg class="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">';
+    echo '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>';
+    echo '</svg>';
+    echo '</div>';
+    echo '</div>';
+    echo '</div>';
+    
+    // Buscar últimos 4 contatos
     $contacts = get_posts(array(
         'post_type' => 'contact_form',
-        'posts_per_page' => 5,
+        'posts_per_page' => 4,
         'orderby' => 'date',
         'order' => 'DESC',
         'post_status' => 'publish'
@@ -369,10 +402,43 @@ function protagonizei_dashboard_recent_contacts_widget() {
  * Widget do Dashboard: Pedidos Recebidos
  */
 function protagonizei_dashboard_recent_orders_widget() {
-    // Buscar pedidos
+    // Calcular pedidos das últimas 24h
+    $last_24h_start = date('Y-m-d H:i:s', strtotime('-24 hours'));
+    
+    $orders_24h_query = new WP_Query(array(
+        'post_type' => 'orders',
+        'posts_per_page' => -1,
+        'post_status' => 'publish',
+        'date_query' => array(
+            array(
+                'after' => $last_24h_start,
+                'inclusive' => true
+            )
+        )
+    ));
+    
+    $orders_24h_count = $orders_24h_query->found_posts;
+    wp_reset_postdata();
+    
+    // Card de contador
+    echo '<div class="bg-purple-50 rounded-lg p-3 sm:p-4 border border-purple-200 mb-4">';
+    echo '<div class="flex items-center justify-between">';
+    echo '<div class="flex-1 min-w-0">';
+    echo '<p class="text-xs font-medium text-purple-600 uppercase truncate">Pedidos (24h)</p>';
+    echo '<p class="text-xl sm:text-2xl font-bold text-purple-900 mt-1 break-words">' . number_format($orders_24h_count) . '</p>';
+    echo '</div>';
+    echo '<div class="w-8 h-8 sm:w-10 sm:h-10 bg-purple-500 rounded-lg flex items-center justify-center flex-shrink-0 ml-2">';
+    echo '<svg class="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">';
+    echo '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>';
+    echo '</svg>';
+    echo '</div>';
+    echo '</div>';
+    echo '</div>';
+    
+    // Buscar últimos 4 pedidos
     $orders = get_posts(array(
         'post_type' => 'orders',
-        'posts_per_page' => 5,
+        'posts_per_page' => 4,
         'orderby' => 'date',
         'order' => 'DESC',
         'post_status' => 'publish'
