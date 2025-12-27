@@ -192,7 +192,7 @@ class Protagonizei_Recent_Orders_Widget extends WP_Widget {
                 echo '<div class="flex items-center justify-between mt-2">';
                 echo '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ' . esc_attr($status_color) . '">' . esc_html($status_label) . '</span>';
                 if ($payment_date) {
-                    $payment_formatted = date('d/m/Y H:i', strtotime($payment_date));
+                    $payment_formatted = mysql2date('d/m/Y H:i', $payment_date);
                     echo '<span class="text-xs text-gray-500">Pago: ' . esc_html($payment_formatted) . '</span>';
                 }
                 echo '</div>';
@@ -308,8 +308,8 @@ add_action('admin_head', 'protagonizei_widget_styles');
  */
 function protagonizei_dashboard_recent_contacts_widget() {
     // Calcular contatos do dia atual (00:00:00 às 23:59:59)
-    $today_start = date('Y-m-d 00:00:00');
-    $today_end = date('Y-m-d 23:59:59');
+    $today_start = current_time('Y-m-d') . ' 00:00:00';
+    $today_end = current_time('Y-m-d') . ' 23:59:59';
     
     $contacts_today_query = new WP_Query(array(
         'post_type' => 'contact_form',
@@ -405,8 +405,8 @@ function protagonizei_dashboard_recent_contacts_widget() {
  */
 function protagonizei_dashboard_recent_orders_widget() {
     // Calcular pedidos do dia atual (00:00:00 às 23:59:59)
-    $today_start = date('Y-m-d 00:00:00');
-    $today_end = date('Y-m-d 23:59:59');
+    $today_start = current_time('Y-m-d') . ' 00:00:00';
+    $today_end = current_time('Y-m-d') . ' 23:59:59';
     
     $orders_today_query = new WP_Query(array(
         'post_type' => 'orders',
@@ -518,7 +518,7 @@ function protagonizei_dashboard_recent_orders_widget() {
             echo '<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mt-2">';
             echo '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ' . esc_attr($status_color) . '">' . esc_html($status_label) . '</span>';
             if ($payment_date) {
-                $payment_formatted = date('d/m/Y H:i', strtotime($payment_date));
+                $payment_formatted = mysql2date('d/m/Y H:i', $payment_date);
                 echo '<span class="text-xs text-gray-500 sm:text-right">Pago: ' . esc_html($payment_formatted) . '</span>';
             }
             echo '</div>';
@@ -603,8 +603,8 @@ function protagonizei_dashboard_stats_widget() {
     $total_orders = array_sum($status_counts);
 
     // Calcular vendas do dia (00:00:00 às 23:59:59)
-    $today_start = date('Y-m-d 00:00:00');
-    $today_end = date('Y-m-d 23:59:59');
+    $today_start = current_time('Y-m-d') . ' 00:00:00';
+    $today_end = current_time('Y-m-d') . ' 23:59:59';
     
     $today_sales_query = new WP_Query(array(
         'post_type' => 'orders',
