@@ -882,21 +882,35 @@ function protagonizei_dashboard_coupons_widget() {
         
         $total_sales = 0;
         $total_discount = 0;
-        $usage_count = 0;
+        $total_orders = 0; // Todos os pedidos (incluindo não pagos)
+        $paid_orders_count = 0; // Apenas pedidos pagos/aprovados
+        
+        // Status considerados como pagos/aprovados
+        $paid_statuses = array('paid', 'thanked', 'delivered', 'completed');
         
         if ($coupon_orders->have_posts()) {
             while ($coupon_orders->have_posts()) {
                 $coupon_orders->the_post();
+                $order_status = get_field('order_status');
                 $payment_amount = get_field('payment_amount') ?: 0;
-                $total_sales += $payment_amount;
-                $usage_count++;
                 
-                // Calcular desconto baseado no tipo
-                if ($discount_type === 'fixed') {
-                    $total_discount += $discount_fixed_amount;
-                } elseif ($discount_type === 'percent') {
-                    $original_amount = $payment_amount / (1 - ($discount_percentage / 100));
-                    $total_discount += ($original_amount - $payment_amount);
+                // Contar todos os pedidos
+                $total_orders++;
+                
+                // Verificar se o pedido está pago/aprovado
+                $is_paid = in_array(strtolower(trim($order_status)), $paid_statuses);
+                
+                if ($is_paid) {
+                    $paid_orders_count++;
+                    $total_sales += $payment_amount;
+                    
+                    // Calcular desconto baseado no tipo (apenas para pedidos pagos)
+                    if ($discount_type === 'fixed') {
+                        $total_discount += $discount_fixed_amount;
+                    } elseif ($discount_type === 'percent') {
+                        $original_amount = $payment_amount / (1 - ($discount_percentage / 100));
+                        $total_discount += ($original_amount - $payment_amount);
+                    }
                 }
             }
             wp_reset_postdata();
@@ -907,7 +921,8 @@ function protagonizei_dashboard_coupons_widget() {
             'code' => $coupon_code,
             'type' => $discount_type,
             'discount_value' => $discount_type === 'fixed' ? $discount_fixed_amount : $discount_percentage,
-            'usage_count' => $usage_count,
+            'total_orders' => $total_orders,
+            'paid_orders_count' => $paid_orders_count,
             'total_sales' => $total_sales,
             'total_discount' => $total_discount,
             'status' => $post_status
@@ -915,9 +930,9 @@ function protagonizei_dashboard_coupons_widget() {
     }
     wp_reset_postdata();
     
-    // Ordenar por uso (mais usado primeiro)
+    // Ordenar por total de pedidos (mais usado primeiro)
     usort($coupons_data, function($a, $b) {
-        return $b['usage_count'] - $a['usage_count'];
+        return $b['total_orders'] - $a['total_orders'];
     });
     
     echo '<div class="space-y-2 sm:space-y-3">';
@@ -950,10 +965,14 @@ function protagonizei_dashboard_coupons_widget() {
         echo '</div>';
         
         // Estatísticas do cupom
-        echo '<div class="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 mt-3 pt-3 border-t border-gray-100">';
+        echo '<div class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mt-3 pt-3 border-t border-gray-100">';
+        echo '<div class="text-center sm:text-left">';
+        echo '<p class="text-xs text-gray-500">Pedidos</p>';
+        echo '<p class="text-sm sm:text-base font-bold text-gray-900">' . number_format($coupon['total_orders']) . '</p>';
+        echo '</div>';
         echo '<div class="text-center sm:text-left">';
         echo '<p class="text-xs text-gray-500">Vendas</p>';
-        echo '<p class="text-sm sm:text-base font-bold text-gray-900">' . number_format($coupon['usage_count']) . '</p>';
+        echo '<p class="text-sm sm:text-base font-bold text-blue-600">' . number_format($coupon['paid_orders_count']) . '</p>';
         echo '</div>';
         echo '<div class="text-center sm:text-left">';
         echo '<p class="text-xs text-gray-500">Total Vendido</p>';
