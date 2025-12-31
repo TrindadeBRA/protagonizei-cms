@@ -667,6 +667,476 @@
         }
       }
     },
+    "/contact-form/list": {
+      "get": {
+        "tags": ["Contato"],
+        "summary": "Listar leads (contatos)",
+        "description": "Retorna todos os leads (contatos) criados nas últimas X horas. Inclui todos os dados do lead: nome, email, telefone, LinkedIn, mensagem, tags, anexos e datas de criação/modificação.",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "hours",
+            "in": "query",
+            "required": true,
+            "description": "Quantidade de horas para buscar leads (ex: 24 para últimas 24 horas, 0 para todos os leads)",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "example": 24
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de leads obtida com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "integer",
+                            "description": "ID do lead no WordPress",
+                            "example": 123
+                          },
+                          "title": {
+                            "type": "string",
+                            "description": "Título do lead (geralmente nome - email)",
+                            "example": "Lucas Trindade - trindade@thetrinityweb.com.br"
+                          },
+                          "name": {
+                            "type": "string",
+                            "description": "Nome do contato",
+                            "example": "Lucas Trindade"
+                          },
+                          "email": {
+                            "type": "string",
+                            "format": "email",
+                            "description": "Email do contato",
+                            "example": "trindade@thetrinityweb.com.br"
+                          },
+                          "phone": {
+                            "type": "string",
+                            "description": "Telefone do contato",
+                            "example": "(11) 99999-9999"
+                          },
+                          "linkedin": {
+                            "type": "string",
+                            "description": "Perfil do LinkedIn do contato",
+                            "example": "https://linkedin.com/in/usuario"
+                          },
+                          "message": {
+                            "type": "string",
+                            "description": "Mensagem do contato",
+                            "example": "Gostaria de mais informações sobre seus produtos."
+                          },
+                          "tags": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            },
+                            "description": "Tags associadas ao lead",
+                            "example": ["orçamento", "lead"]
+                          },
+                          "attachment": {
+                            "type": ["object", "null"],
+                            "description": "Dados do anexo, se houver",
+                            "properties": {
+                              "id": {
+                                "type": "integer",
+                                "description": "ID do anexo no WordPress",
+                                "example": 456
+                              },
+                              "url": {
+                                "type": "string",
+                                "format": "uri",
+                                "description": "URL do anexo",
+                                "example": "https://example.com/wp-content/uploads/2024/01/arquivo.pdf"
+                              },
+                              "filename": {
+                                "type": "string",
+                                "description": "Nome do arquivo",
+                                "example": "arquivo.pdf"
+                              },
+                              "mime_type": {
+                                "type": "string",
+                                "description": "Tipo MIME do arquivo",
+                                "example": "application/pdf"
+                              },
+                              "filesize": {
+                                "type": "integer",
+                                "description": "Tamanho do arquivo em bytes",
+                                "example": 1024000
+                              }
+                            }
+                          },
+                          "created_at": {
+                            "type": "string",
+                            "format": "date-time",
+                            "description": "Data de criação do lead (horário local)",
+                            "example": "2024-01-15 10:30:00"
+                          },
+                          "created_at_gmt": {
+                            "type": "string",
+                            "format": "date-time",
+                            "description": "Data de criação do lead (GMT)",
+                            "example": "2024-01-15 13:30:00"
+                          },
+                          "modified_at": {
+                            "type": "string",
+                            "format": "date-time",
+                            "description": "Data de última modificação (horário local)",
+                            "example": "2024-01-15 10:30:00"
+                          },
+                          "modified_at_gmt": {
+                            "type": "string",
+                            "format": "date-time",
+                            "description": "Data de última modificação (GMT)",
+                            "example": "2024-01-15 13:30:00"
+                          }
+                        }
+                      }
+                    },
+                    "total": {
+                      "type": "integer",
+                      "description": "Número total de leads retornados",
+                      "example": 15
+                    },
+                    "hours_filter": {
+                      "type": "integer",
+                      "description": "Quantidade de horas usada no filtro",
+                      "example": 24
+                    },
+                    "date_cutoff": {
+                      "type": "string",
+                      "format": "date-time",
+                      "description": "Data de corte usada na busca",
+                      "example": "2024-01-14 10:30:00"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro de validação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "invalid_hours"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Parâmetro hours é obrigatório e deve ser um número positivo"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "integer",
+                          "example": 400
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Erro de autenticação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "invalid_api_key"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "API Key inválida ou não fornecida"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "integer",
+                          "example": 401
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno do servidor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "internal_error"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Erro ao buscar leads"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "integer",
+                          "example": 500
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/contact-form/delete": {
+      "delete": {
+        "tags": ["Contato"],
+        "summary": "Remover leads por email",
+        "description": "Remove permanentemente todos os leads (contatos) que possuem o email especificado. Busca em toda a base de dados e remove todos os registros encontrados, incluindo anexos associados. Esta operação é irreversível.",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "email",
+            "in": "query",
+            "required": true,
+            "description": "Email do lead a ser removido. Todos os leads com este email serão removidos permanentemente.",
+            "schema": {
+              "type": "string",
+              "format": "email",
+              "example": "trindade@thetrinityweb.com.br"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operação concluída com sucesso (leads removidos ou nenhum lead encontrado)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "description": "Leads removidos com sucesso",
+                      "properties": {
+                        "success": {
+                          "type": "boolean",
+                          "example": true
+                        },
+                        "message": {
+                          "type": "string",
+                          "description": "Mensagem de sucesso com quantidade de leads removidos",
+                          "example": "3 lead(s) removido(s) com sucesso"
+                        },
+                        "email": {
+                          "type": "string",
+                          "format": "email",
+                          "description": "Email usado na busca",
+                          "example": "trindade@thetrinityweb.com.br"
+                        },
+                        "deleted_count": {
+                          "type": "integer",
+                          "description": "Número de leads removidos",
+                          "example": 3
+                        },
+                        "deleted_ids": {
+                          "type": "array",
+                          "items": {
+                            "type": "integer"
+                          },
+                          "description": "IDs dos leads removidos",
+                          "example": [123, 124, 125]
+                        },
+                        "errors": {
+                          "type": ["array", "null"],
+                          "items": {
+                            "type": "string"
+                          },
+                          "description": "Lista de erros encontrados durante a remoção (null se não houver erros)",
+                          "example": null
+                        }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "description": "Nenhum lead encontrado",
+                      "properties": {
+                        "success": {
+                          "type": "boolean",
+                          "example": true
+                        },
+                        "message": {
+                          "type": "string",
+                          "example": "Nenhum lead encontrado com o email especificado"
+                        },
+                        "email": {
+                          "type": "string",
+                          "format": "email",
+                          "example": "trindade@thetrinityweb.com.br"
+                        },
+                        "deleted_count": {
+                          "type": "integer",
+                          "example": 0
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro de validação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "example": "invalid_email"
+                        },
+                        "message": {
+                          "type": "string",
+                          "example": "Parâmetro email é obrigatório"
+                        },
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "status": {
+                              "type": "integer",
+                              "example": 400
+                            }
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "example": "invalid_email_format"
+                        },
+                        "message": {
+                          "type": "string",
+                          "example": "Email inválido"
+                        },
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "status": {
+                              "type": "integer",
+                              "example": 400
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Erro de autenticação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "invalid_api_key"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "API Key inválida ou não fornecida"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "integer",
+                          "example": 401
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno do servidor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "internal_error"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Erro ao remover leads"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "integer",
+                          "example": 500
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/orders": {
       "post": {
         "tags": ["Pedidos - Gestão"],

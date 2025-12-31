@@ -9,6 +9,44 @@ add_action('rest_api_init', function () {
         'callback' => 'contact_form_submit',
         'permission_callback' => '__return_true'
     ));
+    
+    register_rest_route('trinitykitcms-api/v1', '/contact-form/list', array(
+        'methods'  => 'GET',
+        'callback' => 'contact_form_list',
+        'permission_callback' => function () {
+            return true; // We'll handle authentication in the callback
+        },
+        'args' => array(
+            'hours' => array(
+                'required' => true,
+                'type' => 'integer',
+                'validate_callback' => function($param) {
+                    return is_numeric($param) && $param >= 0;
+                },
+                'sanitize_callback' => 'absint',
+                'description' => 'Quantidade de horas para buscar leads (ex: 24 para últimas 24 horas)'
+            )
+        )
+    ));
+    
+    register_rest_route('trinitykitcms-api/v1', '/contact-form/delete', array(
+        'methods'  => 'DELETE',
+        'callback' => 'contact_form_delete',
+        'permission_callback' => function () {
+            return true; // We'll handle authentication in the callback
+        },
+        'args' => array(
+            'email' => array(
+                'required' => true,
+                'type' => 'string',
+                'validate_callback' => function($param) {
+                    return is_email($param);
+                },
+                'sanitize_callback' => 'sanitize_email',
+                'description' => 'Email do lead a ser removido'
+            )
+        )
+    ));
 });
 
 /**
@@ -188,4 +226,212 @@ function contact_form_submit($request) {
             array('status' => 500)
         );
     }
+}
+
+/**
+ * Lista todos os leads (contatos) criados nas últimas X horas
+ * 
+ * @param WP_REST_Request $request
+ * @return WP_REST_Response|WP_Error
+ */
+function contact_form_list($request) {
+    // Valida a API key
+    $api_validation = trinitykitcms_validate_api_key($request);
+    if (is_wp_error($api_validation)) {
+        return $api_validation;
+    }
+    
+    $hours = $request->get_param('hours');
+    
+    if (empty($hours) || !is_numeric($hours) || $hours < 0) {
+        return new WP_Error(
+            'invalid_hours',
+            __('Parâmetro hours é obrigatório e deve ser um número positivo'),
+            array('status' => 400)
+        );
+    }
+    
+    // Calcula a data de corte (últimas X horas)
+    $date_cutoff = date('Y-m-d H:i:s', strtotime("-{$hours} hours"));
+    
+    // Busca os posts do tipo contact_form criados nas últimas X horas
+    $args = array(
+        'post_type' => 'contact_form',
+        'post_status' => 'publish',
+        'posts_per_page' => -1, // Retorna todos
+        'date_query' => array(
+            array(
+                'after' => $date_cutoff,
+                'inclusive' => true,
+            ),
+        ),
+        'orderby' => 'date',
+        'order' => 'DESC'
+    );
+    
+    $leads = get_posts($args);
+    
+    $leads_data = array();
+    
+    foreach ($leads as $lead) {
+        // Busca os campos ACF
+        $email = get_field('email', $lead->ID);
+        $name = get_field('name', $lead->ID);
+        $phone = get_field('phone', $lead->ID);
+        $linkedin = get_field('linkedin', $lead->ID);
+        $attachment = get_field('attachment', $lead->ID);
+        
+        // Busca as tags
+        $tags = wp_get_post_terms($lead->ID, 'contact_tags', array('fields' => 'names'));
+        
+        // Prepara dados do anexo
+        $attachment_data = null;
+        if ($attachment) {
+            if (is_array($attachment)) {
+                // Se retornar array (ACF return format = array)
+                $attachment_id = isset($attachment['ID']) ? $attachment['ID'] : $attachment;
+            } else {
+                $attachment_id = $attachment;
+            }
+            
+            if ($attachment_id) {
+                $attachment_url = wp_get_attachment_url($attachment_id);
+                $attachment_metadata = wp_get_attachment_metadata($attachment_id);
+                
+                $attachment_data = array(
+                    'id' => $attachment_id,
+                    'url' => $attachment_url,
+                    'filename' => basename($attachment_url),
+                    'mime_type' => get_post_mime_type($attachment_id),
+                    'filesize' => isset($attachment_metadata['filesize']) ? $attachment_metadata['filesize'] : filesize(get_attached_file($attachment_id))
+                );
+            }
+        }
+        
+        $leads_data[] = array(
+            'id' => $lead->ID,
+            'title' => $lead->post_title,
+            'name' => $name ? $name : 'N/A',
+            'email' => $email ? $email : '',
+            'phone' => $phone ? $phone : 'N/A',
+            'linkedin' => $linkedin ? $linkedin : 'N/A',
+            'message' => $lead->post_content,
+            'tags' => $tags ? $tags : array(),
+            'attachment' => $attachment_data,
+            'created_at' => $lead->post_date,
+            'created_at_gmt' => $lead->post_date_gmt,
+            'modified_at' => $lead->post_modified,
+            'modified_at_gmt' => $lead->post_modified_gmt
+        );
+    }
+    
+    return new WP_REST_Response(array(
+        'success' => true,
+        'data' => $leads_data,
+        'total' => count($leads_data),
+        'hours_filter' => intval($hours),
+        'date_cutoff' => $date_cutoff
+    ), 200);
+}
+
+/**
+ * Remove todos os leads (contatos) com o email especificado
+ * 
+ * @param WP_REST_Request $request
+ * @return WP_REST_Response|WP_Error
+ */
+function contact_form_delete($request) {
+    // Valida a API key
+    $api_validation = trinitykitcms_validate_api_key($request);
+    if (is_wp_error($api_validation)) {
+        return $api_validation;
+    }
+    
+    $email = $request->get_param('email');
+    
+    // Validação do email
+    if (empty($email)) {
+        return new WP_Error(
+            'invalid_email',
+            __('Parâmetro email é obrigatório'),
+            array('status' => 400)
+        );
+    }
+    
+    // Sanitiza o email
+    $email = sanitize_email($email);
+    
+    if (!is_email($email)) {
+        return new WP_Error(
+            'invalid_email_format',
+            __('Email inválido'),
+            array('status' => 400)
+        );
+    }
+    
+    // Busca todos os posts do tipo contact_form com o email especificado
+    $args = array(
+        'post_type' => 'contact_form',
+        'post_status' => 'any', // Busca em todos os status (publish, draft, trash, etc)
+        'posts_per_page' => -1, // Retorna todos
+        'meta_query' => array(
+            array(
+                'key' => 'email',
+                'value' => $email,
+                'compare' => '='
+            )
+        )
+    );
+    
+    $leads = get_posts($args);
+    
+    if (empty($leads)) {
+        return new WP_REST_Response(array(
+            'success' => true,
+            'message' => 'Nenhum lead encontrado com o email especificado',
+            'email' => $email,
+            'deleted_count' => 0
+        ), 200);
+    }
+    
+    $deleted_count = 0;
+    $deleted_ids = array();
+    $errors = array();
+    
+    foreach ($leads as $lead) {
+        // Busca anexos associados antes de deletar
+        $attachment = get_field('attachment', $lead->ID);
+        
+        // Deleta o post (force_delete = true remove permanentemente)
+        $deleted = wp_delete_post($lead->ID, true);
+        
+        if ($deleted) {
+            $deleted_count++;
+            $deleted_ids[] = $lead->ID;
+            
+            // Se houver anexo, também remove o arquivo
+            if ($attachment) {
+                if (is_array($attachment)) {
+                    $attachment_id = isset($attachment['ID']) ? $attachment['ID'] : $attachment;
+                } else {
+                    $attachment_id = $attachment;
+                }
+                
+                if ($attachment_id && is_numeric($attachment_id)) {
+                    wp_delete_attachment($attachment_id, true);
+                }
+            }
+        } else {
+            $errors[] = "Falha ao deletar lead ID: {$lead->ID}";
+        }
+    }
+    
+    return new WP_REST_Response(array(
+        'success' => true,
+        'message' => "{$deleted_count} lead(s) removido(s) com sucesso",
+        'email' => $email,
+        'deleted_count' => $deleted_count,
+        'deleted_ids' => $deleted_ids,
+        'errors' => !empty($errors) ? $errors : null
+    ), 200);
 }
