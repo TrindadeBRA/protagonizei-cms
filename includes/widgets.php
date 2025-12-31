@@ -935,53 +935,64 @@ function protagonizei_dashboard_coupons_widget() {
         return $b['total_orders'] - $a['total_orders'];
     });
     
-    echo '<div class="space-y-2 sm:space-y-3">';
+    echo '<div class="space-y-3 sm:space-y-4">';
     foreach ($coupons_data as $coupon) {
         $edit_link = get_edit_post_link($coupon['id']);
         $status_badge = $coupon['status'] === 'publish' 
-            ? '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Publicado</span>'
-            : '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">Rascunho</span>';
+            ? '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 whitespace-nowrap">Publicado</span>'
+            : '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 whitespace-nowrap">Rascunho</span>';
         
         echo '<div class="bg-white border border-gray-200 rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow">';
-        echo '<div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-2">';
-        echo '<div class="flex-1 min-w-0">';
+        
+        // Cabeçalho do cupom
+        echo '<div class="mb-3 sm:mb-4">';
         if ($edit_link) {
-            echo '<h4 class="font-semibold text-gray-900 text-sm truncate"><a href="' . esc_url($edit_link) . '" class="hover:text-blue-600">' . esc_html($coupon['code']) . '</a></h4>';
+            echo '<h4 class="font-bold text-gray-900 text-base sm:text-lg mb-2 break-words"><a href="' . esc_url($edit_link) . '" class="hover:text-blue-600">' . esc_html($coupon['code']) . '</a></h4>';
         } else {
-            echo '<h4 class="font-semibold text-gray-900 text-sm truncate">' . esc_html($coupon['code']) . '</h4>';
+            echo '<h4 class="font-bold text-gray-900 text-base sm:text-lg mb-2 break-words">' . esc_html($coupon['code']) . '</h4>';
         }
-        echo '<div class="flex items-center gap-2 mt-1">';
+        
+        // Badges e informações do desconto
+        echo '<div class="flex flex-wrap items-center gap-2">';
         echo $status_badge;
-        echo '<span class="inline-flex px-2 py-0.5 text-xs font-semibold rounded-full ' . ($coupon['type'] === 'fixed' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800') . '">';
+        echo '<span class="inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded-full whitespace-nowrap ' . ($coupon['type'] === 'fixed' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800') . '">';
         echo $coupon['type'] === 'fixed' ? 'Fixo' : 'Percentual';
         echo '</span>';
         if ($coupon['type'] === 'fixed') {
-            echo '<span class="text-xs text-gray-600">R$ ' . number_format($coupon['discount_value'], 2, ',', '.') . '</span>';
+            echo '<span class="text-xs sm:text-sm text-gray-700 font-medium whitespace-nowrap">R$ ' . number_format($coupon['discount_value'], 2, ',', '.') . '</span>';
         } else {
-            echo '<span class="text-xs text-gray-600">' . number_format($coupon['discount_value'], 1) . '%</span>';
+            echo '<span class="text-xs sm:text-sm text-gray-700 font-medium whitespace-nowrap">' . number_format($coupon['discount_value'], 1) . '%</span>';
         }
         echo '</div>';
         echo '</div>';
+        
+        // Estatísticas do cupom - Grid 2x2 em mobile, 4 colunas em desktop
+        echo '<div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 pt-3 border-t border-gray-200">';
+        
+        // Pedidos
+        echo '<div class="text-center sm:text-left">';
+        echo '<p class="text-xs text-gray-500 mb-1">Pedidos</p>';
+        echo '<p class="text-base sm:text-lg font-bold text-gray-900">' . number_format($coupon['total_orders']) . '</p>';
         echo '</div>';
         
-        // Estatísticas do cupom
-        echo '<div class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mt-3 pt-3 border-t border-gray-100">';
+        // Vendas
         echo '<div class="text-center sm:text-left">';
-        echo '<p class="text-xs text-gray-500">Pedidos</p>';
-        echo '<p class="text-sm sm:text-base font-bold text-gray-900">' . number_format($coupon['total_orders']) . '</p>';
+        echo '<p class="text-xs text-gray-500 mb-1">Vendas</p>';
+        echo '<p class="text-base sm:text-lg font-bold text-blue-600">' . number_format($coupon['paid_orders_count']) . '</p>';
         echo '</div>';
+        
+        // Total Vendido
         echo '<div class="text-center sm:text-left">';
-        echo '<p class="text-xs text-gray-500">Vendas</p>';
-        echo '<p class="text-sm sm:text-base font-bold text-blue-600">' . number_format($coupon['paid_orders_count']) . '</p>';
+        echo '<p class="text-xs text-gray-500 mb-1">Total Vendido</p>';
+        echo '<p class="text-sm sm:text-base font-bold text-green-600 break-words">R$ ' . number_format($coupon['total_sales'], 2, ',', '.') . '</p>';
         echo '</div>';
+        
+        // Descontado
         echo '<div class="text-center sm:text-left">';
-        echo '<p class="text-xs text-gray-500">Total Vendido</p>';
-        echo '<p class="text-sm sm:text-base font-bold text-green-600">R$ ' . number_format($coupon['total_sales'], 2, ',', '.') . '</p>';
+        echo '<p class="text-xs text-gray-500 mb-1">Descontado</p>';
+        echo '<p class="text-sm sm:text-base font-bold text-red-600 break-words">R$ ' . number_format($coupon['total_discount'], 2, ',', '.') . '</p>';
         echo '</div>';
-        echo '<div class="text-center sm:text-left col-span-2 sm:col-span-1">';
-        echo '<p class="text-xs text-gray-500">Descontado</p>';
-        echo '<p class="text-sm sm:text-base font-bold text-red-600">R$ ' . number_format($coupon['total_discount'], 2, ',', '.') . '</p>';
-        echo '</div>';
+        
         echo '</div>';
         echo '</div>';
     }
