@@ -283,13 +283,15 @@ function contact_form_list($request) {
     $exclude_tags_param = $request->get_param('exclude_tags');
     $only_tags_param = $request->get_param('only_tags');
     
-    // Converte strings separadas por vírgula em arrays
+    // Converte strings separadas por vírgula em arrays (case-insensitive)
     $exclude_tags = array();
     if (!empty($exclude_tags_param) && is_string($exclude_tags_param)) {
         $exclude_tags = array_map('trim', explode(',', $exclude_tags_param));
         $exclude_tags = array_filter($exclude_tags, function($tag) {
             return !empty($tag);
         });
+        // Converte para minúsculas para comparação case-insensitive
+        $exclude_tags = array_map('mb_strtolower', $exclude_tags);
     }
     
     $only_tags = array();
@@ -298,6 +300,8 @@ function contact_form_list($request) {
         $only_tags = array_filter($only_tags, function($tag) {
             return !empty($tag);
         });
+        // Converte para minúsculas para comparação case-insensitive
+        $only_tags = array_map('mb_strtolower', $only_tags);
     }
     
     // Calcula a data de corte (últimas X horas)
@@ -334,11 +338,14 @@ function contact_form_list($request) {
         $tags = wp_get_post_terms($lead->ID, 'contact_tags', array('fields' => 'names'));
         $tags = $tags ? $tags : array();
         
+        // Converte tags do lead para minúsculas para comparação case-insensitive
+        $tags_lower = array_map('mb_strtolower', $tags);
+        
         // Aplica filtro exclude_tags: se o lead tiver qualquer tag excluída, pula
         if (!empty($exclude_tags)) {
             $has_excluded_tag = false;
-            foreach ($tags as $tag) {
-                if (in_array($tag, $exclude_tags)) {
+            foreach ($tags_lower as $tag_lower) {
+                if (in_array($tag_lower, $exclude_tags)) {
                     $has_excluded_tag = true;
                     break;
                 }
@@ -351,8 +358,8 @@ function contact_form_list($request) {
         // Aplica filtro only_tags: se especificado, apenas leads com pelo menos uma das tags
         if (!empty($only_tags)) {
             $has_included_tag = false;
-            foreach ($tags as $tag) {
-                if (in_array($tag, $only_tags)) {
+            foreach ($tags_lower as $tag_lower) {
+                if (in_array($tag_lower, $only_tags)) {
                     $has_included_tag = true;
                     break;
                 }
