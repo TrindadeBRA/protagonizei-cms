@@ -25,6 +25,40 @@ add_action('rest_api_init', function () {
                 },
                 'sanitize_callback' => 'absint',
                 'description' => 'Quantidade de horas para buscar leads (ex: 24 para últimas 24 horas)'
+            ),
+            'exclude_tags' => array(
+                'required' => false,
+                'type' => 'array',
+                'validate_callback' => function($param) {
+                    if (!is_array($param)) {
+                        return false;
+                    }
+                    return true;
+                },
+                'sanitize_callback' => function($param) {
+                    if (is_array($param)) {
+                        return array_map('sanitize_text_field', $param);
+                    }
+                    return array();
+                },
+                'description' => 'Array de tags que devem ser ignoradas na resposta'
+            ),
+            'only_tags' => array(
+                'required' => false,
+                'type' => 'array',
+                'validate_callback' => function($param) {
+                    if (!is_array($param)) {
+                        return false;
+                    }
+                    return true;
+                },
+                'sanitize_callback' => function($param) {
+                    if (is_array($param)) {
+                        return array_map('sanitize_text_field', $param);
+                    }
+                    return array();
+                },
+                'description' => 'Array de tags - busca apenas leads com essas tags'
             )
         )
     ));
@@ -251,6 +285,22 @@ function contact_form_list($request) {
         );
     }
     
+    // Obtém os parâmetros de filtro de tags
+    $exclude_tags = $request->get_param('exclude_tags');
+    $only_tags = $request->get_param('only_tags');
+    
+    // Normaliza os arrays de tags
+    if (!is_array($exclude_tags)) {
+        $exclude_tags = array();
+    }
+    if (!is_array($only_tags)) {
+        $only_tags = array();
+    }
+    
+    // Sanitiza as tags
+    $exclude_tags = array_map('sanitize_text_field', $exclude_tags);
+    $only_tags = array_map('sanitize_text_field', $only_tags);
+    
     // Calcula a data de corte (últimas X horas)
     $date_cutoff = date('Y-m-d H:i:s', strtotime("-{$hours} hours"));
     
@@ -283,6 +333,35 @@ function contact_form_list($request) {
         
         // Busca as tags
         $tags = wp_get_post_terms($lead->ID, 'contact_tags', array('fields' => 'names'));
+        $tags = $tags ? $tags : array();
+        
+        // Aplica filtro exclude_tags: se o lead tiver qualquer tag excluída, pula
+        if (!empty($exclude_tags)) {
+            $has_excluded_tag = false;
+            foreach ($tags as $tag) {
+                if (in_array($tag, $exclude_tags)) {
+                    $has_excluded_tag = true;
+                    break;
+                }
+            }
+            if ($has_excluded_tag) {
+                continue; // Pula este lead
+            }
+        }
+        
+        // Aplica filtro only_tags: se especificado, apenas leads com pelo menos uma das tags
+        if (!empty($only_tags)) {
+            $has_included_tag = false;
+            foreach ($tags as $tag) {
+                if (in_array($tag, $only_tags)) {
+                    $has_included_tag = true;
+                    break;
+                }
+            }
+            if (!$has_included_tag) {
+                continue; // Pula este lead
+            }
+        }
         
         // Prepara dados do anexo
         $attachment_data = null;
@@ -316,7 +395,7 @@ function contact_form_list($request) {
             'phone' => $phone ? $phone : 'N/A',
             'linkedin' => $linkedin ? $linkedin : 'N/A',
             'message' => $lead->post_content,
-            'tags' => $tags ? $tags : array(),
+            'tags' => $tags,
             'attachment' => $attachment_data,
             'created_at' => $lead->post_date,
             'created_at_gmt' => $lead->post_date_gmt,
@@ -330,7 +409,9 @@ function contact_form_list($request) {
         'data' => $leads_data,
         'total' => count($leads_data),
         'hours_filter' => intval($hours),
-        'date_cutoff' => $date_cutoff
+        'date_cutoff' => $date_cutoff,
+        'exclude_tags' => !empty($exclude_tags) ? $exclude_tags : null,
+        'only_tags' => !empty($only_tags) ? $only_tags : null
     ), 200);
 }
 

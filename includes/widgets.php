@@ -1116,7 +1116,7 @@ function protagonizei_get_deepseek_balance() {
 
 
 /**
- * Widget do Dashboard: Saldos das APIs
+ * Widget do Dashboard: Hub de Serviços Externos
  */
 function protagonizei_dashboard_api_balances_widget() {
     // Limpar cache ao carregar para sempre buscar dados atualizados
@@ -1128,7 +1128,7 @@ function protagonizei_dashboard_api_balances_widget() {
     ?>
     <div class="space-y-3 sm:space-y-4">
         <!-- Deepseek -->
-        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-200">
+        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-200 hover:shadow-md transition-shadow">
             <div class="flex items-center justify-between mb-2">
                 <div class="flex items-center gap-2">
                     <div class="w-8 h-8 sm:w-10 sm:h-10 bg-blue-500 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -1168,7 +1168,7 @@ function protagonizei_dashboard_api_balances_widget() {
         </div>
 
         <!-- FAL.AI -->
-        <div class="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-4 border border-purple-200">
+        <div class="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-4 border border-purple-200 hover:shadow-md transition-shadow">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
                     <div class="w-8 h-8 sm:w-10 sm:h-10 bg-purple-500 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -1183,6 +1183,50 @@ function protagonizei_dashboard_api_balances_widget() {
                 </div>
             </div>
         </div>
+
+        <!-- N8N -->
+        <a href="https://n8n.srv1238427.hstgr.cloud/home/workflows" target="_blank" class="block">
+            <div class="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-4 border border-green-200 hover:shadow-md transition-shadow">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 sm:w-10 sm:h-10 bg-green-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <svg class="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-semibold text-gray-900">N8N</h3>
+                            <p class="text-xs text-green-600 hover:text-green-800 font-medium">Abrir workflows →</p>
+                        </div>
+                    </div>
+                    <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                </div>
+            </div>
+        </a>
+
+        <!-- SendGrid -->
+        <a href="https://app.sendgrid.com/" target="_blank" class="block">
+            <div class="bg-gradient-to-r from-orange-50 to-amber-50 rounded-lg p-4 border border-orange-200 hover:shadow-md transition-shadow">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 sm:w-10 sm:h-10 bg-orange-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <svg class="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-semibold text-gray-900">SendGrid</h3>
+                            <p class="text-xs text-orange-600 hover:text-orange-800 font-medium">Abrir dashboard →</p>
+                        </div>
+                    </div>
+                    <svg class="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                </div>
+            </div>
+        </a>
     </div>
     <?php
 }
@@ -1217,7 +1261,7 @@ function protagonizei_add_dashboard_widgets() {
     
     wp_add_dashboard_widget(
         'protagonizei_api_balances_dashboard',
-        'Saldos das APIs',
+        'Hub de Serviços Externos',
         'protagonizei_dashboard_api_balances_widget'
     );
 }

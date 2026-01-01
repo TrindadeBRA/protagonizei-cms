@@ -671,7 +671,7 @@
       "get": {
         "tags": ["Contato"],
         "summary": "Listar leads (contatos)",
-        "description": "Retorna todos os leads (contatos) criados nas últimas X horas. Inclui todos os dados do lead: nome, email, telefone, LinkedIn, mensagem, tags, anexos e datas de criação/modificação.",
+        "description": "Retorna todos os leads (contatos) criados nas últimas X horas. Inclui todos os dados do lead: nome, email, telefone, LinkedIn, mensagem, tags, anexos e datas de criação/modificação. Permite filtrar por tags usando os parâmetros opcionais exclude_tags e only_tags.",
         "security": [
           {
             "ApiKeyAuth": []
@@ -688,6 +688,36 @@
               "minimum": 0,
               "example": 24
             }
+          },
+          {
+            "name": "exclude_tags",
+            "in": "query",
+            "required": false,
+            "description": "Array de tags que devem ser ignoradas na resposta. Leads que possuam qualquer uma dessas tags serão excluídos do resultado.",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "example": ["spam", "teste"]
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "only_tags",
+            "in": "query",
+            "required": false,
+            "description": "Array de tags para buscar apenas leads com essas tags. Apenas leads que possuam pelo menos uma das tags especificadas serão retornados.",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "example": ["orçamento", "lead"]
+            },
+            "style": "form",
+            "explode": true
           }
         ],
         "responses": {
@@ -825,6 +855,22 @@
                       "format": "date-time",
                       "description": "Data de corte usada na busca",
                       "example": "2024-01-14 10:30:00"
+                    },
+                    "exclude_tags": {
+                      "type": ["array", "null"],
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Tags excluídas do resultado (null se não foi especificado)",
+                      "example": ["spam", "teste"]
+                    },
+                    "only_tags": {
+                      "type": ["array", "null"],
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Tags usadas para filtrar o resultado (null se não foi especificado)",
+                      "example": ["orçamento", "lead"]
                     }
                   }
                 }
