@@ -693,31 +693,21 @@
             "name": "exclude_tags",
             "in": "query",
             "required": false,
-            "description": "Array de tags que devem ser ignoradas na resposta. Leads que possuam qualquer uma dessas tags serão excluídos do resultado.",
+            "description": "Tags separadas por vírgula que devem ser ignoradas na resposta. Leads que possuam qualquer uma dessas tags serão excluídos do resultado. Exemplo: \"spam,teste,cliente\"",
             "schema": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              },
-              "example": ["spam", "teste"]
-            },
-            "style": "form",
-            "explode": true
+              "type": "string",
+              "example": "spam,teste,cliente"
+            }
           },
           {
             "name": "only_tags",
             "in": "query",
             "required": false,
-            "description": "Array de tags para buscar apenas leads com essas tags. Apenas leads que possuam pelo menos uma das tags especificadas serão retornados.",
+            "description": "Tags separadas por vírgula para buscar apenas leads com essas tags. Apenas leads que possuam pelo menos uma das tags especificadas serão retornados. Exemplo: \"orçamento,lead\"",
             "schema": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              },
-              "example": ["orçamento", "lead"]
-            },
-            "style": "form",
-            "explode": true
+              "type": "string",
+              "example": "orçamento,lead"
+            }
           }
         ],
         "responses": {
@@ -857,20 +847,14 @@
                       "example": "2024-01-14 10:30:00"
                     },
                     "exclude_tags": {
-                      "type": ["array", "null"],
-                      "items": {
-                        "type": "string"
-                      },
-                      "description": "Tags excluídas do resultado (null se não foi especificado)",
-                      "example": ["spam", "teste"]
+                      "type": ["string", "null"],
+                      "description": "Tags excluídas do resultado (string separada por vírgula, null se não foi especificado)",
+                      "example": "spam,teste,cliente"
                     },
                     "only_tags": {
-                      "type": ["array", "null"],
-                      "items": {
-                        "type": "string"
-                      },
-                      "description": "Tags usadas para filtrar o resultado (null se não foi especificado)",
-                      "example": ["orçamento", "lead"]
+                      "type": ["string", "null"],
+                      "description": "Tags usadas para filtrar o resultado (string separada por vírgula, null se não foi especificado)",
+                      "example": "orçamento,lead"
                     }
                   }
                 }

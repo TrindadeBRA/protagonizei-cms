@@ -28,37 +28,31 @@ add_action('rest_api_init', function () {
             ),
             'exclude_tags' => array(
                 'required' => false,
-                'type' => 'array',
+                'type' => 'string',
                 'validate_callback' => function($param) {
-                    if (!is_array($param)) {
-                        return false;
-                    }
-                    return true;
+                    return is_string($param) || is_null($param);
                 },
                 'sanitize_callback' => function($param) {
-                    if (is_array($param)) {
-                        return array_map('sanitize_text_field', $param);
+                    if (empty($param)) {
+                        return '';
                     }
-                    return array();
+                    return sanitize_text_field($param);
                 },
-                'description' => 'Array de tags que devem ser ignoradas na resposta'
+                'description' => 'Tags separadas por vírgula que devem ser ignoradas na resposta. Ex: "spam,teste,cliente"'
             ),
             'only_tags' => array(
                 'required' => false,
-                'type' => 'array',
+                'type' => 'string',
                 'validate_callback' => function($param) {
-                    if (!is_array($param)) {
-                        return false;
-                    }
-                    return true;
+                    return is_string($param) || is_null($param);
                 },
                 'sanitize_callback' => function($param) {
-                    if (is_array($param)) {
-                        return array_map('sanitize_text_field', $param);
+                    if (empty($param)) {
+                        return '';
                     }
-                    return array();
+                    return sanitize_text_field($param);
                 },
-                'description' => 'Array de tags - busca apenas leads com essas tags'
+                'description' => 'Tags separadas por vírgula - busca apenas leads com essas tags. Ex: "orçamento,lead"'
             )
         )
     ));
@@ -285,21 +279,26 @@ function contact_form_list($request) {
         );
     }
     
-    // Obtém os parâmetros de filtro de tags
-    $exclude_tags = $request->get_param('exclude_tags');
-    $only_tags = $request->get_param('only_tags');
+    // Obtém os parâmetros de filtro de tags (strings separadas por vírgula)
+    $exclude_tags_param = $request->get_param('exclude_tags');
+    $only_tags_param = $request->get_param('only_tags');
     
-    // Normaliza os arrays de tags
-    if (!is_array($exclude_tags)) {
-        $exclude_tags = array();
-    }
-    if (!is_array($only_tags)) {
-        $only_tags = array();
+    // Converte strings separadas por vírgula em arrays
+    $exclude_tags = array();
+    if (!empty($exclude_tags_param) && is_string($exclude_tags_param)) {
+        $exclude_tags = array_map('trim', explode(',', $exclude_tags_param));
+        $exclude_tags = array_filter($exclude_tags, function($tag) {
+            return !empty($tag);
+        });
     }
     
-    // Sanitiza as tags
-    $exclude_tags = array_map('sanitize_text_field', $exclude_tags);
-    $only_tags = array_map('sanitize_text_field', $only_tags);
+    $only_tags = array();
+    if (!empty($only_tags_param) && is_string($only_tags_param)) {
+        $only_tags = array_map('trim', explode(',', $only_tags_param));
+        $only_tags = array_filter($only_tags, function($tag) {
+            return !empty($tag);
+        });
+    }
     
     // Calcula a data de corte (últimas X horas)
     $date_cutoff = date('Y-m-d H:i:s', strtotime("-{$hours} hours"));
