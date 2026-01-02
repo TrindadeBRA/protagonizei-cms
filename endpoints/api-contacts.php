@@ -304,8 +304,10 @@ function contact_form_list($request) {
         $only_tags = array_map('mb_strtolower', $only_tags);
     }
     
-    // Calcula a data de corte (últimas X horas)
-    $date_cutoff = date('Y-m-d H:i:s', strtotime("-{$hours} hours"));
+    // Calcula a data de corte (últimas X horas) em GMT
+    // current_time('mysql', true) retorna a hora atual em GMT
+    $current_time_gmt = current_time('mysql', true);
+    $date_cutoff = date('Y-m-d H:i:s', strtotime("-{$hours} hours", strtotime($current_time_gmt)));
     
     // Busca os posts do tipo contact_form criados nas últimas X horas
     $args = array(
@@ -316,6 +318,7 @@ function contact_form_list($request) {
             array(
                 'after' => $date_cutoff,
                 'inclusive' => true,
+                'column' => 'post_date_gmt', // Compara com post_date_gmt (GMT)
             ),
         ),
         'orderby' => 'date',
