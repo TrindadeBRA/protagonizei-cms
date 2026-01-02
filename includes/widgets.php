@@ -100,23 +100,24 @@ function protagonizei_count_orders_by_email($email) {
         return 0;
     }
     
-    $orders_query = new WP_Query(array(
-        'post_type' => 'orders',
-        'posts_per_page' => -1,
-        'post_status' => 'publish',
-        'meta_query' => array(
-            array(
-                'key' => 'buyer_email',
-                'value' => $email,
-                'compare' => '='
-            )
-        )
+    // Normalizar o email (trim e lowercase para comparação precisa)
+    $email_normalized = strtolower(trim($email));
+    
+    // Usar query SQL direta para melhor performance e precisão
+    global $wpdb;
+    
+    $count = $wpdb->get_var($wpdb->prepare(
+        "SELECT COUNT(DISTINCT p.ID) 
+         FROM {$wpdb->posts} p
+         INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id
+         WHERE p.post_type = 'orders'
+         AND p.post_status IN ('publish', 'draft', 'pending', 'private', 'trash')
+         AND pm.meta_key = 'buyer_email'
+         AND LOWER(TRIM(pm.meta_value)) = %s",
+        $email_normalized
     ));
     
-    $count = $orders_query->found_posts;
-    wp_reset_postdata();
-    
-    return $count;
+    return (int) $count;
 }
 
 /**
