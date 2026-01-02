@@ -207,10 +207,8 @@ class Protagonizei_Recent_Orders_Widget extends WP_Widget {
                 
                 // Contar pedidos por email
                 $orders_count = 0;
-                $email_filter_link = '';
                 if ($buyer_email) {
                     $orders_count = protagonizei_count_orders_by_email($buyer_email);
-                    $email_filter_link = admin_url('edit.php?s=' . urlencode($buyer_email) . '&post_type=orders&post_status=all');
                 }
                 
                 echo '<div class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">';
@@ -225,11 +223,7 @@ class Protagonizei_Recent_Orders_Widget extends WP_Widget {
                     echo '<p class="text-xs text-gray-500">' . esc_html($buyer_email) . '</p>';
                     if ($orders_count > 0) {
                         echo '<span class="text-xs text-gray-400">•</span>';
-                        if ($email_filter_link) {
-                            echo '<a href="' . esc_url($email_filter_link) . '" class="text-xs text-blue-600 hover:text-blue-800 hover:underline font-medium">' . esc_html($orders_count) . ' pedido(s)</a>';
-                        } else {
-                            echo '<span class="text-xs text-gray-600 font-medium">' . esc_html($orders_count) . ' pedido(s)</span>';
-                        }
+                        echo '<span class="text-xs text-gray-600 font-medium">' . esc_html($orders_count) . ' pedido(s)</span>';
                     }
                     echo '</div>';
                 }
@@ -547,10 +541,8 @@ function protagonizei_dashboard_recent_orders_widget() {
             
             // Contar pedidos por email
             $orders_count = 0;
-            $email_filter_link = '';
             if ($buyer_email) {
                 $orders_count = protagonizei_count_orders_by_email($buyer_email);
-                $email_filter_link = admin_url('edit.php?s=' . urlencode($buyer_email) . '&post_type=orders&post_status=all');
             }
             
             echo '<div class="bg-white border border-gray-200 rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow">';
@@ -569,11 +561,7 @@ function protagonizei_dashboard_recent_orders_widget() {
                 echo '<p class="text-xs text-gray-500 truncate">' . esc_html($buyer_email) . '</p>';
                 if ($orders_count > 0) {
                     echo '<span class="text-xs text-gray-400">•</span>';
-                    if ($email_filter_link) {
-                        echo '<a href="' . esc_url($email_filter_link) . '" class="text-xs text-blue-600 hover:text-blue-800 hover:underline font-medium whitespace-nowrap">' . esc_html($orders_count) . ' pedido(s)</a>';
-                    } else {
-                        echo '<span class="text-xs text-gray-600 font-medium whitespace-nowrap">' . esc_html($orders_count) . ' pedido(s)</span>';
-                    }
+                    echo '<span class="text-xs text-gray-600 font-medium whitespace-nowrap">' . esc_html($orders_count) . ' pedido(s)</span>';
                 }
                 echo '</div>';
             }
