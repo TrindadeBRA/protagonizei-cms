@@ -91,6 +91,35 @@ class Protagonizei_Recent_Contacts_Widget extends WP_Widget {
 }
 
 /**
+ * Função auxiliar: Contar pedidos por email
+ * @param string $email Email do comprador
+ * @return int Número de pedidos com esse email
+ */
+function protagonizei_count_orders_by_email($email) {
+    if (empty($email)) {
+        return 0;
+    }
+    
+    $orders_query = new WP_Query(array(
+        'post_type' => 'orders',
+        'posts_per_page' => -1,
+        'post_status' => 'publish',
+        'meta_query' => array(
+            array(
+                'key' => 'buyer_email',
+                'value' => $email,
+                'compare' => '='
+            )
+        )
+    ));
+    
+    $count = $orders_query->found_posts;
+    wp_reset_postdata();
+    
+    return $count;
+}
+
+/**
  * Widget: Pedidos Recebidos
  * Exibe os pedidos recebidos com seus status
  */
@@ -175,15 +204,33 @@ class Protagonizei_Recent_Orders_Widget extends WP_Widget {
                 $status_label = isset($status_labels[$status]) ? $status_labels[$status] : ucfirst(str_replace('_', ' ', $status));
                 $status_color = isset($status_colors[$status]) ? $status_colors[$status] : 'bg-gray-100 text-gray-800';
                 
+                // Contar pedidos por email
+                $orders_count = 0;
+                $email_filter_link = '';
+                if ($buyer_email) {
+                    $orders_count = protagonizei_count_orders_by_email($buyer_email);
+                    $email_filter_link = admin_url('edit.php?s=' . urlencode($buyer_email) . '&post_type=orders&post_status=all');
+                }
+                
                 echo '<div class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">';
                 echo '<div class="flex justify-between items-start mb-2">';
                 echo '<div class="flex-1">';
-                echo '<h4 class="font-semibold text-gray-900 text-sm">Pedido #' . esc_html($order->ID) . '</h4>';
-                if ($child_name) {
-                    echo '<p class="text-xs text-gray-600 mt-1">Criança: ' . esc_html($child_name) . '</p>';
-                }
+            echo '<h4 class="font-semibold text-gray-900 text-sm">Pedido #' . esc_html($order->ID) . '</h4>';
+            if ($child_name) {
+                echo '<p class="text-xs text-gray-600 mt-1">Criança: ' . esc_html($child_name) . '</p>';
+            }
                 if ($buyer_email) {
-                    echo '<p class="text-xs text-gray-500 mt-1">' . esc_html($buyer_email) . '</p>';
+                    echo '<div class="flex items-center gap-2 mt-1">';
+                    echo '<p class="text-xs text-gray-500">' . esc_html($buyer_email) . '</p>';
+                    if ($orders_count > 0) {
+                        echo '<span class="text-xs text-gray-400">•</span>';
+                        if ($email_filter_link) {
+                            echo '<a href="' . esc_url($email_filter_link) . '" class="text-xs text-blue-600 hover:text-blue-800 hover:underline font-medium">' . esc_html($orders_count) . ' pedido(s)</a>';
+                        } else {
+                            echo '<span class="text-xs text-gray-600 font-medium">' . esc_html($orders_count) . ' pedido(s)</span>';
+                        }
+                    }
+                    echo '</div>';
                 }
                 echo '</div>';
                 echo '<span class="text-xs text-gray-400 ml-2 whitespace-nowrap">' . esc_html($date) . '</span>';
@@ -497,6 +544,14 @@ function protagonizei_dashboard_recent_orders_widget() {
             $status_label = isset($status_labels[$status]) ? $status_labels[$status] : ucfirst(str_replace('_', ' ', $status));
             $status_color = isset($status_colors[$status]) ? $status_colors[$status] : 'bg-gray-100 text-gray-800';
             
+            // Contar pedidos por email
+            $orders_count = 0;
+            $email_filter_link = '';
+            if ($buyer_email) {
+                $orders_count = protagonizei_count_orders_by_email($buyer_email);
+                $email_filter_link = admin_url('edit.php?s=' . urlencode($buyer_email) . '&post_type=orders&post_status=all');
+            }
+            
             echo '<div class="bg-white border border-gray-200 rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow">';
             echo '<div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-2">';
             echo '<div class="flex-1 min-w-0">';
@@ -509,7 +564,17 @@ function protagonizei_dashboard_recent_orders_widget() {
                 echo '<p class="text-xs text-gray-600 mt-1 truncate">Criança: ' . esc_html($child_name) . '</p>';
             }
             if ($buyer_email) {
-                echo '<p class="text-xs text-gray-500 mt-1 truncate">' . esc_html($buyer_email) . '</p>';
+                echo '<div class="flex items-center gap-2 mt-1 flex-wrap">';
+                echo '<p class="text-xs text-gray-500 truncate">' . esc_html($buyer_email) . '</p>';
+                if ($orders_count > 0) {
+                    echo '<span class="text-xs text-gray-400">•</span>';
+                    if ($email_filter_link) {
+                        echo '<a href="' . esc_url($email_filter_link) . '" class="text-xs text-blue-600 hover:text-blue-800 hover:underline font-medium whitespace-nowrap">' . esc_html($orders_count) . ' pedido(s)</a>';
+                    } else {
+                        echo '<span class="text-xs text-gray-600 font-medium whitespace-nowrap">' . esc_html($orders_count) . ' pedido(s)</span>';
+                    }
+                }
+                echo '</div>';
             }
             echo '</div>';
             echo '<span class="text-xs text-gray-400 sm:ml-2 sm:whitespace-nowrap flex-shrink-0">' . esc_html($date) . '</span>';
