@@ -1585,6 +1585,228 @@
         }
       }
     },
+    "/orders/{order_id}/pages": {
+      "get": {
+        "tags": ["Pedidos - Gestão"],
+        "summary": "Obter páginas do livro de um pedido",
+        "description": "Retorna as páginas finais do livro personalizado no formato usado pelo frontend para exibição no flipbook. O pedido deve estar nos status 'ready_for_delivery', 'delivered' ou 'completed' e ter páginas geradas (campo final_page_with_text).",
+        "security": [],
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "description": "ID do pedido para obter as páginas",
+            "schema": {
+              "type": "integer"
+            },
+            "example": 123
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Páginas obtidas com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "description": "Identificador da página (cover, page1, page2, etc.)",
+                        "example": "cover"
+                      },
+                      "src": {
+                        "type": "string",
+                        "format": "uri",
+                        "description": "URL da imagem da página final com texto",
+                        "example": "https://example.com/wp-content/uploads/2024/01/page-final-cover.jpg"
+                      },
+                      "priority": {
+                        "type": "boolean",
+                        "description": "Se true, a página deve ser carregada com prioridade (primeiras 3 páginas)",
+                        "example": true
+                      }
+                    },
+                    "required": ["id", "src", "priority"]
+                  },
+                  "example": [
+                    {
+                      "id": "cover",
+                      "src": "https://example.com/wp-content/uploads/2024/01/page-final-cover.jpg",
+                      "priority": true
+                    },
+                    {
+                      "id": "page1",
+                      "src": "https://example.com/wp-content/uploads/2024/01/page-final-1.jpg",
+                      "priority": true
+                    },
+                    {
+                      "id": "page2",
+                      "src": "https://example.com/wp-content/uploads/2024/01/page-final-2.jpg",
+                      "priority": true
+                    },
+                    {
+                      "id": "page3",
+                      "src": "https://example.com/wp-content/uploads/2024/01/page-final-3.jpg",
+                      "priority": false
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Status do pedido inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "invalid_order_status"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Pedido não está disponível para visualização. Status atual: thanked"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "integer",
+                          "example": 400
+                        },
+                        "current_status": {
+                          "type": "string",
+                          "example": "thanked"
+                        },
+                        "allowed_statuses": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          },
+                          "example": ["ready_for_delivery", "delivered", "completed"]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Pedido não encontrado ou sem páginas disponíveis",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "example": "order_not_found"
+                        },
+                        "message": {
+                          "type": "string",
+                          "example": "Pedido não encontrado"
+                        },
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "status": {
+                              "type": "integer",
+                              "example": 404
+                            }
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "example": "no_pages_found"
+                        },
+                        "message": {
+                          "type": "string",
+                          "example": "Nenhuma página gerada encontrada para este pedido"
+                        },
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "status": {
+                              "type": "integer",
+                              "example": 404
+                            }
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "example": "no_pages_available"
+                        },
+                        "message": {
+                          "type": "string",
+                          "example": "Nenhuma página final disponível para este pedido"
+                        },
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "status": {
+                              "type": "integer",
+                              "example": 404
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno do servidor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "internal_server_error"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Erro interno do servidor ao obter páginas do pedido"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "integer",
+                          "example": 500
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/orders/{order_id}/pix": {
       "post": {
         "tags": ["Pedidos - Pagamento"],

@@ -54,6 +54,7 @@ require_once THEME_DIR . 'endpoints/orders/webhook-deliver-pdf.php';
 require_once THEME_DIR . 'endpoints/orders/api-deliver-single-order.php';
 require_once THEME_DIR . 'endpoints/orders/api-get-book-details.php';
 require_once THEME_DIR . 'endpoints/orders/api-check-coupon.php';
+require_once THEME_DIR . 'endpoints/orders/api-get-order-pages.php';
 require_once THEME_DIR . 'endpoints/orders/webhook-update-order-status.php';
 
 // Impede acesso direto ao arquivo
