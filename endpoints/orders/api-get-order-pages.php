@@ -126,8 +126,8 @@ function trinitykit_get_order_pages($request) {
                 $page_id = 'page' . $index;
             }
 
-            // Priority: true para as primeiras 3 páginas (cover, page1, page2)
-            $priority = ($index < 3);
+            // Priority: true para todas as páginas
+            $priority = true;
 
             $pages[] = array(
                 'id' => $page_id,

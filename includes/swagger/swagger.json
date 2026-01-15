@@ -1626,7 +1626,7 @@
                       },
                       "priority": {
                         "type": "boolean",
-                        "description": "Se true, a página deve ser carregada com prioridade (primeiras 3 páginas)",
+                        "description": "Se true, a página deve ser carregada com prioridade (sempre true para todas as páginas)",
                         "example": true
                       }
                     },
@@ -1651,7 +1651,7 @@
                     {
                       "id": "page3",
                       "src": "https://example.com/wp-content/uploads/2024/01/page-final-3.jpg",
-                      "priority": false
+                      "priority": true
                     }
                   ]
                 }
