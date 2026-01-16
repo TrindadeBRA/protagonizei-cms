@@ -13,6 +13,11 @@ function trinitykit_get_delivery_email_template($name, $child_name, $order_id, $
     $main_color = $gender === 'menina' ? '#f5349b' : '#357eff';
     $bg_color = $gender === 'menina' ? '#fdf0f8' : '#e8f4fd';
     
+    // Obter URL do front-end para o livro interativo
+    $frontend_url = get_option('trinitykitcms_frontend_app_url', 'https://protagonizei.com');
+    $frontend_url = rtrim($frontend_url, '/');
+    $interactive_book_url = $frontend_url . '/play?id=' . esc_attr($order_id);
+    
     return '
     <!DOCTYPE html>
     <html>
@@ -38,16 +43,25 @@ function trinitykit_get_delivery_email_template($name, $child_name, $order_id, $
                 </div>
 
                 <div style="text-align: center; margin: 30px 0;">
-                    <a href="' . esc_url($pdf_url) . '" style="background-color: ' . $main_color . '; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; display: inline-block;">
-                        📖 Baixar Livro Personalizado
-                    </a>
+                    <p style="margin-bottom: 15px; font-weight: bold; color: #333;">Escolha como deseja visualizar seu livro:</p>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 15px; align-items: center;">
+                        <a href="' . esc_url($interactive_book_url) . '" style="background-color: ' . $main_color . '; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; display: inline-block; width: 100%; max-width: 400px; text-align: center;">
+                            📱 Visualizar Livro Interativo
+                        </a>
+                        
+                        <a href="' . esc_url($pdf_url) . '" style="background-color: #ffffff; color: ' . $main_color . '; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; display: inline-block; width: 100%; max-width: 400px; text-align: center; border: 2px solid ' . $main_color . ';">
+                            📖 Baixar PDF do Livro
+                        </a>
+                    </div>
                 </div>
 
                 <div style="background-color: ' . $bg_color . '; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid ' . $main_color . ';">
                     <h3>💡 Dicas para aproveitar ao máximo:</h3>
                     <ul style="margin: 10px 0; padding-left: 20px;">
-                        <li>Salve o PDF em um local seguro do seu computador</li>
-                        <li>Para melhor qualidade, use um leitor de PDF como Adobe Reader</li>
+                        <li><strong>Livro Interativo:</strong> Experimente a versão interativa com animações e efeitos de virar páginas - perfeito para tablets e computadores!</li>
+                        <li><strong>PDF para Download:</strong> Salve o PDF em um local seguro do seu computador para imprimir quando quiser</li>
+                        <li>Para melhor qualidade do PDF, use um leitor como Adobe Reader</li>
                         <li>Você pode imprimir o livro em casa ou em uma gráfica</li>
                         <li>Compartilhe com familiares e amigos!</li>
                     </ul>
