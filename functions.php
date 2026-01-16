@@ -199,6 +199,7 @@ function trinitykitcms_get_allowed_origins() {
         'http://localhost:3000',
         'http://localhost:8080',
         'https://cms.protagonizei.com',
+        'https://cms-develop.protagonizei.com',
     ];
     
     // Adicionar URLs do frontend (suporta múltiplas URLs separadas por vírgula)
@@ -217,9 +218,11 @@ function trinitykitcms_rewrite_post_preview_url($preview_link, $post) {
     if (get_post_type($post) !== 'post') {
         return $preview_link;
     }
-    $frontend_url = get_option('trinitykitcms_frontend_app_url');
-    if ($frontend_url) {
-        $frontend_url = rtrim($frontend_url, '/');
+    // Se houver múltiplas URLs separadas por vírgula, usa apenas a primeira
+    $frontend_urls = get_option('trinitykitcms_frontend_app_url');
+    if ($frontend_urls) {
+        $frontend_urls_array = array_map('trim', explode(',', $frontend_urls));
+        $frontend_url = rtrim($frontend_urls_array[0], '/');
         return $frontend_url . '/blog/preview?slug=' . $post->post_name;
     }
     return $preview_link;
@@ -230,9 +233,11 @@ function trinitykitcms_rewrite_post_permalink($permalink, $post) {
     if (get_post_type($post) !== 'post') {
         return $permalink;
     }
-    $frontend_url = get_option('trinitykitcms_frontend_app_url');
-    if ($frontend_url) {
-        $frontend_url = rtrim($frontend_url, '/');
+    // Se houver múltiplas URLs separadas por vírgula, usa apenas a primeira
+    $frontend_urls = get_option('trinitykitcms_frontend_app_url');
+    if ($frontend_urls) {
+        $frontend_urls_array = array_map('trim', explode(',', $frontend_urls));
+        $frontend_url = rtrim($frontend_urls_array[0], '/');
         return $frontend_url . '/blog/preview?slug=' . $post->post_name;
     }
     return $permalink;
