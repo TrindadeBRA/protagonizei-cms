@@ -281,5 +281,8 @@ function trinitykitcms_permitir_tipos_arquivo($mimes) {
 add_filter('upload_mimes', 'trinitykitcms_permitir_tipos_arquivo');
 
 // NÃO remover <p> quando alternar abas no editor clássico
-remove_filter('the_content', 'wpautop');
-remove_filter('the_content', 'wptexturize');
+add_filter('tiny_mce_before_init', function ($init) {
+    $init['wpautop'] = false;
+    $init['forced_root_block'] = false;
+    return $init;
+});
