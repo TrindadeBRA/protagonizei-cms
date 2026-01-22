@@ -281,5 +281,19 @@ function trinitykitcms_permitir_tipos_arquivo($mimes) {
 add_filter('upload_mimes', 'trinitykitcms_permitir_tipos_arquivo');
 
 // NÃO remover <p> quando alternar abas no editor clássico
-remove_filter('content_save_pre', 'wp_filter_post_kses');
-remove_filter('content_filtered_save_pre', 'wp_filter_post_kses');
+add_filter('tiny_mce_before_init', function ($init) {
+    // não ficar reescrevendo parágrafos
+    $init['wpautop'] = false;
+    $init['forced_root_block'] = false;
+
+    // impedir "minificação" do HTML e manter formatação
+    $init['remove_linebreaks'] = false;         // não remove quebras de linha
+    $init['apply_source_formatting'] = true;    // preserva/gera formatação no source
+    $init['indent'] = true;                     // indenta o HTML
+    $init['keep_styles'] = true;                // evita limpar estilos/attrs
+
+    // opcional: evita conversões chatas de caracteres
+    $init['entity_encoding'] = 'raw';
+
+    return $init;
+});
