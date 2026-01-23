@@ -202,6 +202,8 @@ function trinitykitcms_get_allowed_origins() {
         'http://localhost:8080',
         'https://cms.protagonizei.com',
         'https://cms-develop.protagonizei.com',
+        'https://protagonizei-play.vercel.app',
+        'https://play.protagonizei.com',
     ];
     
     // Adicionar URLs do frontend (suporta múltiplas URLs separadas por vírgula)
