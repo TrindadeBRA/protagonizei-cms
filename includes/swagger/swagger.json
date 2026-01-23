@@ -288,6 +288,233 @@
         }
       }
     },
+    "/random-video-post": {
+      "get": {
+        "tags": ["Posts"],
+        "summary": "Obter post aleatório com vídeo",
+        "description": "Retorna aleatoriamente 1 post de blog que contenha vídeo de automação e que ainda não tenha sido utilizado (automation_video_used = false). Se todos os posts com vídeo já foram utilizados, o sistema automaticamente reseta todos os campos automation_video_used para false e sorteia novamente, retornando status code 206 ao invés de 200.",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Post com vídeo obtido com sucesso (sem reset)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "reset_occurred": {
+                      "type": "boolean",
+                      "example": false,
+                      "description": "Indica se houve reset dos campos de utilização. false = não houve reset"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "integer",
+                          "description": "ID do post"
+                        },
+                        "title": {
+                          "type": "string",
+                          "description": "Título do post"
+                        },
+                        "body": {
+                          "type": "string",
+                          "description": "Conteúdo completo do post"
+                        },
+                        "summary": {
+                          "type": "string",
+                          "description": "Resumo do post (excerpt ou gerado automaticamente)"
+                        },
+                        "video_url": {
+                          "type": "string",
+                          "description": "URL do vídeo MP4 de automação"
+                        },
+                        "category": {
+                          "type": "string",
+                          "description": "Categorias do post (separadas por vírgula)"
+                        },
+                        "featured_image_url": {
+                          "type": "string",
+                          "description": "URL da imagem destacada do post"
+                        },
+                        "slug": {
+                          "type": "string",
+                          "description": "Slug do post"
+                        },
+                        "created_at": {
+                          "type": "string",
+                          "format": "date-time",
+                          "description": "Data de criação do post"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "206": {
+            "description": "Post com vídeo obtido com sucesso (com reset automático). Todos os posts com vídeo já haviam sido utilizados, então o sistema resetou automaticamente todos os campos automation_video_used para false e sorteou novamente.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "reset_occurred": {
+                      "type": "boolean",
+                      "example": true,
+                      "description": "Indica se houve reset dos campos de utilização. true = houve reset de todos os posts"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "integer",
+                          "description": "ID do post"
+                        },
+                        "title": {
+                          "type": "string",
+                          "description": "Título do post"
+                        },
+                        "body": {
+                          "type": "string",
+                          "description": "Conteúdo completo do post"
+                        },
+                        "summary": {
+                          "type": "string",
+                          "description": "Resumo do post (excerpt ou gerado automaticamente)"
+                        },
+                        "video_url": {
+                          "type": "string",
+                          "description": "URL do vídeo MP4 de automação"
+                        },
+                        "category": {
+                          "type": "string",
+                          "description": "Categorias do post (separadas por vírgula)"
+                        },
+                        "featured_image_url": {
+                          "type": "string",
+                          "description": "URL da imagem destacada do post"
+                        },
+                        "slug": {
+                          "type": "string",
+                          "description": "Slug do post"
+                        },
+                        "created_at": {
+                          "type": "string",
+                          "format": "date-time",
+                          "description": "Data de criação do post"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nenhum post com vídeo encontrado no sistema",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "no_posts_with_video"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Nenhum post com vídeo encontrado no sistema"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "integer",
+                          "example": 404
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Erro de autenticação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "invalid_api_key"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "API Key inválida ou não fornecida"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "integer",
+                          "example": 401
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno do servidor ou estado inconsistente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "inconsistent_state"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Estado inconsistente detectado no sistema"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "integer",
+                          "example": 500
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/post/{slug}": {
       "get": {
         "tags": ["Posts"],

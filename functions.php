@@ -28,6 +28,7 @@ require_once THEME_DIR . 'includes/cpt/cpt-book-templates.php';
 require_once THEME_DIR . 'includes/scf/scf-book-templates.php';
 require_once THEME_DIR . 'includes/cpt/cpt-coupons.php';
 require_once THEME_DIR . 'includes/scf/scf-coupons.php';
+require_once THEME_DIR . 'includes/scf/scf-posts.php';
 require_once THEME_DIR . 'includes/swagger/swagger-page.php';
 
 // Endpoints
@@ -35,6 +36,7 @@ require_once THEME_DIR . 'endpoints/api-configs.php';
 require_once THEME_DIR . 'endpoints/api-contacts.php';
 require_once THEME_DIR . 'endpoints/api-posts-slugs.php';
 require_once THEME_DIR . 'endpoints/api-post-details.php';
+require_once THEME_DIR . 'endpoints/api-random-video-post.php';
 
 // Endpoints de pedidos
 require_once THEME_DIR . 'endpoints/orders/api-create-order.php';
