@@ -13,12 +13,8 @@ function trinitykit_get_delivery_email_template($name, $child_name, $order_id, $
     $main_color = $gender === 'menina' ? '#f5349b' : '#357eff';
     $bg_color = $gender === 'menina' ? '#fdf0f8' : '#e8f4fd';
     
-    // Obter URL do front-end para o livro interativo
-    // Se houver múltiplas URLs separadas por vírgula, usa apenas a primeira
-    $frontend_urls = get_option('trinitykitcms_frontend_app_url', 'https://protagonizei.com');
-    $frontend_urls_array = array_map('trim', explode(',', $frontend_urls));
-    $frontend_url = rtrim($frontend_urls_array[0], '/');
-    $interactive_book_url = $frontend_url . '/play?id=' . esc_attr($order_id);
+    // URL do serviço de livro interativo
+    $interactive_book_url = 'https://play.protagonizei.com?id=' . esc_attr($order_id);
     
     return '
     <!DOCTYPE html>
