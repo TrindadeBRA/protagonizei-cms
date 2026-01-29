@@ -39,8 +39,10 @@ function trinitykit_handle_payment_webhook($request) {
     $data = json_decode($raw_body, true);
     
     // Validate the webhook data
-    if (!isset($data['event']) || $data['event'] !== 'PAYMENT_RECEIVED') {
-        error_log("[TrinityKit] Evento inválido no webhook: " . ($data['event'] ?? 'não definido'));
+    $event = $data['event'] ?? null;
+    $allowed_events = array('PAYMENT_RECEIVED', 'PAYMENT_CONFIRMED');
+    if (!$event || !in_array($event, $allowed_events, true)) {
+        error_log("[TrinityKit] Evento inválido no webhook: " . ($event ?? 'não definido'));
         return new WP_REST_Response(array(
             'message' => 'Evento inválido'
         ), 400);
