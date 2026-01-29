@@ -204,6 +204,7 @@ function trinitykitcms_get_allowed_origins() {
     $allowed_origins = [
         'http://localhost:3000',
         'http://localhost:8080',
+        'http://192.168.3.13:3000',
         'https://cms.protagonizei.com',
         'https://cms-develop.protagonizei.com',
         'https://protagonizei-play.vercel.app',
