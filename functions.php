@@ -44,6 +44,7 @@ require_once THEME_DIR . 'endpoints/api-random-video-social-media.php';
 // Endpoints de pedidos
 require_once THEME_DIR . 'endpoints/orders/api-create-order.php';
 require_once THEME_DIR . 'endpoints/orders/api-create-pix-payment.php';
+require_once THEME_DIR . 'endpoints/orders/api-create-credit-card-payment.php';
 require_once THEME_DIR . 'endpoints/orders/webhook-payment-confirm.php';
 require_once THEME_DIR . 'endpoints/orders/api-check-payment-status.php';
 require_once THEME_DIR . 'endpoints/orders/webhook-email-thanks.php';

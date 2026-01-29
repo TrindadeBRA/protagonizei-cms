@@ -2358,6 +2358,185 @@
         }
       }
     },
+    "/orders/{order_id}/credit-card": {
+      "post": {
+        "tags": ["Pedidos - Pagamento"],
+        "summary": "Criar pagamento via cartão para um pedido",
+        "description": "Cria um pagamento via cartão de crédito para um pedido existente usando a API do Asaas",
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "description": "ID do pedido para criar o pagamento com cartão",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["holderName", "cardNumber", "expiry", "cvc", "document"],
+                "properties": {
+                  "holderName": {
+                    "type": "string",
+                    "example": "Maria Silva"
+                  },
+                  "cardNumber": {
+                    "type": "string",
+                    "example": "4111111111111111"
+                  },
+                  "expiry": {
+                    "type": "string",
+                    "description": "Validade no formato MM/YY ou MMYY",
+                    "example": "06/26"
+                  },
+                  "expiryMonth": {
+                    "type": "string",
+                    "description": "Mês de validade (opcional se enviar expiry)",
+                    "example": "06"
+                  },
+                  "expiryYear": {
+                    "type": "string",
+                    "description": "Ano de validade em 4 dígitos (opcional se enviar expiry)",
+                    "example": "2026"
+                  },
+                  "cvc": {
+                    "type": "string",
+                    "example": "123"
+                  },
+                  "document": {
+                    "type": "string",
+                    "description": "CPF do titular",
+                    "example": "24971563792"
+                  },
+                  "installments": {
+                    "type": "integer",
+                    "description": "Quantidade de parcelas",
+                    "example": 1
+                  },
+                  "buyerName": {
+                    "type": "string",
+                    "description": "Nome do comprador (opcional, usa o do pedido se não enviado)",
+                    "example": "Maria Silva"
+                  },
+                  "buyerEmail": {
+                    "type": "string",
+                    "description": "Email do comprador (opcional, usa o do pedido se não enviado)",
+                    "example": "maria@email.com"
+                  },
+                  "buyerPhone": {
+                    "type": "string",
+                    "description": "Telefone do comprador (opcional, usa o do pedido se não enviado)",
+                    "example": "(11) 91234-5678"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Pagamento com cartão criado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Pagamento cartão criado com sucesso"
+                    },
+                    "payment_id": {
+                      "type": "string",
+                      "description": "ID do pagamento no Asaas",
+                      "example": "pay_123456789"
+                    },
+                    "status": {
+                      "type": "string",
+                      "example": "PENDING"
+                    },
+                    "customer_id": {
+                      "type": "string",
+                      "description": "ID do cliente no Asaas",
+                      "example": "cus_000005219613"
+                    },
+                    "price": {
+                      "type": "number",
+                      "format": "float",
+                      "description": "Preço do livro em reais (R$)",
+                      "example": 49.99
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro de validação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "missing_fields"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Todos os campos do cartão são obrigatórios"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "integer",
+                          "example": 400
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro ao criar pagamento com cartão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "example": "asaas_credit_card_error"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Erro ao criar pagamento cartão: [mensagem de erro]"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "integer",
+                          "example": 500
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/orders/{order_id}/payment-status": {
       "get": {
         "tags": ["Pedidos - Pagamento"],

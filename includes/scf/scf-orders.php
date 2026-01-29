@@ -176,6 +176,14 @@ function register_order_fields() {
                     'required' => 0,
                 ),
                 array(
+                    'key' => 'field_customer_id',
+                    'label' => 'ID do Cliente (Asaas)',
+                    'name' => 'customer_id',
+                    'type' => 'text',
+                    'instructions' => 'ID do cliente no Asaas associado ao pedido',
+                    'required' => 0,
+                ),
+                array(
                     'key' => 'field_payment_date',
                     'label' => 'Data do Pagamento',
                     'name' => 'payment_date',
