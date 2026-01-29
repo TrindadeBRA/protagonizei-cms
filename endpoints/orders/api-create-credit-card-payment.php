@@ -118,10 +118,10 @@ function trinitykit_create_credit_card_payment($request) {
         );
     }
 
-    if ($installments < 0) {
+    if ($installments < 1 || $installments > 3) {
         return new WP_Error(
             'invalid_installments',
-            'Parcelamento inválido',
+            'Parcelamento inválido. Selecione entre 1 e 3 parcelas.',
             array('status' => 400)
         );
     }
@@ -235,6 +235,18 @@ function trinitykit_create_credit_card_payment($request) {
         }
     }
 
+
+    $rate_config = array(
+        // juros aplicado por parcela adicional (ex.: 2x, 3x)
+        'jurosPorParcelaPercent' => 1.5,
+    );
+
+    $calculate_total = function($amount, $installments, $rate_config) {
+        $additional = max($installments - 1, 0);
+        $total = $amount * (1 + ($rate_config['jurosPorParcelaPercent'] / 100) * $additional);
+        return round($total, 2);
+    };
+
     // Create or reuse Asaas customer
     $customer_id = (string) get_field('customer_id', $order_id);
     if (empty($customer_id)) {
@@ -312,11 +324,14 @@ function trinitykit_create_credit_card_payment($request) {
         ),
     );
 
+    $total_value = $calculate_total($final_price, $installments, $rate_config);
+    $installment_value = round($total_value / $installments, 2);
+    $last_installment_value = round($total_value - ($installment_value * ($installments - 1)), 2);
+
     if ($installments > 1) {
-        $installment_value = round($final_price / $installments, 2);
         $payment_payload['installmentCount'] = $installments;
         $payment_payload['installmentValue'] = $installment_value;
-        $payment_payload['totalValue'] = $final_price;
+        $payment_payload['totalValue'] = $total_value;
     }
 
     $remote_ip = $request->get_header('X-Forwarded-For');
@@ -383,6 +398,9 @@ function trinitykit_create_credit_card_payment($request) {
         'payment_id' => $payment_id,
         'status' => $payment_status_value,
         'customer_id' => $customer_id,
-        'price' => $final_price
+        'price' => $final_price,
+        'total_value' => $total_value ?? $final_price,
+        'installment_value' => $installment_value ?? $final_price,
+        'last_installment_value' => $last_installment_value ?? $final_price
     ), 200);
 }
